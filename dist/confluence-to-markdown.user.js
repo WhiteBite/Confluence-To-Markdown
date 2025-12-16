@@ -5,10 +5,10 @@
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown for LLM consumption
 // @icon         https://www.atlassian.com/favicon.ico
-// @homepage     https://github.com/WhiteBite/confluence-to-markdown
-// @supportURL   https://github.com/WhiteBite/confluence-to-markdown/issues
-// @downloadURL  https://raw.githubusercontent.com/WhiteBite/confluence-to-markdown/main/dist/confluence-to-markdown.user.js
-// @updateURL    https://raw.githubusercontent.com/WhiteBite/confluence-to-markdown/main/dist/confluence-to-markdown.user.js
+// @homepage     https://github.com/WhiteBite/Confluence-To-Markdown
+// @supportURL   https://github.com/WhiteBite/Confluence-To-Markdown/issues
+// @downloadURL  https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js
+// @updateURL    https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js
 // @match        https://*.atlassian.net/wiki/*
 // @match        https://*/wiki/*
 // @match        https://*/display/*

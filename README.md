@@ -2,8 +2,8 @@
 
 Export Confluence pages to clean Markdown for LLM consumption.
 
-![Version](https://img.shields.io/github/v/release/WhiteBite/confluence-to-markdown)
-![License](https://img.shields.io/github/license/WhiteBite/confluence-to-markdown)
+![Version](https://img.shields.io/github/v/release/WhiteBite/Confluence-To-Markdown)
+![License](https://img.shields.io/github/license/WhiteBite/Confluence-To-Markdown)
 
 ## Features
 
@@ -20,7 +20,7 @@ Export Confluence pages to clean Markdown for LLM consumption.
 
 ### Option 1: Chrome Extension
 
-1. Download `confluence-to-markdown-extension.zip` from [Releases](https://github.com/WhiteBite/confluence-to-markdown/releases)
+1. Download `confluence-to-markdown-extension.zip` from [Releases](https://github.com/WhiteBite/Confluence-To-Markdown/releases)
 2. Unzip the archive
 3. Go to `chrome://extensions/`
 4. Enable "Developer mode" (top right)
