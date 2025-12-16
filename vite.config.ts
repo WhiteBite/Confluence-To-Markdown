@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
 
-const REPO_URL = 'https://github.com/WhiteBite/confluence-to-markdown';
-const RAW_URL = 'https://raw.githubusercontent.com/WhiteBite/confluence-to-markdown/main/dist/confluence-to-markdown.user.js';
+const REPO_URL = 'https://github.com/WhiteBite/Confluence-To-Markdown';
+const RAW_URL = 'https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js';
 
 export default defineConfig({
     plugins: [
