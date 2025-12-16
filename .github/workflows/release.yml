@@ -5,19 +5,23 @@ on:
     branches:
       - main
       - master
-    tags:
-      - 'v*'
+    paths-ignore:
+      - 'dist/**'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -44,68 +48,7 @@ jobs:
         id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Upload UserScript artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: userscript
-          path: dist/confluence-to-markdown.user.js
-
-      - name: Upload Extension artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: extension
-          path: confluence-to-markdown-extension.zip
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download UserScript artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: userscript
-          path: ./artifacts
-
-      - name: Download Extension artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: extension
-          path: ./artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./artifacts/confluence-to-markdown.user.js
-            ./artifacts/confluence-to-markdown-extension.zip
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Auto-release on push to main/master (creates tag automatically)
-  auto-release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get version from package.json
-        id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
-      - name: Check if tag exists
+      - name: Check if version tag exists
         id: check_tag
         run: |
           if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
@@ -114,30 +57,38 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download UserScript artifact
-        if: steps.check_tag.outputs.exists == 'false'
-        uses: actions/download-artifact@v4
-        with:
-          name: userscript
-          path: ./artifacts
+      # Commit built userscript to repo for auto-update
+      - name: Commit built UserScript
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add dist/confluence-to-markdown.user.js -f
+          git diff --staged --quiet || git commit -m "chore: build userscript v${{ steps.version.outputs.version }}"
+          git push
 
-      - name: Download Extension artifact
-        if: steps.check_tag.outputs.exists == 'false'
-        uses: actions/download-artifact@v4
-        with:
-          name: extension
-          path: ./artifacts
-
+      # Create release only if version is new
       - name: Create Release
         if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## Installation
+            
+            ### Chrome Extension
+            1. Download `confluence-to-markdown-extension.zip`
+            2. Unzip and load in `chrome://extensions/` (Developer mode → Load unpacked)
+            
+            ### Tampermonkey
+            1. Install [Tampermonkey](https://www.tampermonkey.net/)
+            2. Click on `confluence-to-markdown.user.js` below
+            3. Click "Install" in Tampermonkey
+            
+            **Auto-updates enabled!** Tampermonkey will check for updates automatically.
           files: |
-            ./artifacts/confluence-to-markdown.user.js
-            ./artifacts/confluence-to-markdown-extension.zip
-          generate_release_notes: true
+            dist/confluence-to-markdown.user.js
+            confluence-to-markdown-extension.zip
           draft: false
           prerelease: false
         env:

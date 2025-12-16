@@ -1,0 +1,1963 @@
+// ==UserScript==
+// @name         Confluence to Markdown Exporter
+// @namespace    https://github.com/WhiteBite/confluence-to-markdown
+// @version      2.0.0
+// @author       WhiteBite
+// @description  Export Confluence pages to clean Markdown for LLM consumption
+// @icon         https://www.atlassian.com/favicon.ico
+// @homepage     https://github.com/WhiteBite/confluence-to-markdown
+// @supportURL   https://github.com/WhiteBite/confluence-to-markdown/issues
+// @downloadURL  https://raw.githubusercontent.com/WhiteBite/confluence-to-markdown/main/dist/confluence-to-markdown.user.js
+// @updateURL    https://raw.githubusercontent.com/WhiteBite/confluence-to-markdown/main/dist/confluence-to-markdown.user.js
+// @match        https://*.atlassian.net/wiki/*
+// @match        https://*/wiki/*
+// @match        https://*/display/*
+// @match        https://*/pages/*
+// @connect      *
+// @grant        GM_addStyle
+// @grant        GM_xmlhttpRequest
+// ==/UserScript==
+
+(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const r=document.createElement("style");r.textContent=e,document.head.append(r)})(' :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-warning: #FF991F;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-radius: 6px;--md-radius-lg: 12px;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box;font-family:var(--md-font)}#md-export-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:100%;max-width:720px;max-height:85vh;display:flex;flex-direction:column;box-shadow:var(--md-shadow);overflow:hidden;position:relative}.md-modal-header{padding:20px 24px;border-bottom:1px solid var(--md-border);flex-shrink:0}.md-header-title{display:flex;align-items:center;gap:8px}.md-modal-header h3{margin:0;color:var(--md-text);font-size:20px;font-weight:600}.md-modal-header .subtitle{color:var(--md-text-subtle);font-size:14px;margin:4px 0 0;display:flex;align-items:center;gap:6px}.md-modal-header .subtitle svg{width:16px;height:16px;fill:var(--md-text-muted)}.md-btn-icon{width:32px;height:32px;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all .15s ease}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:20px;height:20px;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-controls{display:flex;gap:8px;padding:12px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-tree-container{flex:1;overflow-y:auto;padding:8px 16px;min-height:200px}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:24px}.md-tree li{margin:0}.md-tree-item{display:flex;align-items:center;padding:8px 12px;margin:2px 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color .15s ease;gap:8px}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform .15s ease}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:16px;height:16px;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:16px;height:16px}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:14px;line-height:1.4;-webkit-user-select:none;user-select:none}.md-tree-label.error{color:var(--md-danger)}.md-tree ul.collapsed{display:none}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:12px 24px;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color .15s ease}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:18px;height:18px;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:16px 24px;background:var(--md-bg);display:flex;flex-direction:column;gap:12px}.md-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--md-text)}.md-checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--md-primary);cursor:pointer}.md-progress-section{padding:16px 24px;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--md-text-subtle)}.md-progress-bar{height:6px;background:var(--md-border);border-radius:3px;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:3px;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-toast{position:absolute;bottom:80px;left:50%;transform:translate(-50%) translateY(20px);background:var(--md-success);color:#fff;padding:12px 20px;border-radius:var(--md-radius);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:18px;height:18px;fill:currentColor}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-top:1px solid var(--md-border);background:var(--md-bg);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;gap:8px}.md-btn{padding:8px 16px;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:14px;font-weight:500;font-family:var(--md-font);transition:all .15s ease;display:inline-flex;align-items:center;gap:6px}.md-btn svg{width:16px;height:16px;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg-subtle);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-hover)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:8px 12px}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:6px 12px;font-size:13px}.md-selection-count{font-size:13px;color:var(--md-text-subtle);padding:6px 12px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);margin-left:auto}#md-export-status{margin-left:12px;color:var(--md-text-subtle);font-size:13px;font-family:var(--md-font)}#md-export-trigger{margin-left:10px} ');
+
+(function () {
+  'use strict';
+
+  const MAX_CONCURRENCY = 6;
+  const PAGE_LIMIT = 50;
+  const EXPAND_CONTENT = "body.view,ancestors,version";
+  async function runWithConcurrency(items, fn, options) {
+    const { concurrency, onProgress } = options;
+    const results = new Array(items.length);
+    let completed = 0;
+    let currentIndex = 0;
+    async function worker() {
+      while (currentIndex < items.length) {
+        const index = currentIndex++;
+        const item = items[index];
+        try {
+          results[index] = await fn(item, index);
+        } catch (error) {
+          throw error;
+        }
+        completed++;
+        onProgress == null ? void 0 : onProgress(completed, items.length);
+      }
+    }
+    const workers = [];
+    const workerCount = Math.min(concurrency, items.length);
+    for (let i = 0; i < workerCount; i++) {
+      workers.push(worker());
+    }
+    await Promise.all(workers);
+    return results;
+  }
+  function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  async function withRetry(fn, maxRetries = 3, baseDelay = 1e3) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        if (error instanceof Error && error.message.includes("429")) {
+          const waitTime = baseDelay * Math.pow(2, attempt);
+          await delay(waitTime);
+          continue;
+        }
+        if (attempt < maxRetries) {
+          await delay(baseDelay * (attempt + 1));
+        }
+      }
+    }
+    throw lastError;
+  }
+  function getEnvironment() {
+    var _a;
+    if (typeof GM_xmlhttpRequest !== "undefined") {
+      return "tampermonkey";
+    }
+    if (typeof chrome !== "undefined" && ((_a = chrome.runtime) == null ? void 0 : _a.id)) {
+      return "extension";
+    }
+    return "browser";
+  }
+  const ENV = getEnvironment();
+  const IS_TAMPERMONKEY = ENV === "tampermonkey";
+  function getBaseUrl() {
+    const { protocol, host } = window.location;
+    return `${protocol}//${host}`;
+  }
+  function gmFetch(url) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: "GET",
+        url,
+        headers: { Accept: "application/json" },
+        onload(response) {
+          if (response.status >= 200 && response.status < 300) {
+            try {
+              resolve(JSON.parse(response.responseText));
+            } catch (e) {
+              reject(new Error(`JSON parse error: ${e}`));
+            }
+          } else if (response.status === 429) {
+            reject(new Error("429 Rate Limited"));
+          } else {
+            reject(new Error(`API error ${response.status}: ${response.statusText}`));
+          }
+        },
+        onerror(response) {
+          reject(new Error(`Network error: ${response.statusText || "Unknown"}`));
+        }
+      });
+    });
+  }
+  async function browserFetch(url) {
+    var _a;
+    try {
+      const response = await fetch(url, {
+        credentials: "include",
+        headers: { Accept: "application/json" }
+      });
+      if (response.ok) {
+        return response.json();
+      }
+      if (response.status === 429) {
+        throw new Error("429 Rate Limited");
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    } catch (error) {
+      if (typeof chrome !== "undefined" && ((_a = chrome.runtime) == null ? void 0 : _a.sendMessage)) {
+        const result = await chrome.runtime.sendMessage({
+          type: "FETCH",
+          url
+        });
+        if (result.success) {
+          return result.data;
+        }
+        if (result.status === 429) {
+          throw new Error("429 Rate Limited");
+        }
+        throw new Error(result.error || "Background fetch failed");
+      }
+      throw error;
+    }
+  }
+  function fetchJson(url) {
+    return withRetry(async () => {
+      if (IS_TAMPERMONKEY) {
+        return gmFetch(url);
+      }
+      return browserFetch(url);
+    });
+  }
+  async function fetchPage(pageId) {
+    const url = `${getBaseUrl()}/rest/api/content/${pageId}`;
+    return fetchJson(url);
+  }
+  async function fetchPageWithContent(pageId) {
+    const url = `${getBaseUrl()}/rest/api/content/${pageId}?expand=${EXPAND_CONTENT}`;
+    return fetchJson(url);
+  }
+  async function fetchChildren(pageId) {
+    var _a, _b;
+    const baseUrl = getBaseUrl();
+    const children = [];
+    let start = 0;
+    let hasMore = true;
+    while (hasMore) {
+      const url = `${baseUrl}/rest/api/content/${pageId}/child/page?limit=${PAGE_LIMIT}&start=${start}`;
+      const response = await fetchJson(url);
+      if ((_a = response.results) == null ? void 0 : _a.length) {
+        children.push(...response.results);
+      }
+      hasMore = ((_b = response.results) == null ? void 0 : _b.length) === PAGE_LIMIT;
+      start += PAGE_LIMIT;
+    }
+    return children;
+  }
+  async function buildPageTree(rootPageId, onStatus) {
+    const processedIds = /* @__PURE__ */ new Set();
+    let counter = 0;
+    async function processNode(pageId, level, parentId) {
+      if (processedIds.has(pageId)) {
+        return { id: pageId, title: "[Duplicate]", level, parentId, children: [], error: true };
+      }
+      processedIds.add(pageId);
+      counter++;
+      onStatus == null ? void 0 : onStatus(`Collecting hierarchy: ${counter} pages... (ID: ${pageId})`);
+      try {
+        const pageInfo = await fetchPage(pageId);
+        const children = await fetchChildren(pageId);
+        const childNodes = [];
+        for (const child of children) {
+          const childNode = await processNode(child.id, level + 1, pageId);
+          childNodes.push(childNode);
+        }
+        return {
+          id: pageId,
+          title: pageInfo.title,
+          level,
+          parentId,
+          children: childNodes,
+          error: false
+        };
+      } catch (error) {
+        return {
+          id: pageId,
+          title: `Error loading (${pageId})`,
+          level,
+          parentId,
+          children: [],
+          error: true
+        };
+      }
+    }
+    return processNode(rootPageId, 0, null);
+  }
+  function flattenTree(node) {
+    const result = [node];
+    for (const child of node.children) {
+      result.push(...flattenTree(child));
+    }
+    return result;
+  }
+  function extend(destination) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+      for (var key in source) {
+        if (source.hasOwnProperty(key)) destination[key] = source[key];
+      }
+    }
+    return destination;
+  }
+  function repeat(character, count) {
+    return Array(count + 1).join(character);
+  }
+  function trimLeadingNewlines(string) {
+    return string.replace(/^\n*/, "");
+  }
+  function trimTrailingNewlines(string) {
+    var indexEnd = string.length;
+    while (indexEnd > 0 && string[indexEnd - 1] === "\n") indexEnd--;
+    return string.substring(0, indexEnd);
+  }
+  function trimNewlines(string) {
+    return trimTrailingNewlines(trimLeadingNewlines(string));
+  }
+  var blockElements = [
+    "ADDRESS",
+    "ARTICLE",
+    "ASIDE",
+    "AUDIO",
+    "BLOCKQUOTE",
+    "BODY",
+    "CANVAS",
+    "CENTER",
+    "DD",
+    "DIR",
+    "DIV",
+    "DL",
+    "DT",
+    "FIELDSET",
+    "FIGCAPTION",
+    "FIGURE",
+    "FOOTER",
+    "FORM",
+    "FRAMESET",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "HEADER",
+    "HGROUP",
+    "HR",
+    "HTML",
+    "ISINDEX",
+    "LI",
+    "MAIN",
+    "MENU",
+    "NAV",
+    "NOFRAMES",
+    "NOSCRIPT",
+    "OL",
+    "OUTPUT",
+    "P",
+    "PRE",
+    "SECTION",
+    "TABLE",
+    "TBODY",
+    "TD",
+    "TFOOT",
+    "TH",
+    "THEAD",
+    "TR",
+    "UL"
+  ];
+  function isBlock(node) {
+    return is(node, blockElements);
+  }
+  var voidElements = [
+    "AREA",
+    "BASE",
+    "BR",
+    "COL",
+    "COMMAND",
+    "EMBED",
+    "HR",
+    "IMG",
+    "INPUT",
+    "KEYGEN",
+    "LINK",
+    "META",
+    "PARAM",
+    "SOURCE",
+    "TRACK",
+    "WBR"
+  ];
+  function isVoid(node) {
+    return is(node, voidElements);
+  }
+  function hasVoid(node) {
+    return has(node, voidElements);
+  }
+  var meaningfulWhenBlankElements = [
+    "A",
+    "TABLE",
+    "THEAD",
+    "TBODY",
+    "TFOOT",
+    "TH",
+    "TD",
+    "IFRAME",
+    "SCRIPT",
+    "AUDIO",
+    "VIDEO"
+  ];
+  function isMeaningfulWhenBlank(node) {
+    return is(node, meaningfulWhenBlankElements);
+  }
+  function hasMeaningfulWhenBlank(node) {
+    return has(node, meaningfulWhenBlankElements);
+  }
+  function is(node, tagNames) {
+    return tagNames.indexOf(node.nodeName) >= 0;
+  }
+  function has(node, tagNames) {
+    return node.getElementsByTagName && tagNames.some(function(tagName) {
+      return node.getElementsByTagName(tagName).length;
+    });
+  }
+  var rules$1 = {};
+  rules$1.paragraph = {
+    filter: "p",
+    replacement: function(content) {
+      return "\n\n" + content + "\n\n";
+    }
+  };
+  rules$1.lineBreak = {
+    filter: "br",
+    replacement: function(content, node, options) {
+      return options.br + "\n";
+    }
+  };
+  rules$1.heading = {
+    filter: ["h1", "h2", "h3", "h4", "h5", "h6"],
+    replacement: function(content, node, options) {
+      var hLevel = Number(node.nodeName.charAt(1));
+      if (options.headingStyle === "setext" && hLevel < 3) {
+        var underline = repeat(hLevel === 1 ? "=" : "-", content.length);
+        return "\n\n" + content + "\n" + underline + "\n\n";
+      } else {
+        return "\n\n" + repeat("#", hLevel) + " " + content + "\n\n";
+      }
+    }
+  };
+  rules$1.blockquote = {
+    filter: "blockquote",
+    replacement: function(content) {
+      content = trimNewlines(content).replace(/^/gm, "> ");
+      return "\n\n" + content + "\n\n";
+    }
+  };
+  rules$1.list = {
+    filter: ["ul", "ol"],
+    replacement: function(content, node) {
+      var parent = node.parentNode;
+      if (parent.nodeName === "LI" && parent.lastElementChild === node) {
+        return "\n" + content;
+      } else {
+        return "\n\n" + content + "\n\n";
+      }
+    }
+  };
+  rules$1.listItem = {
+    filter: "li",
+    replacement: function(content, node, options) {
+      var prefix = options.bulletListMarker + "   ";
+      var parent = node.parentNode;
+      if (parent.nodeName === "OL") {
+        var start = parent.getAttribute("start");
+        var index = Array.prototype.indexOf.call(parent.children, node);
+        prefix = (start ? Number(start) + index : index + 1) + ".  ";
+      }
+      var isParagraph = /\n$/.test(content);
+      content = trimNewlines(content) + (isParagraph ? "\n" : "");
+      content = content.replace(/\n/gm, "\n" + " ".repeat(prefix.length));
+      return prefix + content + (node.nextSibling ? "\n" : "");
+    }
+  };
+  rules$1.indentedCodeBlock = {
+    filter: function(node, options) {
+      return options.codeBlockStyle === "indented" && node.nodeName === "PRE" && node.firstChild && node.firstChild.nodeName === "CODE";
+    },
+    replacement: function(content, node, options) {
+      return "\n\n    " + node.firstChild.textContent.replace(/\n/g, "\n    ") + "\n\n";
+    }
+  };
+  rules$1.fencedCodeBlock = {
+    filter: function(node, options) {
+      return options.codeBlockStyle === "fenced" && node.nodeName === "PRE" && node.firstChild && node.firstChild.nodeName === "CODE";
+    },
+    replacement: function(content, node, options) {
+      var className = node.firstChild.getAttribute("class") || "";
+      var language = (className.match(/language-(\S+)/) || [null, ""])[1];
+      var code = node.firstChild.textContent;
+      var fenceChar = options.fence.charAt(0);
+      var fenceSize = 3;
+      var fenceInCodeRegex = new RegExp("^" + fenceChar + "{3,}", "gm");
+      var match;
+      while (match = fenceInCodeRegex.exec(code)) {
+        if (match[0].length >= fenceSize) {
+          fenceSize = match[0].length + 1;
+        }
+      }
+      var fence = repeat(fenceChar, fenceSize);
+      return "\n\n" + fence + language + "\n" + code.replace(/\n$/, "") + "\n" + fence + "\n\n";
+    }
+  };
+  rules$1.horizontalRule = {
+    filter: "hr",
+    replacement: function(content, node, options) {
+      return "\n\n" + options.hr + "\n\n";
+    }
+  };
+  rules$1.inlineLink = {
+    filter: function(node, options) {
+      return options.linkStyle === "inlined" && node.nodeName === "A" && node.getAttribute("href");
+    },
+    replacement: function(content, node) {
+      var href = node.getAttribute("href");
+      if (href) href = href.replace(/([()])/g, "\\$1");
+      var title = cleanAttribute(node.getAttribute("title"));
+      if (title) title = ' "' + title.replace(/"/g, '\\"') + '"';
+      return "[" + content + "](" + href + title + ")";
+    }
+  };
+  rules$1.referenceLink = {
+    filter: function(node, options) {
+      return options.linkStyle === "referenced" && node.nodeName === "A" && node.getAttribute("href");
+    },
+    replacement: function(content, node, options) {
+      var href = node.getAttribute("href");
+      var title = cleanAttribute(node.getAttribute("title"));
+      if (title) title = ' "' + title + '"';
+      var replacement;
+      var reference;
+      switch (options.linkReferenceStyle) {
+        case "collapsed":
+          replacement = "[" + content + "][]";
+          reference = "[" + content + "]: " + href + title;
+          break;
+        case "shortcut":
+          replacement = "[" + content + "]";
+          reference = "[" + content + "]: " + href + title;
+          break;
+        default:
+          var id = this.references.length + 1;
+          replacement = "[" + content + "][" + id + "]";
+          reference = "[" + id + "]: " + href + title;
+      }
+      this.references.push(reference);
+      return replacement;
+    },
+    references: [],
+    append: function(options) {
+      var references = "";
+      if (this.references.length) {
+        references = "\n\n" + this.references.join("\n") + "\n\n";
+        this.references = [];
+      }
+      return references;
+    }
+  };
+  rules$1.emphasis = {
+    filter: ["em", "i"],
+    replacement: function(content, node, options) {
+      if (!content.trim()) return "";
+      return options.emDelimiter + content + options.emDelimiter;
+    }
+  };
+  rules$1.strong = {
+    filter: ["strong", "b"],
+    replacement: function(content, node, options) {
+      if (!content.trim()) return "";
+      return options.strongDelimiter + content + options.strongDelimiter;
+    }
+  };
+  rules$1.code = {
+    filter: function(node) {
+      var hasSiblings = node.previousSibling || node.nextSibling;
+      var isCodeBlock = node.parentNode.nodeName === "PRE" && !hasSiblings;
+      return node.nodeName === "CODE" && !isCodeBlock;
+    },
+    replacement: function(content) {
+      if (!content) return "";
+      content = content.replace(/\r?\n|\r/g, " ");
+      var extraSpace = /^`|^ .*?[^ ].* $|`$/.test(content) ? " " : "";
+      var delimiter = "`";
+      var matches = content.match(/`+/gm) || [];
+      while (matches.indexOf(delimiter) !== -1) delimiter = delimiter + "`";
+      return delimiter + extraSpace + content + extraSpace + delimiter;
+    }
+  };
+  rules$1.image = {
+    filter: "img",
+    replacement: function(content, node) {
+      var alt = cleanAttribute(node.getAttribute("alt"));
+      var src = node.getAttribute("src") || "";
+      var title = cleanAttribute(node.getAttribute("title"));
+      var titlePart = title ? ' "' + title + '"' : "";
+      return src ? "![" + alt + "](" + src + titlePart + ")" : "";
+    }
+  };
+  function cleanAttribute(attribute) {
+    return attribute ? attribute.replace(/(\n+\s*)+/g, "\n") : "";
+  }
+  function Rules(options) {
+    this.options = options;
+    this._keep = [];
+    this._remove = [];
+    this.blankRule = {
+      replacement: options.blankReplacement
+    };
+    this.keepReplacement = options.keepReplacement;
+    this.defaultRule = {
+      replacement: options.defaultReplacement
+    };
+    this.array = [];
+    for (var key in options.rules) this.array.push(options.rules[key]);
+  }
+  Rules.prototype = {
+    add: function(key, rule) {
+      this.array.unshift(rule);
+    },
+    keep: function(filter) {
+      this._keep.unshift({
+        filter,
+        replacement: this.keepReplacement
+      });
+    },
+    remove: function(filter) {
+      this._remove.unshift({
+        filter,
+        replacement: function() {
+          return "";
+        }
+      });
+    },
+    forNode: function(node) {
+      if (node.isBlank) return this.blankRule;
+      var rule;
+      if (rule = findRule(this.array, node, this.options)) return rule;
+      if (rule = findRule(this._keep, node, this.options)) return rule;
+      if (rule = findRule(this._remove, node, this.options)) return rule;
+      return this.defaultRule;
+    },
+    forEach: function(fn) {
+      for (var i = 0; i < this.array.length; i++) fn(this.array[i], i);
+    }
+  };
+  function findRule(rules2, node, options) {
+    for (var i = 0; i < rules2.length; i++) {
+      var rule = rules2[i];
+      if (filterValue(rule, node, options)) return rule;
+    }
+    return void 0;
+  }
+  function filterValue(rule, node, options) {
+    var filter = rule.filter;
+    if (typeof filter === "string") {
+      if (filter === node.nodeName.toLowerCase()) return true;
+    } else if (Array.isArray(filter)) {
+      if (filter.indexOf(node.nodeName.toLowerCase()) > -1) return true;
+    } else if (typeof filter === "function") {
+      if (filter.call(rule, node, options)) return true;
+    } else {
+      throw new TypeError("`filter` needs to be a string, array, or function");
+    }
+  }
+  function collapseWhitespace(options) {
+    var element = options.element;
+    var isBlock2 = options.isBlock;
+    var isVoid2 = options.isVoid;
+    var isPre = options.isPre || function(node2) {
+      return node2.nodeName === "PRE";
+    };
+    if (!element.firstChild || isPre(element)) return;
+    var prevText = null;
+    var keepLeadingWs = false;
+    var prev = null;
+    var node = next(prev, element, isPre);
+    while (node !== element) {
+      if (node.nodeType === 3 || node.nodeType === 4) {
+        var text = node.data.replace(/[ \r\n\t]+/g, " ");
+        if ((!prevText || / $/.test(prevText.data)) && !keepLeadingWs && text[0] === " ") {
+          text = text.substr(1);
+        }
+        if (!text) {
+          node = remove(node);
+          continue;
+        }
+        node.data = text;
+        prevText = node;
+      } else if (node.nodeType === 1) {
+        if (isBlock2(node) || node.nodeName === "BR") {
+          if (prevText) {
+            prevText.data = prevText.data.replace(/ $/, "");
+          }
+          prevText = null;
+          keepLeadingWs = false;
+        } else if (isVoid2(node) || isPre(node)) {
+          prevText = null;
+          keepLeadingWs = true;
+        } else if (prevText) {
+          keepLeadingWs = false;
+        }
+      } else {
+        node = remove(node);
+        continue;
+      }
+      var nextNode = next(prev, node, isPre);
+      prev = node;
+      node = nextNode;
+    }
+    if (prevText) {
+      prevText.data = prevText.data.replace(/ $/, "");
+      if (!prevText.data) {
+        remove(prevText);
+      }
+    }
+  }
+  function remove(node) {
+    var next2 = node.nextSibling || node.parentNode;
+    node.parentNode.removeChild(node);
+    return next2;
+  }
+  function next(prev, current, isPre) {
+    if (prev && prev.parentNode === current || isPre(current)) {
+      return current.nextSibling || current.parentNode;
+    }
+    return current.firstChild || current.nextSibling || current.parentNode;
+  }
+  var root = typeof window !== "undefined" ? window : {};
+  function canParseHTMLNatively() {
+    var Parser = root.DOMParser;
+    var canParse = false;
+    try {
+      if (new Parser().parseFromString("", "text/html")) {
+        canParse = true;
+      }
+    } catch (e) {
+    }
+    return canParse;
+  }
+  function createHTMLParser() {
+    var Parser = function() {
+    };
+    {
+      if (shouldUseActiveX()) {
+        Parser.prototype.parseFromString = function(string) {
+          var doc = new window.ActiveXObject("htmlfile");
+          doc.designMode = "on";
+          doc.open();
+          doc.write(string);
+          doc.close();
+          return doc;
+        };
+      } else {
+        Parser.prototype.parseFromString = function(string) {
+          var doc = document.implementation.createHTMLDocument("");
+          doc.open();
+          doc.write(string);
+          doc.close();
+          return doc;
+        };
+      }
+    }
+    return Parser;
+  }
+  function shouldUseActiveX() {
+    var useActiveX = false;
+    try {
+      document.implementation.createHTMLDocument("").open();
+    } catch (e) {
+      if (root.ActiveXObject) useActiveX = true;
+    }
+    return useActiveX;
+  }
+  var HTMLParser = canParseHTMLNatively() ? root.DOMParser : createHTMLParser();
+  function RootNode(input, options) {
+    var root2;
+    if (typeof input === "string") {
+      var doc = htmlParser().parseFromString(
+        // DOM parsers arrange elements in the <head> and <body>.
+        // Wrapping in a custom element ensures elements are reliably arranged in
+        // a single element.
+        '<x-turndown id="turndown-root">' + input + "</x-turndown>",
+        "text/html"
+      );
+      root2 = doc.getElementById("turndown-root");
+    } else {
+      root2 = input.cloneNode(true);
+    }
+    collapseWhitespace({
+      element: root2,
+      isBlock,
+      isVoid,
+      isPre: options.preformattedCode ? isPreOrCode : null
+    });
+    return root2;
+  }
+  var _htmlParser;
+  function htmlParser() {
+    _htmlParser = _htmlParser || new HTMLParser();
+    return _htmlParser;
+  }
+  function isPreOrCode(node) {
+    return node.nodeName === "PRE" || node.nodeName === "CODE";
+  }
+  function Node(node, options) {
+    node.isBlock = isBlock(node);
+    node.isCode = node.nodeName === "CODE" || node.parentNode.isCode;
+    node.isBlank = isBlank(node);
+    node.flankingWhitespace = flankingWhitespace(node, options);
+    return node;
+  }
+  function isBlank(node) {
+    return !isVoid(node) && !isMeaningfulWhenBlank(node) && /^\s*$/i.test(node.textContent) && !hasVoid(node) && !hasMeaningfulWhenBlank(node);
+  }
+  function flankingWhitespace(node, options) {
+    if (node.isBlock || options.preformattedCode && node.isCode) {
+      return { leading: "", trailing: "" };
+    }
+    var edges = edgeWhitespace(node.textContent);
+    if (edges.leadingAscii && isFlankedByWhitespace("left", node, options)) {
+      edges.leading = edges.leadingNonAscii;
+    }
+    if (edges.trailingAscii && isFlankedByWhitespace("right", node, options)) {
+      edges.trailing = edges.trailingNonAscii;
+    }
+    return { leading: edges.leading, trailing: edges.trailing };
+  }
+  function edgeWhitespace(string) {
+    var m = string.match(/^(([ \t\r\n]*)(\s*))(?:(?=\S)[\s\S]*\S)?((\s*?)([ \t\r\n]*))$/);
+    return {
+      leading: m[1],
+      // whole string for whitespace-only strings
+      leadingAscii: m[2],
+      leadingNonAscii: m[3],
+      trailing: m[4],
+      // empty for whitespace-only strings
+      trailingNonAscii: m[5],
+      trailingAscii: m[6]
+    };
+  }
+  function isFlankedByWhitespace(side, node, options) {
+    var sibling;
+    var regExp;
+    var isFlanked;
+    if (side === "left") {
+      sibling = node.previousSibling;
+      regExp = / $/;
+    } else {
+      sibling = node.nextSibling;
+      regExp = /^ /;
+    }
+    if (sibling) {
+      if (sibling.nodeType === 3) {
+        isFlanked = regExp.test(sibling.nodeValue);
+      } else if (options.preformattedCode && sibling.nodeName === "CODE") {
+        isFlanked = false;
+      } else if (sibling.nodeType === 1 && !isBlock(sibling)) {
+        isFlanked = regExp.test(sibling.textContent);
+      }
+    }
+    return isFlanked;
+  }
+  var reduce = Array.prototype.reduce;
+  var escapes = [
+    [/\\/g, "\\\\"],
+    [/\*/g, "\\*"],
+    [/^-/g, "\\-"],
+    [/^\+ /g, "\\+ "],
+    [/^(=+)/g, "\\$1"],
+    [/^(#{1,6}) /g, "\\$1 "],
+    [/`/g, "\\`"],
+    [/^~~~/g, "\\~~~"],
+    [/\[/g, "\\["],
+    [/\]/g, "\\]"],
+    [/^>/g, "\\>"],
+    [/_/g, "\\_"],
+    [/^(\d+)\. /g, "$1\\. "]
+  ];
+  function TurndownService(options) {
+    if (!(this instanceof TurndownService)) return new TurndownService(options);
+    var defaults = {
+      rules: rules$1,
+      headingStyle: "setext",
+      hr: "* * *",
+      bulletListMarker: "*",
+      codeBlockStyle: "indented",
+      fence: "```",
+      emDelimiter: "_",
+      strongDelimiter: "**",
+      linkStyle: "inlined",
+      linkReferenceStyle: "full",
+      br: "  ",
+      preformattedCode: false,
+      blankReplacement: function(content, node) {
+        return node.isBlock ? "\n\n" : "";
+      },
+      keepReplacement: function(content, node) {
+        return node.isBlock ? "\n\n" + node.outerHTML + "\n\n" : node.outerHTML;
+      },
+      defaultReplacement: function(content, node) {
+        return node.isBlock ? "\n\n" + content + "\n\n" : content;
+      }
+    };
+    this.options = extend({}, defaults, options);
+    this.rules = new Rules(this.options);
+  }
+  TurndownService.prototype = {
+    /**
+     * The entry point for converting a string or DOM node to Markdown
+     * @public
+     * @param {String|HTMLElement} input The string or DOM node to convert
+     * @returns A Markdown representation of the input
+     * @type String
+     */
+    turndown: function(input) {
+      if (!canConvert(input)) {
+        throw new TypeError(
+          input + " is not a string, or an element/document/fragment node."
+        );
+      }
+      if (input === "") return "";
+      var output = process.call(this, new RootNode(input, this.options));
+      return postProcess.call(this, output);
+    },
+    /**
+     * Add one or more plugins
+     * @public
+     * @param {Function|Array} plugin The plugin or array of plugins to add
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+    use: function(plugin) {
+      if (Array.isArray(plugin)) {
+        for (var i = 0; i < plugin.length; i++) this.use(plugin[i]);
+      } else if (typeof plugin === "function") {
+        plugin(this);
+      } else {
+        throw new TypeError("plugin must be a Function or an Array of Functions");
+      }
+      return this;
+    },
+    /**
+     * Adds a rule
+     * @public
+     * @param {String} key The unique key of the rule
+     * @param {Object} rule The rule
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+    addRule: function(key, rule) {
+      this.rules.add(key, rule);
+      return this;
+    },
+    /**
+     * Keep a node (as HTML) that matches the filter
+     * @public
+     * @param {String|Array|Function} filter The unique key of the rule
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+    keep: function(filter) {
+      this.rules.keep(filter);
+      return this;
+    },
+    /**
+     * Remove a node that matches the filter
+     * @public
+     * @param {String|Array|Function} filter The unique key of the rule
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+    remove: function(filter) {
+      this.rules.remove(filter);
+      return this;
+    },
+    /**
+     * Escapes Markdown syntax
+     * @public
+     * @param {String} string The string to escape
+     * @returns A string with Markdown syntax escaped
+     * @type String
+     */
+    escape: function(string) {
+      return escapes.reduce(function(accumulator, escape) {
+        return accumulator.replace(escape[0], escape[1]);
+      }, string);
+    }
+  };
+  function process(parentNode) {
+    var self = this;
+    return reduce.call(parentNode.childNodes, function(output, node) {
+      node = new Node(node, self.options);
+      var replacement = "";
+      if (node.nodeType === 3) {
+        replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue);
+      } else if (node.nodeType === 1) {
+        replacement = replacementForNode.call(self, node);
+      }
+      return join(output, replacement);
+    }, "");
+  }
+  function postProcess(output) {
+    var self = this;
+    this.rules.forEach(function(rule) {
+      if (typeof rule.append === "function") {
+        output = join(output, rule.append(self.options));
+      }
+    });
+    return output.replace(/^[\t\r\n]+/, "").replace(/[\t\r\n\s]+$/, "");
+  }
+  function replacementForNode(node) {
+    var rule = this.rules.forNode(node);
+    var content = process.call(this, node);
+    var whitespace = node.flankingWhitespace;
+    if (whitespace.leading || whitespace.trailing) content = content.trim();
+    return whitespace.leading + rule.replacement(content, node, this.options) + whitespace.trailing;
+  }
+  function join(output, replacement) {
+    var s1 = trimTrailingNewlines(output);
+    var s2 = trimLeadingNewlines(replacement);
+    var nls = Math.max(output.length - s1.length, replacement.length - s2.length);
+    var separator = "\n\n".substring(0, nls);
+    return s1 + separator + s2;
+  }
+  function canConvert(input) {
+    return input != null && (typeof input === "string" || input.nodeType && (input.nodeType === 1 || input.nodeType === 9 || input.nodeType === 11));
+  }
+  var highlightRegExp = /highlight-(?:text|source)-([a-z0-9]+)/;
+  function highlightedCodeBlock(turndownService) {
+    turndownService.addRule("highlightedCodeBlock", {
+      filter: function(node) {
+        var firstChild = node.firstChild;
+        return node.nodeName === "DIV" && highlightRegExp.test(node.className) && firstChild && firstChild.nodeName === "PRE";
+      },
+      replacement: function(content, node, options) {
+        var className = node.className || "";
+        var language = (className.match(highlightRegExp) || [null, ""])[1];
+        return "\n\n" + options.fence + language + "\n" + node.firstChild.textContent + "\n" + options.fence + "\n\n";
+      }
+    });
+  }
+  function strikethrough(turndownService) {
+    turndownService.addRule("strikethrough", {
+      filter: ["del", "s", "strike"],
+      replacement: function(content) {
+        return "~" + content + "~";
+      }
+    });
+  }
+  var indexOf = Array.prototype.indexOf;
+  var every = Array.prototype.every;
+  var rules = {};
+  rules.tableCell = {
+    filter: ["th", "td"],
+    replacement: function(content, node) {
+      return cell(content, node);
+    }
+  };
+  rules.tableRow = {
+    filter: "tr",
+    replacement: function(content, node) {
+      var borderCells = "";
+      var alignMap = { left: ":--", right: "--:", center: ":-:" };
+      if (isHeadingRow(node)) {
+        for (var i = 0; i < node.childNodes.length; i++) {
+          var border = "---";
+          var align = (node.childNodes[i].getAttribute("align") || "").toLowerCase();
+          if (align) border = alignMap[align] || border;
+          borderCells += cell(border, node.childNodes[i]);
+        }
+      }
+      return "\n" + content + (borderCells ? "\n" + borderCells : "");
+    }
+  };
+  rules.table = {
+    // Only convert tables with a heading row.
+    // Tables with no heading row are kept using `keep` (see below).
+    filter: function(node) {
+      return node.nodeName === "TABLE" && isHeadingRow(node.rows[0]);
+    },
+    replacement: function(content) {
+      content = content.replace("\n\n", "\n");
+      return "\n\n" + content + "\n\n";
+    }
+  };
+  rules.tableSection = {
+    filter: ["thead", "tbody", "tfoot"],
+    replacement: function(content) {
+      return content;
+    }
+  };
+  function isHeadingRow(tr) {
+    var parentNode = tr.parentNode;
+    return parentNode.nodeName === "THEAD" || parentNode.firstChild === tr && (parentNode.nodeName === "TABLE" || isFirstTbody(parentNode)) && every.call(tr.childNodes, function(n) {
+      return n.nodeName === "TH";
+    });
+  }
+  function isFirstTbody(element) {
+    var previousSibling = element.previousSibling;
+    return element.nodeName === "TBODY" && (!previousSibling || previousSibling.nodeName === "THEAD" && /^\s*$/i.test(previousSibling.textContent));
+  }
+  function cell(content, node) {
+    var index = indexOf.call(node.parentNode.childNodes, node);
+    var prefix = " ";
+    if (index === 0) prefix = "| ";
+    return prefix + content + " |";
+  }
+  function tables(turndownService) {
+    turndownService.keep(function(node) {
+      return node.nodeName === "TABLE" && !isHeadingRow(node.rows[0]);
+    });
+    for (var key in rules) turndownService.addRule(key, rules[key]);
+  }
+  function taskListItems(turndownService) {
+    turndownService.addRule("taskListItems", {
+      filter: function(node) {
+        return node.type === "checkbox" && node.parentNode.nodeName === "LI";
+      },
+      replacement: function(content, node) {
+        return (node.checked ? "[x]" : "[ ]") + " ";
+      }
+    });
+  }
+  function gfm(turndownService) {
+    turndownService.use([
+      highlightedCodeBlock,
+      strikethrough,
+      tables,
+      taskListItems
+    ]);
+  }
+  let turndownInstance = null;
+  function getTurndown() {
+    if (turndownInstance) return turndownInstance;
+    turndownInstance = new TurndownService({
+      headingStyle: "atx",
+      codeBlockStyle: "fenced",
+      bulletListMarker: "-",
+      emDelimiter: "*"
+    });
+    turndownInstance.use(gfm);
+    turndownInstance.addRule("confluenceMacros", {
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        return node.classList.contains("confluence-information-macro") || node.tagName === "DIV" && node.dataset.macroName === "panel";
+      },
+      replacement: (_content, node) => {
+        var _a, _b, _c;
+        const el = node;
+        let type = "Info";
+        const macroName = el.dataset.macroName || "";
+        if (macroName.includes("note") || el.classList.contains("confluence-information-macro-note")) {
+          type = "Note";
+        } else if (macroName.includes("tip") || el.classList.contains("confluence-information-macro-tip")) {
+          type = "Tip";
+        } else if (macroName.includes("warning") || el.classList.contains("confluence-information-macro-warning")) {
+          type = "Warning";
+        }
+        const titleEl = el.querySelector(".confluence-information-macro-title, .panelHeader");
+        const title = ((_a = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a.trim()) || "";
+        const bodyEl = el.querySelector(".confluence-information-macro-body, .panelContent");
+        const body = ((_b = bodyEl == null ? void 0 : bodyEl.textContent) == null ? void 0 : _b.trim()) || ((_c = el.textContent) == null ? void 0 : _c.trim()) || "";
+        const header = title ? `**${type}: ${title}**` : `**${type}**`;
+        const lines = body.split("\n").map((line) => `> ${line}`).join("\n");
+        return `
+${header}
+${lines}
+
+`;
+      }
+    });
+    turndownInstance.addRule("auiLozenge", {
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        return node.classList.contains("aui-lozenge");
+      },
+      replacement: (content) => {
+        return content ? `[${content.trim()}]` : "";
+      }
+    });
+    turndownInstance.addRule("taskList", {
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        return node.classList.contains("task-list-item");
+      },
+      replacement: (content, node) => {
+        const el = node;
+        const isComplete = el.dataset.taskStatus === "complete";
+        const checkbox = isComplete ? "[x]" : "[ ]";
+        return `- ${checkbox} ${content.trim()}
+`;
+      }
+    });
+    turndownInstance.addRule("codeBlock", {
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        return node.tagName === "PRE" || node.classList.contains("code") || node.classList.contains("codeContent");
+      },
+      replacement: (content, node) => {
+        var _a;
+        const el = node;
+        const lang = el.dataset.language || ((_a = el.className.match(/language-(\w+)/)) == null ? void 0 : _a[1]) || "";
+        const code = content.trim();
+        return `
+\`\`\`${lang}
+${code}
+\`\`\`
+
+`;
+      }
+    });
+    turndownInstance.addRule("emptyLinks", {
+      filter: (node) => {
+        var _a;
+        if (!(node instanceof HTMLElement)) return false;
+        return node.tagName === "A" && !((_a = node.textContent) == null ? void 0 : _a.trim());
+      },
+      replacement: () => ""
+    });
+    turndownInstance.addRule("confluenceTable", {
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        return node.tagName === "TABLE" && node.classList.contains("confluenceTable");
+      },
+      replacement: (_content, node) => {
+        const el = node;
+        const rows = Array.from(el.querySelectorAll("tr"));
+        if (rows.length === 0) return "";
+        const result = [];
+        let hasHeader = false;
+        rows.forEach((row, rowIndex) => {
+          const cells = Array.from(row.querySelectorAll("th, td"));
+          const isHeaderRow = cells.some((c) => c.tagName === "TH");
+          const cellContents = cells.map((cell2) => {
+            return (cell2.textContent || "").replace(/\n/g, " ").replace(/\|/g, "\\|").trim();
+          });
+          result.push(`| ${cellContents.join(" | ")} |`);
+          if (isHeaderRow && !hasHeader) {
+            hasHeader = true;
+            result.push(`| ${cells.map(() => "---").join(" | ")} |`);
+          } else if (rowIndex === 0 && !hasHeader) {
+            hasHeader = true;
+            result.push(`| ${cells.map(() => "---").join(" | ")} |`);
+          }
+        });
+        return `
+
+${result.join("\n")}
+
+`;
+      }
+    });
+    return turndownInstance;
+  }
+  const BASE_SELECTORS_TO_REMOVE = [
+    "#likes-and-labels-container",
+    "#likes-section",
+    "#labels-section",
+    ".page-metadata-modification-info",
+    "#children-section",
+    ".plugin_pagetree",
+    ".content-action",
+    ".page-header-actions",
+    ".contributors",
+    "script",
+    "style",
+    ".expand-control",
+    ".aui-expander-trigger"
+  ];
+  function sanitizeHtml(html, options, pageId) {
+    if (!html) return "";
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    doc.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
+      el.style.display = "block";
+      el.removeAttribute("aria-hidden");
+      const expander = el.closest(".aui-expander-container, .expand-container");
+      if (expander) {
+        expander.classList.remove("collapsed");
+        expander.classList.add("expanded");
+      }
+    });
+    BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
+      doc.querySelectorAll(selector).forEach((el) => el.remove());
+    });
+    if (!options.includeComments) {
+      doc.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
+        el.remove();
+      });
+    }
+    if (!options.includeImages) {
+      doc.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
+        el.remove();
+      });
+    } else {
+      doc.querySelectorAll("img").forEach((img) => {
+        var _a, _b;
+        if (!((_a = img.alt) == null ? void 0 : _a.trim())) {
+          const src = img.src || "";
+          const filename = ((_b = src.split("/").pop()) == null ? void 0 : _b.split("?")[0]) || "image";
+          img.alt = `[Image: ${filename}]`;
+        }
+      });
+    }
+    return doc.body.innerHTML;
+  }
+  function convertToMarkdown(html) {
+    if (!html) return "";
+    const turndown = getTurndown();
+    return turndown.turndown(html);
+  }
+  async function fetchPagesContent(pageIds, settings, onProgress) {
+    const sanitizeOptions = {
+      includeImages: settings.includeImages,
+      includeComments: settings.includeComments
+    };
+    const fetchSingle = async (pageId) => {
+      try {
+        const page = await fetchPageWithContent(pageId);
+        return {
+          id: page.id,
+          title: page.title,
+          htmlContent: sanitizeHtml(page.body.view.value, sanitizeOptions, pageId),
+          ancestors: page.ancestors || [],
+          version: page.version,
+          error: false
+        };
+      } catch (error) {
+        return {
+          id: pageId,
+          title: `Error loading: ${pageId}`,
+          htmlContent: "",
+          ancestors: [],
+          error: true
+        };
+      }
+    };
+    const results = await runWithConcurrency(pageIds, fetchSingle, {
+      concurrency: MAX_CONCURRENCY,
+      onProgress: (completed, total) => {
+        onProgress == null ? void 0 : onProgress(completed, total, "content");
+      }
+    });
+    return results;
+  }
+  function buildMarkdownDocument(pages, rootNode, exportTitle, settings) {
+    const flatTree = flattenTree(rootNode);
+    const treeMap = new Map(flatTree.map((n) => [n.id, n]));
+    const lines = [];
+    const baseUrl = getBaseUrl();
+    lines.push(`# ${exportTitle}`);
+    lines.push("");
+    if (settings.includeMetadata) {
+      lines.push("## Metadata");
+      lines.push("");
+      lines.push(`- **Root Page ID:** ${rootNode.id}`);
+      lines.push(`- **Total Pages:** ${pages.length}`);
+      lines.push(`- **Export Date:** ${(/* @__PURE__ */ new Date()).toISOString()}`);
+      lines.push("");
+    }
+    lines.push("## Table of Contents");
+    lines.push("");
+    const baseLevel = rootNode.level;
+    for (const page of pages) {
+      if (page.error) continue;
+      const node = treeMap.get(page.id);
+      const relativeLevel = node ? node.level - baseLevel : 0;
+      const indent = "  ".repeat(relativeLevel);
+      const anchor = makeAnchor(page.title);
+      lines.push(`${indent}- [${page.title}](#${anchor})`);
+    }
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+    for (const page of pages) {
+      const node = treeMap.get(page.id);
+      const relativeLevel = node ? node.level - baseLevel : 0;
+      const headingLevel = Math.min(relativeLevel + 2, 6);
+      const heading = "#".repeat(headingLevel);
+      lines.push(`${heading} ${page.title}`);
+      lines.push("");
+      if (settings.includeSourceLinks) {
+        const pageUrl = `${baseUrl}/pages/viewpage.action?pageId=${page.id}`;
+        lines.push(`> Source: ${pageUrl}`);
+        lines.push("");
+      }
+      if (settings.includeMetadata && page.version) {
+        const date = new Date(page.version.when).toLocaleDateString();
+        lines.push(`*Last updated: ${date}*`);
+        lines.push("");
+      }
+      if (page.error) {
+        lines.push("*Error loading page content*");
+      } else {
+        const markdown = convertToMarkdown(page.htmlContent);
+        lines.push(markdown);
+      }
+      lines.push("");
+      lines.push("---");
+      lines.push("");
+    }
+    return {
+      markdown: lines.join("\n"),
+      pageCount: pages.length,
+      title: exportTitle
+    };
+  }
+  function makeAnchor(title) {
+    return title.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
+  }
+  function downloadMarkdown(result) {
+    const blob = new Blob([result.markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const filename = `${sanitizeFilename(result.title)}.md`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  async function copyToClipboard(result) {
+    try {
+      await navigator.clipboard.writeText(result.markdown);
+      return true;
+    } catch (error) {
+      const textarea = document.createElement("textarea");
+      textarea.value = result.markdown;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const success = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return success;
+    }
+  }
+  function sanitizeFilename(name) {
+    return name.replace(/[<>:"/\\|?*]/g, "_").replace(/\s+/g, "_").substring(0, 100);
+  }
+  const DEFAULT_SETTINGS = {
+    includeImages: true,
+    includeMetadata: true,
+    includeComments: false,
+    includeSourceLinks: true
+  };
+  const STORAGE_KEYS = {
+    SETTINGS: "md_export_settings",
+    TREE_PREFIX: "md_tree_cache_"
+  };
+  const CACHE_TTL = 24 * 60 * 60 * 1e3;
+  function loadSettings() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (stored) {
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+      }
+    } catch (e) {
+      console.warn("Failed to load settings:", e);
+    }
+    return { ...DEFAULT_SETTINGS };
+  }
+  function saveSettings(settings) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    } catch (e) {
+      console.warn("Failed to save settings:", e);
+    }
+  }
+  function getCachedTree(rootId) {
+    try {
+      const key = STORAGE_KEYS.TREE_PREFIX + rootId;
+      const stored = localStorage.getItem(key);
+      if (!stored) return null;
+      const cached = JSON.parse(stored);
+      if (Date.now() - cached.timestamp > CACHE_TTL) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      return cached;
+    } catch (e) {
+      console.warn("Failed to load cached tree:", e);
+      return null;
+    }
+  }
+  function setCachedTree(rootId, rootTitle, tree) {
+    try {
+      const key = STORAGE_KEYS.TREE_PREFIX + rootId;
+      const cached = {
+        rootId,
+        rootTitle,
+        tree,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(key, JSON.stringify(cached));
+    } catch (e) {
+      console.warn("Failed to cache tree:", e);
+    }
+  }
+  function clearCachedTree(rootId) {
+    try {
+      const key = STORAGE_KEYS.TREE_PREFIX + rootId;
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Failed to clear cache:", e);
+    }
+  }
+  const ICONS = {
+    chevron: `<svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
+    folder: `<svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
+    page: `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
+    download: `<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`,
+    copy: `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`,
+    refresh: `<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`,
+    settings: `<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
+    check: `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`
+  };
+  let modalElement = null;
+  let currentSettings;
+  function showPageSelectorModal(rootNode, rootTitle, options) {
+    return new Promise((resolve) => {
+      currentSettings = loadSettings();
+      const modal = document.createElement("div");
+      modal.id = "md-export-modal";
+      modalElement = modal;
+      modal.innerHTML = `
+      <div id="md-export-modal-content">
+        <div class="md-modal-header">
+          <div class="md-header-title">
+            <h3>Export to Markdown</h3>
+            <button class="md-btn-icon" data-action="refresh" title="Refresh page tree">
+              ${ICONS.refresh}
+            </button>
+          </div>
+          <p class="subtitle">
+            ${ICONS.folder.replace("<svg", '<svg class="icon"')}
+            <span>${escapeHtml(rootTitle)}</span>
+          </p>
+        </div>
+        
+        <div class="md-controls">
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="expand">Expand All</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="collapse">Collapse All</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="select-all">Select All</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="deselect-all">Deselect All</button>
+          <span class="md-selection-count" id="md-selection-count">0 selected</span>
+        </div>
+        
+        <div class="md-tree-container">
+          <div class="md-tree" id="md-tree-root">${buildTreeHtml([rootNode])}</div>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div class="md-settings-panel">
+          <button class="md-settings-toggle" data-action="toggle-settings">
+            ${ICONS.settings}
+            <span>Export Settings</span>
+            <span class="md-chevron">${ICONS.chevron}</span>
+          </button>
+          <div class="md-settings-content" id="md-settings-content" style="display: none;">
+            <label class="md-checkbox-label">
+              <input type="checkbox" id="setting-images" ${currentSettings.includeImages ? "checked" : ""}>
+              <span>Include images</span>
+            </label>
+            <label class="md-checkbox-label">
+              <input type="checkbox" id="setting-metadata" ${currentSettings.includeMetadata ? "checked" : ""}>
+              <span>Include metadata (author, date)</span>
+            </label>
+            <label class="md-checkbox-label">
+              <input type="checkbox" id="setting-comments" ${currentSettings.includeComments ? "checked" : ""}>
+              <span>Include user comments</span>
+            </label>
+            <label class="md-checkbox-label">
+              <input type="checkbox" id="setting-links" ${currentSettings.includeSourceLinks ? "checked" : ""}>
+              <span>Include source links</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="md-progress-section" id="md-progress-section" style="display: none;">
+          <div class="md-progress-label">
+            <span id="md-progress-text">Preparing...</span>
+            <span id="md-progress-count"></span>
+          </div>
+          <div class="md-progress-bar">
+            <div class="md-progress-fill" id="md-progress-fill"></div>
+          </div>
+        </div>
+        
+        <!-- Toast notification -->
+        <div class="md-toast" id="md-toast" style="display: none;">
+          ${ICONS.check}
+          <span>Copied to clipboard!</span>
+        </div>
+        
+        <div class="md-modal-footer">
+          <div class="md-footer-left">
+            <button class="md-btn md-btn-link" data-action="cancel">Cancel</button>
+          </div>
+          <div class="md-footer-right">
+            <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn">
+              ${ICONS.copy}
+              <span>Copy to Clipboard</span>
+            </button>
+            <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn">
+              ${ICONS.download}
+              <span>Download</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(modal);
+      updateSelectionCount(modal);
+      modal.addEventListener("click", async (e) => {
+        const target = e.target;
+        const btn = target.closest("[data-action]");
+        if (!btn) return;
+        const action = btn.dataset.action;
+        if (action === "cancel") {
+          modal.remove();
+          modalElement = null;
+          resolve({ selectedIds: [], cancelled: true, action: "cancel", settings: currentSettings });
+          return;
+        }
+        if (action === "download" || action === "copy") {
+          const selectedIds = getSelectedIds(modal);
+          if (selectedIds.length === 0) {
+            alert("Please select at least one page.");
+            return;
+          }
+          saveCurrentSettings(modal);
+          disableModalInteraction(modal);
+          resolve({
+            selectedIds,
+            cancelled: false,
+            action,
+            settings: currentSettings
+          });
+          return;
+        }
+        if (action === "refresh") {
+          const refreshBtn = btn;
+          refreshBtn.classList.add("spinning");
+          try {
+            const newTree = await options.onRefresh();
+            const treeRoot = modal.querySelector("#md-tree-root");
+            if (treeRoot) {
+              treeRoot.innerHTML = buildTreeHtml([newTree]);
+            }
+            updateSelectionCount(modal);
+          } finally {
+            refreshBtn.classList.remove("spinning");
+          }
+          return;
+        }
+        if (action === "toggle-settings") {
+          const content = modal.querySelector("#md-settings-content");
+          const chevron = btn.querySelector(".md-chevron");
+          if (content) {
+            const isHidden = content.style.display === "none";
+            content.style.display = isHidden ? "block" : "none";
+            chevron == null ? void 0 : chevron.classList.toggle("expanded", isHidden);
+          }
+          return;
+        }
+        if (action === "expand") {
+          modal.querySelectorAll(".md-tree ul").forEach((ul) => ul.classList.remove("collapsed"));
+          modal.querySelectorAll(".md-tree-toggler").forEach((t) => t.classList.add("expanded"));
+          return;
+        }
+        if (action === "collapse") {
+          modal.querySelectorAll(".md-tree ul ul").forEach((ul) => ul.classList.add("collapsed"));
+          modal.querySelectorAll(".md-tree-toggler").forEach((t) => {
+            if (!t.classList.contains("empty")) t.classList.remove("expanded");
+          });
+          return;
+        }
+        if (action === "select-all") {
+          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => cb.checked = true);
+          updateSelectionCount(modal);
+          return;
+        }
+        if (action === "deselect-all") {
+          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => cb.checked = false);
+          updateSelectionCount(modal);
+          return;
+        }
+      });
+      modal.addEventListener("click", (e) => {
+        const target = e.target;
+        if (target.closest(".md-tree-toggler")) {
+          const toggler = target.closest(".md-tree-toggler");
+          if (toggler.classList.contains("empty")) return;
+          const li = toggler.closest("li");
+          const childUl = li == null ? void 0 : li.querySelector(":scope > ul");
+          if (childUl) {
+            childUl.classList.toggle("collapsed");
+            toggler.classList.toggle("expanded");
+          }
+          return;
+        }
+        const treeItem = target.closest(".md-tree-item");
+        if (treeItem && !target.closest(".md-tree-checkbox")) {
+          const checkbox = treeItem.querySelector(".md-tree-checkbox");
+          if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+      });
+      modal.addEventListener("change", (e) => {
+        var _a, _b;
+        const target = e.target;
+        if (!target.classList.contains("md-tree-checkbox")) return;
+        const isChecked = target.checked;
+        const li = target.closest("li");
+        li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
+          cb.checked = isChecked;
+        });
+        if (isChecked) {
+          let parent = (_a = li == null ? void 0 : li.parentElement) == null ? void 0 : _a.closest("li");
+          while (parent) {
+            const parentCb = parent.querySelector(":scope > .md-tree-item .md-tree-checkbox");
+            if (parentCb) parentCb.checked = true;
+            parent = (_b = parent.parentElement) == null ? void 0 : _b.closest("li");
+          }
+        }
+        updateSelectionCount(modal);
+      });
+    });
+  }
+  function updateModalProgress(completed, total, phase) {
+    if (!modalElement) return;
+    const section = modalElement.querySelector("#md-progress-section");
+    const text = modalElement.querySelector("#md-progress-text");
+    const count = modalElement.querySelector("#md-progress-count");
+    const fill = modalElement.querySelector("#md-progress-fill");
+    if (!section || !text || !fill) return;
+    section.style.display = "block";
+    const phaseLabels = {
+      tree: "Scanning page tree...",
+      content: "Loading page content...",
+      convert: "Converting to Markdown..."
+    };
+    text.textContent = phaseLabels[phase] || phase;
+    if (total > 0) {
+      count.textContent = `${completed}/${total}`;
+      const percent = Math.round(completed / total * 100);
+      fill.style.width = `${percent}%`;
+      fill.classList.remove("indeterminate");
+    } else {
+      count.textContent = "";
+      fill.classList.add("indeterminate");
+    }
+  }
+  function showToast(message) {
+    if (!modalElement) return;
+    const toast = modalElement.querySelector("#md-toast");
+    if (!toast) return;
+    {
+      const span = toast.querySelector("span");
+      if (span) span.textContent = message;
+    }
+    toast.style.display = "flex";
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 300);
+    }, 2e3);
+  }
+  function closeModal() {
+    if (modalElement) {
+      modalElement.remove();
+      modalElement = null;
+    }
+  }
+  function enableModal() {
+    if (!modalElement) return;
+    const downloadBtn = modalElement.querySelector("#md-download-btn");
+    const copyBtn = modalElement.querySelector("#md-copy-btn");
+    if (downloadBtn) {
+      downloadBtn.disabled = false;
+      downloadBtn.innerHTML = `${ICONS.download}<span>Download</span>`;
+    }
+    if (copyBtn) {
+      copyBtn.disabled = false;
+      copyBtn.innerHTML = `${ICONS.copy}<span>Copy to Clipboard</span>`;
+    }
+    modalElement.querySelectorAll(".md-controls button").forEach((btn) => {
+      btn.disabled = false;
+    });
+    modalElement.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+      cb.disabled = false;
+    });
+    const progressSection = modalElement.querySelector("#md-progress-section");
+    if (progressSection) {
+      progressSection.style.display = "none";
+    }
+  }
+  function saveCurrentSettings(modal) {
+    var _a, _b, _c, _d;
+    currentSettings = {
+      includeImages: ((_a = modal.querySelector("#setting-images")) == null ? void 0 : _a.checked) ?? true,
+      includeMetadata: ((_b = modal.querySelector("#setting-metadata")) == null ? void 0 : _b.checked) ?? true,
+      includeComments: ((_c = modal.querySelector("#setting-comments")) == null ? void 0 : _c.checked) ?? false,
+      includeSourceLinks: ((_d = modal.querySelector("#setting-links")) == null ? void 0 : _d.checked) ?? true
+    };
+    saveSettings(currentSettings);
+  }
+  function disableModalInteraction(modal) {
+    const downloadBtn = modal.querySelector("#md-download-btn");
+    const copyBtn = modal.querySelector("#md-copy-btn");
+    if (downloadBtn) {
+      downloadBtn.disabled = true;
+      downloadBtn.innerHTML = `<span>Processing...</span>`;
+    }
+    if (copyBtn) {
+      copyBtn.disabled = true;
+    }
+    modal.querySelectorAll(".md-controls button").forEach((btn) => {
+      btn.disabled = true;
+    });
+    modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+      cb.disabled = true;
+    });
+  }
+  function buildTreeHtml(nodes) {
+    let html = "<ul>";
+    for (const node of nodes) {
+      const hasChildren = node.children.length > 0;
+      const errorClass = node.error ? " error" : "";
+      const togglerClass = hasChildren ? "md-tree-toggler expanded" : "md-tree-toggler empty";
+      const iconClass = hasChildren ? "md-tree-icon folder" : "md-tree-icon page";
+      const icon = hasChildren ? ICONS.folder : ICONS.page;
+      html += `<li data-page-id="${node.id}">`;
+      html += `<div class="md-tree-item">`;
+      html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
+      html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
+      html += `<span class="${iconClass}">${icon}</span>`;
+      html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}${node.error ? " (Error)" : ""}</span>`;
+      html += `</div>`;
+      if (hasChildren) {
+        html += buildTreeHtml(node.children);
+      }
+      html += "</li>";
+    }
+    html += "</ul>";
+    return html;
+  }
+  function getSelectedIds(modal) {
+    const ids = [];
+    modal.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
+      if (cb.dataset.pageId) {
+        ids.push(cb.dataset.pageId);
+      }
+    });
+    return ids;
+  }
+  function updateSelectionCount(modal) {
+    const count = modal.querySelectorAll(".md-tree-checkbox:checked").length;
+    const counter = modal.querySelector("#md-selection-count");
+    if (counter) {
+      counter.textContent = `${count} selected`;
+    }
+  }
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  function createButton(text, className, onClick) {
+    const btn = document.createElement("button");
+    btn.textContent = text;
+    btn.className = className;
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+  function createStatus() {
+    const span = document.createElement("span");
+    span.id = "md-export-status";
+    return span;
+  }
+  function updateStatus(message) {
+    const el = document.getElementById("md-export-status");
+    if (el) el.textContent = message;
+  }
+  function setButtonLoading(btn, loading, text) {
+    btn.disabled = loading;
+    btn.textContent = loading ? "Loading..." : text;
+  }
+  function getCurrentPageId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("pageId");
+  }
+  function getErrorMessage(error) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "string") return error;
+    return "Unknown error";
+  }
+  let exportButton = null;
+  async function startExport() {
+    if (!exportButton || exportButton.disabled) return;
+    const pageId = getCurrentPageId();
+    if (!pageId) {
+      alert("Could not find current page ID!");
+      return;
+    }
+    setButtonLoading(exportButton, true, "Export to Markdown");
+    try {
+      let rootTree;
+      let rootTitle;
+      const cached = getCachedTree(pageId);
+      if (cached) {
+        rootTree = cached.tree;
+        rootTitle = cached.rootTitle;
+        updateStatus("Loaded from cache");
+      } else {
+        updateStatus("Scanning page tree...");
+        rootTree = await buildPageTree(pageId, updateStatus);
+        if (!rootTree || rootTree.error) {
+          alert("Failed to load page hierarchy.");
+          updateStatus("Error: Could not load hierarchy");
+          return;
+        }
+        rootTitle = rootTree.title;
+        setCachedTree(pageId, rootTitle, rootTree);
+        updateStatus("Tree cached");
+      }
+      const { selectedIds, cancelled, action, settings } = await showPageSelectorModal(
+        rootTree,
+        rootTitle,
+        {
+          onRefresh: async () => {
+            updateStatus("Refreshing tree...");
+            clearCachedTree(pageId);
+            const newTree = await buildPageTree(pageId, updateStatus);
+            if (newTree && !newTree.error) {
+              setCachedTree(pageId, newTree.title, newTree);
+              rootTree = newTree;
+              rootTitle = newTree.title;
+            }
+            updateStatus("Tree refreshed");
+            return newTree;
+          }
+        }
+      );
+      if (cancelled) {
+        updateStatus("Cancelled");
+        return;
+      }
+      if (selectedIds.length === 0) {
+        closeModal();
+        updateStatus("No pages selected");
+        return;
+      }
+      updateModalProgress(0, selectedIds.length, "content");
+      const pagesContent = await fetchPagesContent(selectedIds, settings, (completed, total, phase) => {
+        updateModalProgress(completed, total, phase);
+      });
+      updateModalProgress(0, 0, "convert");
+      const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+      if (action === "copy") {
+        const success = await copyToClipboard(result);
+        if (success) {
+          showToast("Copied to clipboard!");
+          enableModal();
+          updateStatus(`Copied ${result.pageCount} pages`);
+        } else {
+          alert("Failed to copy to clipboard");
+          enableModal();
+        }
+      } else {
+        downloadMarkdown(result);
+        closeModal();
+        updateStatus(`Downloaded ${result.pageCount} pages`);
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      closeModal();
+      alert(`Export failed: ${getErrorMessage(error)}`);
+      updateStatus(`Error: ${getErrorMessage(error)}`);
+    } finally {
+      if (exportButton) {
+        setButtonLoading(exportButton, false, "Export to Markdown");
+      }
+    }
+  }
+  function addExportButton() {
+    if (document.getElementById("md-export-trigger")) return;
+    if (!getCurrentPageId()) return;
+    const actionMenu = document.getElementById("action-menu-link");
+    if (!(actionMenu == null ? void 0 : actionMenu.parentElement)) return;
+    exportButton = createButton("Export to Markdown", "aui-button", startExport);
+    exportButton.id = "md-export-trigger";
+    const status = createStatus();
+    actionMenu.parentElement.insertBefore(exportButton, actionMenu.nextSibling);
+    actionMenu.parentElement.insertBefore(status, exportButton.nextSibling);
+  }
+  function init() {
+    addExportButton();
+    let lastHref = location.href;
+    const observer = new MutationObserver(() => {
+      if (location.href !== lastHref) {
+        lastHref = location.href;
+        setTimeout(addExportButton, 500);
+      } else if (!document.getElementById("md-export-trigger") && document.getElementById("action-menu-link")) {
+        setTimeout(addExportButton, 200);
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+})();
