@@ -11,7 +11,7 @@ export default defineConfig({
             userscript: {
                 name: 'Confluence to Markdown Exporter',
                 namespace: 'https://github.com/WhiteBite/confluence-to-markdown',
-                version: '2.2.0',
+                version: '2.3.0',
                 description: 'Export Confluence pages to clean Markdown for LLM consumption',
                 author: 'WhiteBite',
                 homepage: REPO_URL,
