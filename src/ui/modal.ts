@@ -17,7 +17,7 @@ const ICONS = {
 export interface ModalResult {
     selectedIds: string[];
     cancelled: boolean;
-    action: 'download' | 'copy' | 'cancel';
+    action: 'download' | 'copy' | 'pdf' | 'cancel';
     settings: ExportSettings;
 }
 
@@ -118,11 +118,14 @@ export function showPageSelectorModal(
           <div class="md-footer-right">
             <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn">
               ${ICONS.copy}
-              <span>Copy to Clipboard</span>
+              <span>Copy</span>
+            </button>
+            <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn">
+              <span>📄 PDF</span>
             </button>
             <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn">
               ${ICONS.download}
-              <span>Download</span>
+              <span>Download MD</span>
             </button>
           </div>
         </div>
@@ -147,7 +150,7 @@ export function showPageSelectorModal(
                 return;
             }
 
-            if (action === 'download' || action === 'copy') {
+            if (action === 'download' || action === 'copy' || action === 'pdf') {
                 const selectedIds = getSelectedIds(modal);
                 if (selectedIds.length === 0) {
                     alert('Please select at least one page.');
@@ -158,7 +161,7 @@ export function showPageSelectorModal(
                 resolve({
                     selectedIds,
                     cancelled: false,
-                    action: action as 'download' | 'copy',
+                    action: action as 'download' | 'copy' | 'pdf',
                     settings: currentSettings,
                 });
                 return;

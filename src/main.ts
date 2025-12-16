@@ -2,6 +2,7 @@ import './ui/styles.css';
 import { buildPageTree } from '@/core/tree-processor';
 import { fetchPagesContent } from '@/core/content-loader';
 import { buildMarkdownDocument, downloadMarkdown, copyToClipboard } from '@/core/exporter';
+import { exportToPdf } from '@/core/pdf-exporter';
 import {
     showPageSelectorModal,
     updateModalProgress,
@@ -106,6 +107,10 @@ async function startExport(): Promise<void> {
                 alert('Failed to copy to clipboard');
                 enableModal();
             }
+        } else if (action === 'pdf') {
+            exportToPdf(pagesContent, rootTree, rootTitle, settings);
+            closeModal();
+            updateStatus(`PDF preview opened for ${result.pageCount} pages`);
         } else {
             downloadMarkdown(result);
             closeModal();
