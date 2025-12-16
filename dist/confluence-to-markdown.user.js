@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Confluence to Markdown Exporter
 // @namespace    https://github.com/WhiteBite/confluence-to-markdown
-// @version      2.3.0
+// @version      2.3.1
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown for LLM consumption
 // @icon         https://www.atlassian.com/favicon.ico
@@ -2199,7 +2199,9 @@ ${result.join("\n")}
           return;
         }
         if (action === "deselect-all") {
-          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => cb.checked = false);
+          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+            cb.checked = false;
+          });
           updateSelectionCount(modal);
           return;
         }

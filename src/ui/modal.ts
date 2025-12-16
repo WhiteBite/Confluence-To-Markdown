@@ -294,7 +294,9 @@ export function showPageSelectorModal(
             }
 
             if (action === 'deselect-all') {
-                modal.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').forEach((cb) => (cb.checked = false));
+                modal.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').forEach((cb) => {
+                    cb.checked = false;
+                });
                 updateSelectionCount(modal);
                 return;
             }

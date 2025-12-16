@@ -1,6 +1,6 @@
 {
     "name": "confluence-to-markdown",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "description": "Confluence pages to Markdown exporter for LLM consumption",
     "type": "module",
     "scripts": {
