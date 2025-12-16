@@ -18,7 +18,7 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const r=document.createElement("style");r.textContent=e,document.head.append(r)})(' :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-warning: #FF991F;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-radius: 6px;--md-radius-lg: 12px;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box;font-family:var(--md-font)}#md-export-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:100%;max-width:720px;max-height:85vh;display:flex;flex-direction:column;box-shadow:var(--md-shadow);overflow:hidden;position:relative}.md-modal-header{padding:20px 24px;border-bottom:1px solid var(--md-border);flex-shrink:0}.md-header-title{display:flex;align-items:center;gap:8px}.md-modal-header h3{margin:0;color:var(--md-text);font-size:20px;font-weight:600}.md-modal-header .subtitle{color:var(--md-text-subtle);font-size:14px;margin:4px 0 0;display:flex;align-items:center;gap:6px}.md-modal-header .subtitle svg{width:16px;height:16px;fill:var(--md-text-muted)}.md-btn-icon{width:32px;height:32px;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all .15s ease}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:20px;height:20px;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-controls{display:flex;gap:8px;padding:12px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-tree-container{flex:1;overflow-y:auto;padding:8px 16px;min-height:200px}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:24px}.md-tree li{margin:0}.md-tree-item{display:flex;align-items:center;padding:8px 12px;margin:2px 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color .15s ease;gap:8px}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform .15s ease}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:16px;height:16px;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:16px;height:16px}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:14px;line-height:1.4;-webkit-user-select:none;user-select:none}.md-tree-label.error{color:var(--md-danger)}.md-tree ul.collapsed{display:none}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:12px 24px;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color .15s ease}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:18px;height:18px;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:16px 24px;background:var(--md-bg);display:flex;flex-direction:column;gap:12px}.md-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--md-text)}.md-checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--md-primary);cursor:pointer}.md-progress-section{padding:16px 24px;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--md-text-subtle)}.md-progress-bar{height:6px;background:var(--md-border);border-radius:3px;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:3px;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-toast{position:absolute;bottom:80px;left:50%;transform:translate(-50%) translateY(20px);background:var(--md-success);color:#fff;padding:12px 20px;border-radius:var(--md-radius);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:18px;height:18px;fill:currentColor}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;border-top:1px solid var(--md-border);background:var(--md-bg);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;gap:8px}.md-btn{padding:8px 16px;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:14px;font-weight:500;font-family:var(--md-font);transition:all .15s ease;display:inline-flex;align-items:center;gap:6px}.md-btn svg{width:16px;height:16px;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg-subtle);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-hover)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:8px 12px}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:6px 12px;font-size:13px}.md-selection-count{font-size:13px;color:var(--md-text-subtle);padding:6px 12px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);margin-left:auto}#md-export-status{margin-left:12px;color:var(--md-text-subtle);font-size:13px;font-family:var(--md-font)}#md-export-trigger{margin-left:10px} ');
+(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const e=document.createElement("style");e.textContent=r,document.head.append(e)})(' :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-danger-light: #FFEBE6;--md-warning: #FF991F;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-radius: 6px;--md-radius-lg: 12px;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;--md-transition: .15s ease}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box;font-family:var(--md-font);animation:fadeIn .2s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.md-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:100%;max-width:780px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--md-shadow);overflow:hidden;position:relative;animation:slideUp .25s ease}@keyframes slideUp{0%{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.md-modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--md-border);flex-shrink:0}.md-header-row{display:flex;justify-content:space-between;align-items:flex-start}.md-header-title{display:flex;align-items:center;gap:8px}.md-modal-header h3{margin:0;color:var(--md-text);font-size:20px;font-weight:600}.md-modal-header .subtitle{color:var(--md-text-subtle);font-size:14px;margin:8px 0 0;display:flex;align-items:center;gap:6px}.md-modal-header .subtitle svg{width:16px;height:16px;fill:var(--md-text-muted)}.md-page-count{background:var(--md-bg-subtle);padding:2px 8px;border-radius:10px;font-size:12px;color:var(--md-text-muted);margin-left:8px}.md-close-btn{margin:-4px -8px 0 0}.md-btn-icon{width:32px;height:32px;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all var(--md-transition)}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:20px;height:20px;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-search-bar{display:flex;align-items:center;padding:8px 24px;background:var(--md-bg);border-bottom:1px solid var(--md-border);gap:8px}.md-search-icon{color:var(--md-text-muted);display:flex}.md-search-icon svg{width:18px;height:18px;fill:currentColor}.md-search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:var(--md-font);color:var(--md-text);background:transparent}.md-search-bar input::placeholder{color:var(--md-text-muted)}.md-search-clear{width:24px;height:24px;padding:0;border:none;background:var(--md-bg-subtle);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);transition:all var(--md-transition)}.md-search-clear:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-search-clear svg{width:14px;height:14px;fill:currentColor}.md-controls{display:flex;gap:6px;padding:10px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-controls-divider{width:1px;height:20px;background:var(--md-border);margin:0 4px}.md-tree-container{flex:1;overflow-y:auto;padding:8px 16px;min-height:200px;max-height:400px}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:20px;padding-left:12px;border-left:1px solid var(--md-border)}.md-tree li{margin:0;transition:opacity var(--md-transition)}.md-tree li.hidden{display:none}.md-tree li.highlight>.md-tree-item{background:var(--md-primary-light)}.md-tree-item{display:flex;align-items:center;padding:6px 10px;margin:1px 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color var(--md-transition);gap:6px}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform var(--md-transition);border-radius:4px}.md-tree-toggler:hover{background:var(--md-bg-subtle)}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:16px;height:16px;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:16px;height:16px}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:13px;line-height:1.4;-webkit-user-select:none;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-tree-label.error{color:var(--md-danger)}.md-child-count{font-size:11px;color:var(--md-text-muted);background:var(--md-bg-subtle);padding:1px 6px;border-radius:8px;margin-left:4px}.md-error-badge{font-size:10px;color:var(--md-danger);background:var(--md-danger-light);padding:2px 6px;border-radius:4px;font-weight:500}.md-tree ul.collapsed{display:none}.md-tree ul{overflow:hidden}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:12px 24px;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color var(--md-transition)}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:18px;height:18px;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:16px 24px;background:var(--md-bg);display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.md-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--md-text)}.md-checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--md-primary);cursor:pointer}.md-progress-section{padding:16px 24px;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--md-text-subtle)}.md-progress-bar{height:6px;background:var(--md-border);border-radius:3px;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:3px;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-toast{position:absolute;bottom:80px;left:50%;transform:translate(-50%) translateY(20px);background:var(--md-success);color:#fff;padding:12px 20px;border-radius:var(--md-radius);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:18px;height:18px;fill:currentColor}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--md-border);background:var(--md-bg);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;gap:8px;align-items:center}.md-hint{font-size:12px;color:var(--md-text-muted)}.md-btn{padding:8px 14px;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);transition:all var(--md-transition);display:inline-flex;align-items:center;gap:6px;position:relative}.md-btn svg{width:16px;height:16px;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-subtle);border-color:var(--md-text-muted)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:8px 12px}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:5px 10px;font-size:12px}.md-btn-badge{background:#fff3;padding:1px 6px;border-radius:8px;font-size:11px;min-width:18px;text-align:center}.md-btn-badge.has-count{background:#ffffff4d}.md-selection-count{font-size:12px;color:var(--md-text-subtle);padding:5px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);margin-left:auto;transition:all var(--md-transition)}@keyframes shake{0%,to{transform:translate(0)}20%,60%{transform:translate(-5px)}40%,80%{transform:translate(5px)}}.shake{animation:shake .5s ease;background:var(--md-danger-light)!important;border-color:var(--md-danger)!important;color:var(--md-danger)!important}#md-export-status{margin-left:12px;color:var(--md-text-subtle);font-size:13px;font-family:var(--md-font)}#md-export-trigger{margin-left:10px}.md-tree-container::-webkit-scrollbar{width:8px}.md-tree-container::-webkit-scrollbar-track{background:var(--md-bg-subtle);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb{background:var(--md-border);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb:hover{background:var(--md-text-muted)} ');
 
 (function () {
   'use strict';
@@ -1961,40 +1961,68 @@ ${result.join("\n")}
     copy: `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`,
     refresh: `<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`,
     settings: `<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
-    check: `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`
+    check: `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+    search: `<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`,
+    close: `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`
   };
   let modalElement = null;
   let currentSettings;
+  let resolveModal = null;
+  function cancelModal() {
+    if (modalElement && resolveModal) {
+      modalElement.remove();
+      modalElement = null;
+      resolveModal({ selectedIds: [], cancelled: true, action: "cancel", settings: currentSettings });
+      resolveModal = null;
+    }
+  }
   function showPageSelectorModal(rootNode, rootTitle, options) {
     return new Promise((resolve) => {
+      resolveModal = resolve;
       currentSettings = loadSettings();
       const modal = document.createElement("div");
       modal.id = "md-export-modal";
       modalElement = modal;
+      const totalPages = countNodes(rootNode);
       modal.innerHTML = `
-      <div id="md-export-modal-content">
+      <div id="md-export-modal-content" class="md-modal-content">
         <div class="md-modal-header">
-          <div class="md-header-title">
-            <h3>Export to Markdown</h3>
-            <button class="md-btn-icon" data-action="refresh" title="Refresh page tree">
-              ${ICONS.refresh}
+          <div class="md-header-row">
+            <div class="md-header-title">
+              <h3>Export to Markdown</h3>
+              <button class="md-btn-icon" data-action="refresh" title="Refresh page tree (re-scan)">
+                ${ICONS.refresh}
+              </button>
+            </div>
+            <button class="md-btn-icon md-close-btn" data-action="cancel" title="Close (Esc)">
+              ${ICONS.close}
             </button>
           </div>
           <p class="subtitle">
             ${ICONS.folder.replace("<svg", '<svg class="icon"')}
             <span>${escapeHtml(rootTitle)}</span>
+            <span class="md-page-count">${totalPages} pages</span>
           </p>
         </div>
         
+        <!-- Search -->
+        <div class="md-search-bar">
+          <span class="md-search-icon">${ICONS.search}</span>
+          <input type="text" id="md-search-input" placeholder="Search pages..." autocomplete="off">
+          <button class="md-search-clear" id="md-search-clear" style="display:none">${ICONS.close}</button>
+        </div>
+        
         <div class="md-controls">
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="expand">Expand All</button>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="collapse">Collapse All</button>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="select-all">Select All</button>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="deselect-all">Deselect All</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="expand" title="Expand all branches">Expand</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="collapse" title="Collapse all branches">Collapse</button>
+          <div class="md-controls-divider"></div>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="select-all" title="Select all pages">All</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="deselect-all" title="Deselect all pages">None</button>
+          <button class="md-btn md-btn-secondary md-btn-sm" data-action="invert" title="Invert selection">Invert</button>
           <span class="md-selection-count" id="md-selection-count">0 selected</span>
         </div>
         
-        <div class="md-tree-container">
+        <div class="md-tree-container" id="md-tree-container">
           <div class="md-tree" id="md-tree-root">${buildTreeHtml([rootNode])}</div>
         </div>
         
@@ -2043,19 +2071,20 @@ ${result.join("\n")}
         
         <div class="md-modal-footer">
           <div class="md-footer-left">
-            <button class="md-btn md-btn-link" data-action="cancel">Cancel</button>
+            <span class="md-hint">Esc to close</span>
           </div>
           <div class="md-footer-right">
-            <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn">
+            <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="Copy Markdown to clipboard">
               ${ICONS.copy}
               <span>Copy</span>
             </button>
-            <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn">
+            <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="Open print preview for PDF">
               <span>📄 PDF</span>
             </button>
-            <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn">
+            <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="Download as .md file">
               ${ICONS.download}
-              <span>Download MD</span>
+              <span>Download</span>
+              <span class="md-btn-badge" id="md-download-badge">0</span>
             </button>
           </div>
         </div>
@@ -2063,25 +2092,55 @@ ${result.join("\n")}
     `;
       document.body.appendChild(modal);
       updateSelectionCount(modal);
+      setTimeout(() => {
+        const searchInput2 = modal.querySelector("#md-search-input");
+        searchInput2 == null ? void 0 : searchInput2.focus();
+      }, 100);
+      const escHandler = (e) => {
+        if (e.key === "Escape") {
+          cancelModal();
+          document.removeEventListener("keydown", escHandler);
+        }
+      };
+      document.addEventListener("keydown", escHandler);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          cancelModal();
+          document.removeEventListener("keydown", escHandler);
+        }
+      });
+      const searchInput = modal.querySelector("#md-search-input");
+      const searchClear = modal.querySelector("#md-search-clear");
+      searchInput == null ? void 0 : searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        searchClear.style.display = query ? "flex" : "none";
+        filterTree(modal, query);
+      });
+      searchClear == null ? void 0 : searchClear.addEventListener("click", () => {
+        searchInput.value = "";
+        searchClear.style.display = "none";
+        filterTree(modal, "");
+        searchInput.focus();
+      });
       modal.addEventListener("click", async (e) => {
         const target = e.target;
         const btn = target.closest("[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
         if (action === "cancel") {
-          modal.remove();
-          modalElement = null;
-          resolve({ selectedIds: [], cancelled: true, action: "cancel", settings: currentSettings });
+          cancelModal();
+          document.removeEventListener("keydown", escHandler);
           return;
         }
         if (action === "download" || action === "copy" || action === "pdf") {
           const selectedIds = getSelectedIds(modal);
           if (selectedIds.length === 0) {
-            alert("Please select at least one page.");
+            shakeElement(modal.querySelector(".md-selection-count"));
             return;
           }
           saveCurrentSettings(modal);
           disableModalInteraction(modal);
+          document.removeEventListener("keydown", escHandler);
           resolve({
             selectedIds,
             cancelled: false,
@@ -2098,6 +2157,10 @@ ${result.join("\n")}
             const treeRoot = modal.querySelector("#md-tree-root");
             if (treeRoot) {
               treeRoot.innerHTML = buildTreeHtml([newTree]);
+            }
+            const pageCount = modal.querySelector(".md-page-count");
+            if (pageCount) {
+              pageCount.textContent = `${countNodes(newTree)} pages`;
             }
             updateSelectionCount(modal);
           } finally {
@@ -2128,12 +2191,23 @@ ${result.join("\n")}
           return;
         }
         if (action === "select-all") {
-          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => cb.checked = true);
+          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+            var _a;
+            if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) cb.checked = true;
+          });
           updateSelectionCount(modal);
           return;
         }
         if (action === "deselect-all") {
           modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => cb.checked = false);
+          updateSelectionCount(modal);
+          return;
+        }
+        if (action === "invert") {
+          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+            var _a;
+            if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) cb.checked = !cb.checked;
+          });
           updateSelectionCount(modal);
           return;
         }
@@ -2152,7 +2226,7 @@ ${result.join("\n")}
           return;
         }
         const treeItem = target.closest(".md-tree-item");
-        if (treeItem && !target.closest(".md-tree-checkbox")) {
+        if (treeItem && !target.closest(".md-tree-checkbox") && !target.closest(".md-tree-toggler")) {
           const checkbox = treeItem.querySelector(".md-tree-checkbox");
           if (checkbox) {
             checkbox.checked = !checkbox.checked;
@@ -2180,6 +2254,55 @@ ${result.join("\n")}
         updateSelectionCount(modal);
       });
     });
+  }
+  function filterTree(modal, query) {
+    const items = modal.querySelectorAll(".md-tree li");
+    if (!query) {
+      items.forEach((li) => {
+        li.classList.remove("hidden", "highlight");
+      });
+      return;
+    }
+    items.forEach((li) => {
+      var _a, _b, _c, _d, _e;
+      const label = ((_b = (_a = li.querySelector(".md-tree-label")) == null ? void 0 : _a.textContent) == null ? void 0 : _b.toLowerCase()) || "";
+      const matches = label.includes(query);
+      if (matches) {
+        li.classList.remove("hidden");
+        li.classList.add("highlight");
+        let parent = (_c = li.parentElement) == null ? void 0 : _c.closest("li");
+        while (parent) {
+          parent.classList.remove("hidden");
+          const ul = parent.querySelector(":scope > ul");
+          ul == null ? void 0 : ul.classList.remove("collapsed");
+          (_d = parent.querySelector(".md-tree-toggler")) == null ? void 0 : _d.classList.add("expanded");
+          parent = (_e = parent.parentElement) == null ? void 0 : _e.closest("li");
+        }
+      } else {
+        li.classList.add("hidden");
+        li.classList.remove("highlight");
+      }
+    });
+    items.forEach((li) => {
+      if (li.classList.contains("hidden")) {
+        const hasVisibleChild = li.querySelector("li:not(.hidden)");
+        if (hasVisibleChild) {
+          li.classList.remove("hidden");
+        }
+      }
+    });
+  }
+  function shakeElement(el) {
+    if (!el) return;
+    el.classList.add("shake");
+    setTimeout(() => el.classList.remove("shake"), 500);
+  }
+  function countNodes(node) {
+    let count = 1;
+    for (const child of node.children) {
+      count += countNodes(child);
+    }
+    return count;
   }
   function updateModalProgress(completed, total, phase) {
     if (!modalElement) return;
@@ -2226,19 +2349,24 @@ ${result.join("\n")}
     if (modalElement) {
       modalElement.remove();
       modalElement = null;
+      resolveModal = null;
     }
   }
   function enableModal() {
     if (!modalElement) return;
     const downloadBtn = modalElement.querySelector("#md-download-btn");
     const copyBtn = modalElement.querySelector("#md-copy-btn");
+    const pdfBtn = modalElement.querySelector("#md-pdf-btn");
     if (downloadBtn) {
       downloadBtn.disabled = false;
-      downloadBtn.innerHTML = `${ICONS.download}<span>Download</span>`;
+      downloadBtn.innerHTML = `${ICONS.download}<span>Download</span><span class="md-btn-badge" id="md-download-badge">0</span>`;
     }
     if (copyBtn) {
       copyBtn.disabled = false;
-      copyBtn.innerHTML = `${ICONS.copy}<span>Copy to Clipboard</span>`;
+      copyBtn.innerHTML = `${ICONS.copy}<span>Copy</span>`;
+    }
+    if (pdfBtn) {
+      pdfBtn.disabled = false;
     }
     modalElement.querySelectorAll(".md-controls button").forEach((btn) => {
       btn.disabled = false;
@@ -2250,6 +2378,7 @@ ${result.join("\n")}
     if (progressSection) {
       progressSection.style.display = "none";
     }
+    updateSelectionCount(modalElement);
   }
   function saveCurrentSettings(modal) {
     var _a, _b, _c, _d;
@@ -2264,13 +2393,13 @@ ${result.join("\n")}
   function disableModalInteraction(modal) {
     const downloadBtn = modal.querySelector("#md-download-btn");
     const copyBtn = modal.querySelector("#md-copy-btn");
+    const pdfBtn = modal.querySelector("#md-pdf-btn");
     if (downloadBtn) {
       downloadBtn.disabled = true;
       downloadBtn.innerHTML = `<span>Processing...</span>`;
     }
-    if (copyBtn) {
-      copyBtn.disabled = true;
-    }
+    if (copyBtn) copyBtn.disabled = true;
+    if (pdfBtn) pdfBtn.disabled = true;
     modal.querySelectorAll(".md-controls button").forEach((btn) => {
       btn.disabled = true;
     });
@@ -2278,23 +2407,30 @@ ${result.join("\n")}
       cb.disabled = true;
     });
   }
-  function buildTreeHtml(nodes) {
-    let html = "<ul>";
+  function buildTreeHtml(nodes, level = 0) {
+    let html = `<ul${level === 0 ? "" : ""}>`;
     for (const node of nodes) {
       const hasChildren = node.children.length > 0;
+      const childCount = hasChildren ? countNodes(node) - 1 : 0;
       const errorClass = node.error ? " error" : "";
       const togglerClass = hasChildren ? "md-tree-toggler expanded" : "md-tree-toggler empty";
       const iconClass = hasChildren ? "md-tree-icon folder" : "md-tree-icon page";
       const icon = hasChildren ? ICONS.folder : ICONS.page;
-      html += `<li data-page-id="${node.id}">`;
-      html += `<div class="md-tree-item">`;
+      html += `<li data-page-id="${node.id}" data-level="${level}">`;
+      html += `<div class="md-tree-item" data-level="${level}">`;
       html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
       html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
       html += `<span class="${iconClass}">${icon}</span>`;
-      html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}${node.error ? " (Error)" : ""}</span>`;
+      html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}</span>`;
+      if (hasChildren) {
+        html += `<span class="md-child-count">${childCount}</span>`;
+      }
+      if (node.error) {
+        html += `<span class="md-error-badge">Error</span>`;
+      }
       html += `</div>`;
       if (hasChildren) {
-        html += buildTreeHtml(node.children);
+        html += buildTreeHtml(node.children, level + 1);
       }
       html += "</li>";
     }
@@ -2304,17 +2440,28 @@ ${result.join("\n")}
   function getSelectedIds(modal) {
     const ids = [];
     modal.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
-      if (cb.dataset.pageId) {
+      const li = cb.closest("li");
+      if (cb.dataset.pageId && !(li == null ? void 0 : li.classList.contains("hidden"))) {
         ids.push(cb.dataset.pageId);
       }
     });
     return ids;
   }
   function updateSelectionCount(modal) {
-    const count = modal.querySelectorAll(".md-tree-checkbox:checked").length;
+    const checkboxes = modal.querySelectorAll(".md-tree-checkbox:checked");
+    let count = 0;
+    checkboxes.forEach((cb) => {
+      var _a;
+      if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) count++;
+    });
     const counter = modal.querySelector("#md-selection-count");
     if (counter) {
       counter.textContent = `${count} selected`;
+    }
+    const badge = modal.querySelector("#md-download-badge");
+    if (badge) {
+      badge.textContent = String(count);
+      badge.classList.toggle("has-count", count > 0);
     }
   }
   function escapeHtml(text) {
