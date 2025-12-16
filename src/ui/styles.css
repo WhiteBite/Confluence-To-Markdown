@@ -1,0 +1,503 @@
+/* ========================================
+   Confluence to Markdown - Modern UI v2
+   Chrome Extension Edition
+   ======================================== */
+
+:root {
+    --md-primary: #0052CC;
+    --md-primary-hover: #0065FF;
+    --md-primary-light: #DEEBFF;
+    --md-success: #00875A;
+    --md-success-light: #E3FCEF;
+    --md-danger: #DE350B;
+    --md-warning: #FF991F;
+    --md-text: #172B4D;
+    --md-text-subtle: #5E6C84;
+    --md-text-muted: #97A0AF;
+    --md-bg: #FFFFFF;
+    --md-bg-subtle: #F4F5F7;
+    --md-bg-hover: #EBECF0;
+    --md-border: #DFE1E6;
+    --md-shadow: 0 8px 32px rgba(9, 30, 66, 0.25);
+    --md-shadow-sm: 0 1px 3px rgba(9, 30, 66, 0.12);
+    --md-radius: 6px;
+    --md-radius-lg: 12px;
+    --md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Modal Overlay */
+#md-export-modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(9, 30, 66, 0.54);
+    backdrop-filter: blur(2px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+    font-family: var(--md-font);
+}
+
+/* Modal Container */
+#md-export-modal-content {
+    background-color: var(--md-bg);
+    border-radius: var(--md-radius-lg);
+    width: 100%;
+    max-width: 720px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--md-shadow);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Header */
+.md-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--md-border);
+    flex-shrink: 0;
+}
+
+.md-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.md-modal-header h3 {
+    margin: 0;
+    color: var(--md-text);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.md-modal-header .subtitle {
+    color: var(--md-text-subtle);
+    font-size: 14px;
+    margin: 4px 0 0 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.md-modal-header .subtitle svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--md-text-muted);
+}
+
+/* Icon Button */
+.md-btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: var(--md-radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-text-subtle);
+    transition: all 0.15s ease;
+}
+
+.md-btn-icon:hover {
+    background: var(--md-bg-subtle);
+    color: var(--md-text);
+}
+
+.md-btn-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.md-btn-icon.spinning svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Controls Bar */
+.md-controls {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--md-bg-subtle);
+    border-bottom: 1px solid var(--md-border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Tree Container */
+.md-tree-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px;
+    min-height: 200px;
+}
+
+/* Tree Structure */
+.md-tree ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.md-tree ul ul {
+    margin-left: 24px;
+}
+
+.md-tree li {
+    margin: 0;
+}
+
+.md-tree-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 2px 0;
+    border-radius: var(--md-radius);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    gap: 8px;
+}
+
+.md-tree-item:hover {
+    background-color: var(--md-bg-hover);
+}
+
+.md-tree-toggler {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-text-muted);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.md-tree-toggler.expanded {
+    transform: rotate(90deg);
+}
+
+.md-tree-toggler svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.md-tree-toggler.empty {
+    visibility: hidden;
+}
+
+.md-tree-checkbox {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--md-primary);
+    flex-shrink: 0;
+}
+
+.md-tree-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.md-tree-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.md-tree-icon.folder svg {
+    fill: #FFAB00;
+}
+
+.md-tree-icon.page svg {
+    fill: var(--md-primary);
+}
+
+.md-tree-label {
+    flex: 1;
+    color: var(--md-text);
+    font-size: 14px;
+    line-height: 1.4;
+    user-select: none;
+}
+
+.md-tree-label.error {
+    color: var(--md-danger);
+}
+
+.md-tree ul.collapsed {
+    display: none;
+}
+
+/* Settings Panel */
+.md-settings-panel {
+    border-top: 1px solid var(--md-border);
+    flex-shrink: 0;
+}
+
+.md-settings-toggle {
+    width: 100%;
+    padding: 12px 24px;
+    border: none;
+    background: var(--md-bg-subtle);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--md-text-subtle);
+    font-family: var(--md-font);
+    transition: background-color 0.15s ease;
+}
+
+.md-settings-toggle:hover {
+    background: var(--md-bg-hover);
+}
+
+.md-settings-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.md-settings-toggle .md-chevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.md-settings-toggle .md-chevron.expanded {
+    transform: rotate(90deg);
+}
+
+.md-settings-content {
+    padding: 16px 24px;
+    background: var(--md-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.md-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--md-text);
+}
+
+.md-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--md-primary);
+    cursor: pointer;
+}
+
+/* Progress Section */
+.md-progress-section {
+    padding: 16px 24px;
+    background: var(--md-bg-subtle);
+    border-top: 1px solid var(--md-border);
+    flex-shrink: 0;
+}
+
+.md-progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--md-text-subtle);
+}
+
+.md-progress-bar {
+    height: 6px;
+    background: var(--md-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.md-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--md-primary), var(--md-primary-hover));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.md-progress-fill.indeterminate {
+    width: 30%;
+    animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(400%);
+    }
+}
+
+/* Toast Notification */
+.md-toast {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--md-success);
+    color: white;
+    padding: 12px 20px;
+    border-radius: var(--md-radius);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--md-shadow-sm);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.md-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.md-toast svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* Footer */
+.md-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--md-border);
+    background: var(--md-bg);
+    flex-shrink: 0;
+}
+
+.md-footer-left,
+.md-footer-right {
+    display: flex;
+    gap: 8px;
+}
+
+/* Buttons */
+.md-btn {
+    padding: 8px 16px;
+    border-radius: var(--md-radius);
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--md-font);
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.md-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.md-btn-primary {
+    background-color: var(--md-primary);
+    color: #fff;
+}
+
+.md-btn-primary:hover:not(:disabled) {
+    background-color: var(--md-primary-hover);
+}
+
+.md-btn-primary:disabled {
+    background-color: #B3D4FF;
+    cursor: not-allowed;
+}
+
+.md-btn-secondary {
+    background-color: var(--md-bg-subtle);
+    color: var(--md-text);
+    border: 1px solid var(--md-border);
+}
+
+.md-btn-secondary:hover:not(:disabled) {
+    background-color: var(--md-bg-hover);
+}
+
+.md-btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.md-btn-link {
+    background: none;
+    color: var(--md-text-subtle);
+    padding: 8px 12px;
+}
+
+.md-btn-link:hover {
+    color: var(--md-text);
+    background-color: var(--md-bg-subtle);
+}
+
+.md-btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* Selection Counter */
+.md-selection-count {
+    font-size: 13px;
+    color: var(--md-text-subtle);
+    padding: 6px 12px;
+    background: var(--md-bg);
+    border-radius: var(--md-radius);
+    border: 1px solid var(--md-border);
+    margin-left: auto;
+}
+
+/* Status Badge (for page button) */
+#md-export-status {
+    margin-left: 12px;
+    color: var(--md-text-subtle);
+    font-size: 13px;
+    font-family: var(--md-font);
+}
+
+#md-export-trigger {
+    margin-left: 10px;
+}

@@ -1,0 +1,39 @@
+{
+    "manifest_version": 3,
+    "name": "Confluence to Markdown",
+    "version": "2.0.0",
+    "description": "Export Confluence pages to clean Markdown for LLM consumption",
+    "permissions": [
+        "activeTab",
+        "storage",
+        "clipboardWrite"
+    ],
+    "host_permissions": [
+        "https://*.atlassian.net/*",
+        "https://*/rest/api/content/*"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://*.atlassian.net/wiki/*",
+                "https://*/wiki/*",
+                "https://*/display/*",
+                "https://*/pages/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "styles.css"
+            ]
+        }
+    ],
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    }
+}

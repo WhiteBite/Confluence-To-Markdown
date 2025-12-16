@@ -1,0 +1,23 @@
+{
+    "name": "confluence-to-markdown",
+    "version": "2.0.0",
+    "description": "Confluence pages to Markdown exporter for LLM consumption",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "build:ext": "vite build --config vite.config.extension.ts && vite build --config vite.config.background.ts && node scripts/copy-assets.js",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "turndown": "^7.2.0",
+        "turndown-plugin-gfm": "^1.0.2"
+    },
+    "devDependencies": {
+        "@types/chrome": "^0.0.268",
+        "@types/turndown": "^5.0.5",
+        "typescript": "^5.3.3",
+        "vite": "^5.4.11",
+        "vite-plugin-monkey": "^4.0.6"
+    }
+}
