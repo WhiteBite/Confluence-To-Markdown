@@ -1,8 +1,7 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-dist/
+# Build outputs (extension only - userscript needs to be in repo for auto-update)
 dist-extension/
 
 # IDE
@@ -25,3 +24,6 @@ npm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Temp
+confluence-to-markdown-extension.zip
