@@ -7,6 +7,10 @@ import {
     generateMermaidCodeBlock,
     type TargetFormat,
 } from './diagram-processor';
+import type { DiagramInfo } from './sanitizer';
+
+// Re-export sanitizer functions for backward compatibility
+export { sanitizeHtml, extractDiagramInfoFromHtml, type DiagramInfo, type SanitizeOptions } from './sanitizer';
 
 let turndownInstance: TurndownService | null = null;
 let obsidianTurndownInstance: TurndownService | null = null;
@@ -20,6 +24,8 @@ export interface ConvertOptions {
     diagramTargetFormat?: TargetFormat;
     /** Embed diagrams as code blocks (vs file references) */
     embedDiagramsAsCode?: boolean;
+    /** Pre-extracted diagram info (extracted before sanitization) */
+    diagramInfo?: DiagramInfo[];
 }
 
 /** Get configured Turndown instance */
@@ -142,17 +148,53 @@ function getTurndown(options?: ConvertOptions): TurndownService {
     instance.addRule('drawioMacro', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
-            return (
+
+            const macroName = node.getAttribute('data-macro-name') || '';
+
+            // Direct matches by class or data attribute
+            if (
                 node.classList.contains('drawio-macro') ||
                 node.classList.contains('drawio-diagram') ||
-                node.dataset.macroName === 'drawio'
-            );
+                macroName === 'drawio' ||
+                macroName === 'drawio-sketch'
+            ) {
+                return true;
+            }
+
+            // Confluence Cloud/Server format
+            if (
+                node.classList.contains('conf-macro') &&
+                (macroName === 'drawio' || macroName === 'drawio-sketch')
+            ) {
+                return true;
+            }
+
+            // Match by extracted diagram data (set during sanitization)
+            if (node.getAttribute('data-extracted-diagram-name')) {
+                return true;
+            }
+
+            // Only match elements that directly contain geDiagramContainer (not ancestors)
+            if (node.classList.contains('geDiagramContainer')) {
+                return true;
+            }
+
+            return false;
         },
         replacement: (_content, node) => {
             const el = node as HTMLElement;
-            const diagramName = el.dataset.diagramName ||
+
+            // Get diagram name - prefer extracted name (set before script removal)
+            let diagramName = el.getAttribute('data-extracted-diagram-name') ||
+                el.dataset.diagramName ||
                 el.getAttribute('data-diagram-name') ||
-                'diagram';
+                '';
+
+            // Fallback to generic name with index if available
+            if (!diagramName) {
+                const index = el.getAttribute('data-diagram-index');
+                diagramName = index ? `diagram-${parseInt(index) + 1}` : 'diagram';
+            }
 
             // Try to extract and convert diagram
             if (convertDiagrams) {
@@ -347,80 +389,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
     return instance;
 }
 
-/** Base selectors to always remove */
-const BASE_SELECTORS_TO_REMOVE = [
-    '#likes-and-labels-container',
-    '#likes-section',
-    '#labels-section',
-    '.page-metadata-modification-info',
-    '#children-section',
-    '.plugin_pagetree',
-    '.content-action',
-    '.page-header-actions',
-    '.contributors',
-    'script',
-    'style',
-    '.expand-control',
-    '.aui-expander-trigger',
-];
 
-export interface SanitizeOptions {
-    includeImages: boolean;
-    includeComments: boolean;
-}
-
-/** Pre-process and sanitize HTML before Turndown conversion */
-export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: string): string {
-    if (!html) return '';
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-    if (DEBUG) console.group(`Sanitize HTML for Page ID: ${pageId || 'N/A'}`);
-
-    // Expand collapsed content
-    doc.querySelectorAll('.aui-expander-content, .expand-content').forEach((el) => {
-        (el as HTMLElement).style.display = 'block';
-        el.removeAttribute('aria-hidden');
-        const expander = el.closest('.aui-expander-container, .expand-container');
-        if (expander) {
-            expander.classList.remove('collapsed');
-            expander.classList.add('expanded');
-        }
-    });
-
-    // Remove base selectors
-    BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
-        doc.querySelectorAll(selector).forEach((el) => el.remove());
-    });
-
-    // Conditionally remove comments
-    if (!options.includeComments) {
-        doc.querySelectorAll('#comments-section, .comment-thread, .inline-comment').forEach((el) => {
-            el.remove();
-        });
-    }
-
-    // Conditionally remove images
-    if (!options.includeImages) {
-        doc.querySelectorAll('img, .confluence-embedded-image, .image-wrap').forEach((el) => {
-            el.remove();
-        });
-    } else {
-        // Add alt text to images without it
-        doc.querySelectorAll('img').forEach((img) => {
-            if (!img.alt?.trim()) {
-                const src = img.src || '';
-                const filename = src.split('/').pop()?.split('?')[0] || 'image';
-                img.alt = `[Image: ${filename}]`;
-            }
-        });
-    }
-
-    if (DEBUG) console.groupEnd();
-
-    return doc.body.innerHTML;
-}
 
 /** Convert sanitized HTML to Markdown */
 export function convertToMarkdown(html: string, options?: ConvertOptions): string {

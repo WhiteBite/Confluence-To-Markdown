@@ -18,13 +18,14 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const e=document.createElement("style");e.textContent=r,document.head.append(e)})(' :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-danger-light: #FFEBE6;--md-warning: #FF991F;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-radius: 6px;--md-radius-lg: 12px;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;--md-transition: .15s ease}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box;font-family:var(--md-font);animation:fadeIn .2s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.md-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:100%;max-width:780px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--md-shadow);overflow:hidden;position:relative;animation:slideUp .25s ease}@keyframes slideUp{0%{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.md-modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--md-border);flex-shrink:0}.md-header-row{display:flex;justify-content:space-between;align-items:flex-start}.md-header-title{display:flex;align-items:center;gap:8px}.md-modal-header h3{margin:0;color:var(--md-text);font-size:20px;font-weight:600}.md-modal-header .subtitle{color:var(--md-text-subtle);font-size:14px;margin:8px 0 0;display:flex;align-items:center;gap:6px}.md-modal-header .subtitle svg{width:16px;height:16px;fill:var(--md-text-muted)}.md-page-count{background:var(--md-bg-subtle);padding:2px 8px;border-radius:10px;font-size:12px;color:var(--md-text-muted);margin-left:8px}.md-close-btn{margin:-4px -8px 0 0}.md-btn-icon{width:32px;height:32px;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all var(--md-transition)}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:20px;height:20px;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-search-bar{display:flex;align-items:center;padding:8px 24px;background:var(--md-bg);border-bottom:1px solid var(--md-border);gap:8px}.md-search-icon{color:var(--md-text-muted);display:flex}.md-search-icon svg{width:18px;height:18px;fill:currentColor}.md-search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:var(--md-font);color:var(--md-text);background:transparent}.md-search-bar input::placeholder{color:var(--md-text-muted)}.md-search-clear{width:24px;height:24px;padding:0;border:none;background:var(--md-bg-subtle);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);transition:all var(--md-transition)}.md-search-clear:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-search-clear svg{width:14px;height:14px;fill:currentColor}.md-controls{display:flex;gap:6px;padding:10px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-controls-divider{width:1px;height:20px;background:var(--md-border);margin:0 4px}.md-tree-container{flex:1;overflow-y:auto;padding:8px 16px;min-height:200px;max-height:400px}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:20px;padding-left:12px;border-left:1px solid var(--md-border)}.md-tree li{margin:0;transition:opacity var(--md-transition)}.md-tree li.hidden{display:none}.md-tree li.highlight>.md-tree-item{background:var(--md-primary-light)}.md-tree-item{display:flex;align-items:center;padding:6px 10px;margin:1px 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color var(--md-transition);gap:6px}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform var(--md-transition);border-radius:4px}.md-tree-toggler:hover{background:var(--md-bg-subtle)}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:16px;height:16px;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:16px;height:16px}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:13px;line-height:1.4;-webkit-user-select:none;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-tree-label.error{color:var(--md-danger)}.md-child-count{font-size:11px;color:var(--md-text-muted);background:var(--md-bg-subtle);padding:1px 6px;border-radius:8px;margin-left:4px}.md-error-badge{font-size:10px;color:var(--md-danger);background:var(--md-danger-light);padding:2px 6px;border-radius:4px;font-weight:500}.md-tree ul.collapsed{display:none}.md-tree ul{overflow:hidden}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:12px 24px;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color var(--md-transition)}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:18px;height:18px;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:16px 24px;background:var(--md-bg);display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.md-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--md-text)}.md-checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--md-primary);cursor:pointer}.md-progress-section{padding:16px 24px;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--md-text-subtle)}.md-progress-bar{height:6px;background:var(--md-border);border-radius:3px;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:3px;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-toast{position:absolute;bottom:80px;left:50%;transform:translate(-50%) translateY(20px);background:var(--md-success);color:#fff;padding:12px 20px;border-radius:var(--md-radius);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:18px;height:18px;fill:currentColor}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--md-border);background:var(--md-bg);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;gap:8px;align-items:center}.md-hint{font-size:12px;color:var(--md-text-muted)}.md-btn{padding:8px 14px;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);transition:all var(--md-transition);display:inline-flex;align-items:center;gap:6px;position:relative}.md-btn svg{width:16px;height:16px;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-subtle);border-color:var(--md-text-muted)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:8px 12px}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:5px 10px;font-size:12px}.md-btn-badge{background:#fff3;padding:1px 6px;border-radius:8px;font-size:11px;min-width:18px;text-align:center}.md-btn-badge.has-count{background:#ffffff4d}.md-selection-count{font-size:12px;color:var(--md-text-subtle);padding:5px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);margin-left:auto;transition:all var(--md-transition)}@keyframes shake{0%,to{transform:translate(0)}20%,60%{transform:translate(-5px)}40%,80%{transform:translate(5px)}}.shake{animation:shake .5s ease;background:var(--md-danger-light)!important;border-color:var(--md-danger)!important;color:var(--md-danger)!important}#md-export-status{margin-left:12px;color:var(--md-text-subtle);font-size:13px;font-family:var(--md-font)}#md-export-trigger{margin-left:10px}.md-tree-container::-webkit-scrollbar{width:8px}.md-tree-container::-webkit-scrollbar-track{background:var(--md-bg-subtle);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb{background:var(--md-border);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb:hover{background:var(--md-text-muted)}.md-preset-buttons{display:flex;gap:8px;margin-bottom:16px}.md-preset-btn{flex:1;padding:12px 16px;border:2px solid var(--md-border);border-radius:var(--md-radius);background:var(--md-bg);cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);color:var(--md-text-subtle);transition:all var(--md-transition);text-align:center}.md-preset-btn:hover{border-color:var(--md-primary);color:var(--md-primary);background:var(--md-primary-light)}.md-preset-btn.active{border-color:var(--md-primary);background:var(--md-primary);color:#fff}.md-obsidian-options{padding-top:8px;border-top:1px solid var(--md-border);margin-top:8px}.md-option-group{display:flex;align-items:center;gap:12px;margin:8px 0}.md-option-label{font-size:13px;color:var(--md-text-subtle);white-space:nowrap}.md-preset-mini{display:flex;gap:6px}.md-btn-xs{padding:4px 8px;font-size:11px;border-radius:4px;background:var(--md-bg-subtle);border:1px solid var(--md-border);color:var(--md-text-subtle);cursor:pointer;font-family:var(--md-font);transition:all var(--md-transition)}.md-btn-xs:hover{background:var(--md-primary-light);border-color:var(--md-primary);color:var(--md-primary)}.md-checkbox-label.md-indent{margin-left:26px}.md-radio-group{display:flex;gap:16px}.md-radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--md-text);cursor:pointer}.md-radio-group input[type=radio]{accent-color:var(--md-primary);cursor:pointer}.md-settings-content.md-single-column{grid-template-columns:1fr}#md-diagrams-content{display:block}#md-diagrams-content .md-checkbox-label{margin-bottom:8px}#md-diagrams-content .md-option-group{margin-left:26px}#md-format-content{display:block}#md-format-content .md-checkbox-label{margin-bottom:8px}.md-settings-toggle svg[viewBox="0 0 24 24"] path[d*="L2 7"]{fill:#7c3aed}.md-stats-section{padding:12px 24px;background:linear-gradient(135deg,var(--md-bg-subtle) 0%,var(--md-bg) 100%);border-bottom:1px solid var(--md-border)}.md-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.md-stat-item{display:flex;flex-direction:column;align-items:center;padding:8px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);transition:all var(--md-transition)}.md-stat-item:hover{border-color:var(--md-primary);box-shadow:0 2px 8px #0052cc1a}.md-stat-icon{font-size:20px;margin-bottom:4px}.md-stat-value{font-size:18px;font-weight:600;color:var(--md-text)}.md-stat-label{font-size:11px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px}@media (prefers-color-scheme: dark){:root{--md-primary: #4C9AFF;--md-primary-hover: #79B8FF;--md-primary-light: #1C2B41;--md-success: #36B37E;--md-success-light: #1C3829;--md-danger: #FF5630;--md-danger-light: #3D1F1F;--md-warning: #FFAB00;--md-text: #E6E6E6;--md-text-subtle: #A6A6A6;--md-text-muted: #6B6B6B;--md-bg: #1E1E1E;--md-bg-subtle: #252526;--md-bg-hover: #2D2D2D;--md-border: #3C3C3C}#md-export-modal{background-color:#000000b3}}.md-shortcuts-hint{display:flex;gap:12px;font-size:11px;color:var(--md-text-muted)}.md-shortcut{display:flex;align-items:center;gap:4px}.md-shortcut kbd{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:3px;padding:1px 5px;font-family:monospace;font-size:10px}.md-progress-details{margin-top:12px;max-height:120px;overflow-y:auto;font-size:12px}.md-progress-item{display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--md-text-subtle)}.md-progress-item.done{color:var(--md-success)}.md-progress-item.active{color:var(--md-primary);font-weight:500}.md-progress-item.error{color:var(--md-danger)}.md-progress-item .status-icon{width:16px;text-align:center}.md-modal-content.with-preview{max-width:1200px}.md-split-view{display:flex;flex:1;min-height:0;overflow:hidden}.md-split-left{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--md-border);min-width:0}.md-split-right{flex:1;display:flex;flex-direction:column;min-width:0}.md-preview-header{padding:12px 16px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);font-size:13px;font-weight:500;color:var(--md-text-subtle);display:flex;align-items:center;gap:8px}.md-preview-content{flex:1;overflow-y:auto;padding:16px;font-family:SF Mono,Monaco,Cascadia Code,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:var(--md-bg);color:var(--md-text)}.md-preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--md-text-muted);text-align:center;padding:24px}.md-preview-placeholder .icon{font-size:48px;margin-bottom:12px;opacity:.5}.md-preview-content .mermaid-block{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:12px;margin:8px 0}.md-preview-content .mermaid-header{color:var(--md-primary);font-weight:500;margin-bottom:8px}.md-history-section{padding:8px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border)}.md-history-title{font-size:11px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}.md-history-list{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.md-history-item{flex-shrink:0;padding:6px 12px;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);font-size:12px;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:6px}.md-history-item:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-history-item .date{color:var(--md-text-muted);font-size:10px}.md-filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.md-filter-chip{padding:4px 10px;background:var(--md-bg);border:1px solid var(--md-border);border-radius:12px;font-size:11px;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:4px}.md-filter-chip:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-filter-chip.active{background:var(--md-primary);border-color:var(--md-primary);color:#fff}.md-filter-chip .count{background:#0000001a;padding:1px 5px;border-radius:8px;font-size:10px}.md-filter-chip.active .count{background:#fff3}.md-skeleton{background:linear-gradient(90deg,var(--md-bg-subtle) 25%,var(--md-bg-hover) 50%,var(--md-bg-subtle) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite;border-radius:var(--md-radius)}@keyframes skeleton-loading{0%{background-position:200% 0}to{background-position:-200% 0}}.md-skeleton-text{height:14px;margin:8px 0}.md-skeleton-text.short{width:60%}.md-skeleton-text.medium{width:80%}@media (max-width: 800px){.md-stats-grid{grid-template-columns:repeat(2,1fr)}.md-split-view{flex-direction:column}.md-split-left,.md-split-right{border-right:none;border-bottom:1px solid var(--md-border)}.md-settings-content{grid-template-columns:1fr}}.md-progress-current{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);font-size:12px;color:var(--md-text-subtle);overflow:hidden}.md-progress-page-icon{flex-shrink:0}.md-progress-page-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--md-text)} ');
+(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const e=document.createElement("style");e.textContent=r,document.head.append(e)})(' :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-danger-light: #FFEBE6;--md-warning: #FF991F;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-radius: 6px;--md-radius-lg: 12px;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;--md-transition: .15s ease}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box;font-family:var(--md-font);animation:fadeIn .2s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.md-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:100%;max-width:780px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--md-shadow);overflow:hidden;position:relative;animation:slideUp .25s ease}@media (max-width: 768px){#md-export-modal{padding:12px}.md-modal-content{max-width:100%;max-height:95vh;border-radius:var(--md-radius)}}@media (max-width: 480px){#md-export-modal{padding:8px}.md-modal-content{max-height:98vh;border-radius:8px}}@media (max-height: 600px){.md-modal-content{max-height:98vh}}@keyframes slideUp{0%{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.md-modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--md-border);flex-shrink:0}.md-header-row{display:flex;justify-content:space-between;align-items:flex-start}.md-header-title{display:flex;align-items:center;gap:8px}.md-header-actions{display:flex;align-items:center;gap:4px}.md-modal-header h3{margin:0;color:var(--md-text);font-size:20px;font-weight:600}.md-modal-header .subtitle{color:var(--md-text-subtle);font-size:14px;margin:8px 0 0;display:flex;align-items:center;gap:6px}.md-modal-header .subtitle svg{width:16px;height:16px;fill:var(--md-text-muted)}.md-page-count{background:var(--md-bg-subtle);padding:2px 8px;border-radius:10px;font-size:12px;color:var(--md-text-muted);margin-left:8px}.md-close-btn{margin:0}.md-btn-icon{width:32px;height:32px;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all var(--md-transition)}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:20px;height:20px;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-search-bar{display:flex;align-items:center;padding:8px 24px;background:var(--md-bg);border-bottom:1px solid var(--md-border);gap:8px}.md-search-icon{color:var(--md-text-muted);display:flex}.md-search-icon svg{width:18px;height:18px;fill:currentColor}.md-search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:var(--md-font);color:var(--md-text);background:transparent}.md-search-bar input::placeholder{color:var(--md-text-muted)}.md-search-clear{width:24px;height:24px;padding:0;border:none;background:var(--md-bg-subtle);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);transition:all var(--md-transition)}.md-search-clear:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-search-clear svg{width:14px;height:14px;fill:currentColor}.md-controls{display:flex;gap:6px;padding:10px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-controls-divider{width:1px;height:20px;background:var(--md-border);margin:0 4px}.md-tree-container{flex:1;overflow-y:auto;padding:8px 16px;min-height:200px;max-height:400px}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:20px;padding-left:12px;border-left:1px solid var(--md-border)}.md-tree li{margin:0;transition:opacity var(--md-transition)}.md-tree li.hidden{display:none}.md-tree li.highlight>.md-tree-item{background:var(--md-primary-light)}.md-tree-item{display:flex;align-items:center;padding:6px 10px;margin:1px 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color var(--md-transition);gap:6px}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform var(--md-transition);border-radius:4px}.md-tree-toggler:hover{background:var(--md-bg-subtle)}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:16px;height:16px;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:16px;height:16px}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:13px;line-height:1.4;-webkit-user-select:none;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-tree-label.error{color:var(--md-danger)}.md-child-count{font-size:11px;color:var(--md-text-muted);background:var(--md-bg-subtle);padding:1px 6px;border-radius:8px;margin-left:4px}.md-error-badge{font-size:10px;color:var(--md-danger);background:var(--md-danger-light);padding:2px 6px;border-radius:4px;font-weight:500}.md-tree ul.collapsed{display:none}.md-tree ul{overflow:hidden}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:12px 24px;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color var(--md-transition)}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:18px;height:18px;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:16px 24px;background:var(--md-bg);display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.md-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--md-text)}.md-checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--md-primary);cursor:pointer}.md-progress-section{padding:16px 24px;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--md-text-subtle)}.md-progress-bar{height:6px;background:var(--md-border);border-radius:3px;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:3px;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-toast{position:absolute;bottom:80px;left:50%;transform:translate(-50%) translateY(20px);background:var(--md-success);color:#fff;padding:12px 20px;border-radius:var(--md-radius);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:18px;height:18px;fill:currentColor}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--md-border);background:var(--md-bg);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;gap:8px;align-items:center}.md-hint{font-size:12px;color:var(--md-text-muted)}.md-btn{padding:8px 14px;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);transition:all var(--md-transition);display:inline-flex;align-items:center;gap:6px;position:relative}.md-btn svg{width:16px;height:16px;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-subtle);border-color:var(--md-text-muted)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:8px 12px}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:5px 10px;font-size:12px}.md-btn-badge{background:#fff3;padding:1px 6px;border-radius:8px;font-size:11px;min-width:18px;text-align:center}.md-btn-badge.has-count{background:#ffffff4d}.md-selection-count{font-size:12px;color:var(--md-text-subtle);padding:5px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);margin-left:auto;transition:all var(--md-transition)}@keyframes shake{0%,to{transform:translate(0)}20%,60%{transform:translate(-5px)}40%,80%{transform:translate(5px)}}.shake{animation:shake .5s ease;background:var(--md-danger-light)!important;border-color:var(--md-danger)!important;color:var(--md-danger)!important}#md-export-status{margin-left:12px;color:var(--md-text-subtle);font-size:13px;font-family:var(--md-font)}#md-export-trigger{margin-left:10px}.md-tree-container::-webkit-scrollbar{width:8px}.md-tree-container::-webkit-scrollbar-track{background:var(--md-bg-subtle);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb{background:var(--md-border);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb:hover{background:var(--md-text-muted)}.md-preset-buttons{display:flex;gap:8px;margin-bottom:16px}.md-preset-btn{flex:1;padding:12px 16px;border:2px solid var(--md-border);border-radius:var(--md-radius);background:var(--md-bg);cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);color:var(--md-text-subtle);transition:all var(--md-transition);text-align:center}.md-preset-btn:hover{border-color:var(--md-primary);color:var(--md-primary);background:var(--md-primary-light)}.md-preset-btn.active{border-color:var(--md-primary);background:var(--md-primary);color:#fff}.md-obsidian-options{padding-top:8px;border-top:1px solid var(--md-border);margin-top:8px}.md-option-group{display:flex;align-items:center;gap:12px;margin:8px 0}.md-option-label{font-size:13px;color:var(--md-text-subtle);white-space:nowrap}.md-preset-mini{display:flex;gap:6px}.md-btn-xs{padding:4px 8px;font-size:11px;border-radius:4px;background:var(--md-bg-subtle);border:1px solid var(--md-border);color:var(--md-text-subtle);cursor:pointer;font-family:var(--md-font);transition:all var(--md-transition)}.md-btn-xs:hover{background:var(--md-primary-light);border-color:var(--md-primary);color:var(--md-primary)}.md-checkbox-label.md-indent{margin-left:26px}.md-radio-group{display:flex;gap:16px}.md-radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--md-text);cursor:pointer}.md-radio-group input[type=radio]{accent-color:var(--md-primary);cursor:pointer}.md-settings-content.md-single-column{grid-template-columns:1fr}#md-diagrams-content{display:block}#md-diagrams-content .md-checkbox-label{margin-bottom:8px}#md-diagrams-content .md-option-group{margin-left:26px}#md-format-content{display:block}#md-format-content .md-checkbox-label{margin-bottom:8px}.md-settings-toggle svg[viewBox="0 0 24 24"] path[d*="L2 7"]{fill:#7c3aed}.md-stats-section{padding:12px 24px;background:linear-gradient(135deg,var(--md-bg-subtle) 0%,var(--md-bg) 100%);border-bottom:1px solid var(--md-border)}.md-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.md-stat-item{display:flex;flex-direction:column;align-items:center;padding:8px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);transition:all var(--md-transition)}.md-stat-item:hover{border-color:var(--md-primary);box-shadow:0 2px 8px #0052cc1a}.md-stat-icon{font-size:20px;margin-bottom:4px}.md-stat-value{font-size:18px;font-weight:600;color:var(--md-text)}.md-stat-label{font-size:11px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px}#md-export-modal[data-theme=dark]{--md-primary: #4C9AFF;--md-primary-hover: #79B8FF;--md-primary-light: #1C2B41;--md-success: #36B37E;--md-success-light: #1C3829;--md-danger: #FF5630;--md-danger-light: #3D1F1F;--md-warning: #FFAB00;--md-text: #E6E6E6;--md-text-subtle: #A6A6A6;--md-text-muted: #6B6B6B;--md-bg: #1E1E1E;--md-bg-subtle: #252526;--md-bg-hover: #2D2D2D;--md-border: #3C3C3C}#md-export-modal[data-theme=dark]{background-color:#000000b3}.md-shortcuts-hint{display:flex;gap:12px;font-size:11px;color:var(--md-text-muted)}.md-shortcut{display:flex;align-items:center;gap:4px}.md-shortcut kbd{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:3px;padding:1px 5px;font-family:monospace;font-size:10px}.md-progress-details{margin-top:12px;max-height:120px;overflow-y:auto;font-size:12px}.md-progress-item{display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--md-text-subtle)}.md-progress-item.done{color:var(--md-success)}.md-progress-item.active{color:var(--md-primary);font-weight:500}.md-progress-item.error{color:var(--md-danger)}.md-progress-item .status-icon{width:16px;text-align:center}.md-modal-content.with-preview{max-width:1200px}.md-split-view{display:flex;flex:1;min-height:0;overflow:hidden}.md-split-left{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--md-border);min-width:0}.md-split-right{flex:1;display:flex;flex-direction:column;min-width:0}.md-preview-header{padding:12px 16px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);font-size:13px;font-weight:500;color:var(--md-text-subtle);display:flex;align-items:center;gap:8px}.md-preview-content{flex:1;overflow-y:auto;padding:16px;font-family:SF Mono,Monaco,Cascadia Code,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:var(--md-bg);color:var(--md-text)}.md-preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--md-text-muted);text-align:center;padding:24px}.md-preview-placeholder .icon{font-size:48px;margin-bottom:12px;opacity:.5}.md-preview-content .mermaid-block{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:12px;margin:8px 0}.md-preview-content .mermaid-header{color:var(--md-primary);font-weight:500;margin-bottom:8px}.md-history-section{padding:8px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border)}.md-history-title{font-size:11px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}.md-history-list{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.md-history-item{flex-shrink:0;padding:6px 12px;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);font-size:12px;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:6px}.md-history-item:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-history-item .date{color:var(--md-text-muted);font-size:10px}.md-filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.md-filter-chip{padding:4px 10px;background:var(--md-bg);border:1px solid var(--md-border);border-radius:12px;font-size:11px;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:4px}.md-filter-chip:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-filter-chip.active{background:var(--md-primary);border-color:var(--md-primary);color:#fff}.md-filter-chip .count{background:#0000001a;padding:1px 5px;border-radius:8px;font-size:10px}.md-filter-chip.active .count{background:#fff3}.md-skeleton{background:linear-gradient(90deg,var(--md-bg-subtle) 25%,var(--md-bg-hover) 50%,var(--md-bg-subtle) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite;border-radius:var(--md-radius)}@keyframes skeleton-loading{0%{background-position:200% 0}to{background-position:-200% 0}}.md-skeleton-text{height:14px;margin:8px 0}.md-skeleton-text.short{width:60%}.md-skeleton-text.medium{width:80%}@media (max-width: 800px){.md-stats-grid{grid-template-columns:repeat(2,1fr)}.md-split-view{flex-direction:column}.md-split-left,.md-split-right{border-right:none;border-bottom:1px solid var(--md-border)}.md-settings-content{grid-template-columns:1fr}}.md-progress-current{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);font-size:12px;color:var(--md-text-subtle);overflow:hidden}.md-progress-page-icon{flex-shrink:0}.md-progress-page-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--md-text)}@media (max-width: 768px){.md-modal-header{padding:16px 16px 12px}.md-modal-header h3{font-size:18px}.md-modal-header .subtitle{font-size:13px}.md-controls{padding:12px 16px;gap:6px;flex-wrap:wrap}.md-btn-sm{padding:6px 10px;font-size:12px}.md-tree-container{padding:12px 16px}.md-settings-panel{margin:0 16px 12px}.md-settings-toggle{padding:10px 12px;font-size:13px}.md-settings-content{padding:12px}.md-modal-footer{padding:12px 16px;flex-direction:column;gap:12px}.md-footer-left,.md-footer-right{width:100%;justify-content:center}.md-shortcuts-hint{flex-wrap:wrap;justify-content:center}.md-footer-right{flex-direction:column;gap:8px}.md-footer-right .md-btn{width:100%;justify-content:center}}@media (max-width: 480px){.md-modal-header{padding:12px 12px 10px}.md-modal-header h3{font-size:16px}.md-modal-header .subtitle{font-size:12px;flex-wrap:wrap}.md-page-count{font-size:11px;padding:1px 6px}.md-search-bar{margin:8px 12px}.md-search-bar input{font-size:14px;padding:8px 32px 8px 36px}.md-controls{padding:8px 12px;gap:4px}.md-btn-sm{padding:5px 8px;font-size:11px}.md-filter-chip{padding:4px 8px;font-size:11px}.md-selection-count{font-size:11px}.md-stats-section{margin:8px 12px;padding:10px}.md-stats-grid{gap:8px}.md-stat-item{padding:8px}.md-stat-icon{font-size:18px}.md-stat-value{font-size:16px}.md-stat-label{font-size:10px}.md-tree-container{padding:8px 12px}.md-tree-item{padding:6px 8px;font-size:13px}.md-tree-toggler{width:20px;height:20px}.md-tree-toggler svg{width:14px;height:14px}.md-tree-checkbox{width:16px;height:16px}.md-tree-icon svg{width:16px;height:16px}.md-child-count{font-size:10px;padding:1px 5px}.md-settings-panel{margin:0 12px 10px}.md-settings-toggle{padding:8px 10px;font-size:12px}.md-settings-content{padding:10px;font-size:12px}.md-checkbox-label{font-size:12px}.md-option-label{font-size:11px}.md-radio-group label{font-size:12px}.md-preset-btn{padding:8px 12px;font-size:12px}.md-modal-footer{padding:10px 12px}.md-shortcuts-hint{display:none}.md-btn{font-size:13px;padding:8px 14px}.md-btn-badge{width:18px;height:18px;font-size:11px}}@media (max-width: 360px){.md-modal-header h3{font-size:15px}.md-btn-sm{padding:4px 6px;font-size:10px}.md-tree-item{font-size:12px}.md-settings-toggle{font-size:11px}}@media (max-height: 500px) and (orientation: landscape){.md-modal-content{max-height:98vh}.md-modal-header{padding:10px 16px 8px}.md-modal-header h3{font-size:16px}.md-stats-section{display:none}.md-controls,.md-tree-container,.md-modal-footer{padding:8px 16px}.md-shortcuts-hint{display:none}} ');
 
 (function () {
   'use strict';
 
   const MAX_CONCURRENCY = 6;
   const PAGE_LIMIT = 50;
+  const DEBUG = false;
   const EXPAND_CONTENT = "body.view,ancestors,version";
   async function runWithConcurrency(items, fn, options) {
     const { concurrency, onProgress } = options;
@@ -12061,6 +12062,100 @@ ${header}${code.trim()}
         return "txt";
     }
   }
+  const BASE_SELECTORS_TO_REMOVE = [
+    "#likes-and-labels-container",
+    "#likes-section",
+    "#labels-section",
+    ".page-metadata-modification-info",
+    "#children-section",
+    ".plugin_pagetree",
+    ".content-action",
+    ".page-header-actions",
+    ".contributors",
+    "script",
+    "style",
+    ".expand-control",
+    ".aui-expander-trigger"
+  ];
+  const DIAGRAM_SELECTORS = [
+    '[data-macro-name="drawio"]',
+    '[data-macro-name="drawio-sketch"]',
+    ".drawio-macro",
+    ".drawio-diagram",
+    '.conf-macro[data-macro-name="drawio"]',
+    '.conf-macro[data-macro-name="drawio-sketch"]',
+    '[data-macro-name="gliffy"]',
+    ".gliffy-macro",
+    ".gliffy-diagram"
+  ].join(", ");
+  function extractDiagramNameFromScript(el) {
+    const script = el.querySelector("script");
+    if (!(script == null ? void 0 : script.textContent)) return "";
+    const nameMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*decodeURIComponent\(['"]([^'"]+)['"]\)/);
+    if (nameMatch) {
+      try {
+        return decodeURIComponent(nameMatch[1]);
+      } catch {
+        return nameMatch[1];
+      }
+    }
+    const simpleMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*['"]([^'"]+)['"]/);
+    if (simpleMatch) return simpleMatch[1];
+    return "";
+  }
+  function sanitizeHtml(html, options, pageId) {
+    if (!html) return "";
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    doc.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
+      el.style.display = "block";
+      el.removeAttribute("aria-hidden");
+      const expander = el.closest(".aui-expander-container, .expand-container");
+      if (expander) {
+        expander.classList.remove("collapsed");
+        expander.classList.add("expanded");
+      }
+    });
+    doc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
+      const htmlEl = el;
+      let name = htmlEl.dataset.diagramName || htmlEl.getAttribute("data-diagram-name") || htmlEl.getAttribute("data-extracted-diagram-name") || "";
+      if (!name) {
+        name = extractDiagramNameFromScript(htmlEl);
+      }
+      if (name) {
+        htmlEl.setAttribute("data-extracted-diagram-name", name);
+      }
+      htmlEl.setAttribute("data-diagram-index", String(index));
+      const marker = doc.createElement("span");
+      marker.style.display = "none";
+      marker.setAttribute("data-diagram-marker", "true");
+      marker.textContent = `DIAGRAM:${name || `diagram-${index + 1}`}`;
+      htmlEl.appendChild(marker);
+    });
+    BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
+      doc.querySelectorAll(selector).forEach((el) => el.remove());
+    });
+    if (!options.includeComments) {
+      doc.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
+        el.remove();
+      });
+    }
+    if (!options.includeImages) {
+      doc.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
+        el.remove();
+      });
+    } else {
+      doc.querySelectorAll("img").forEach((img) => {
+        var _a, _b;
+        if (!((_a = img.alt) == null ? void 0 : _a.trim())) {
+          const src = img.src || "";
+          const filename = ((_b = src.split("/").pop()) == null ? void 0 : _b.split("?")[0]) || "image";
+          img.alt = `[Image: ${filename}]`;
+        }
+      });
+    }
+    return doc.body.innerHTML;
+  }
   let turndownInstance = null;
   let obsidianTurndownInstance = null;
   let diagramConvertInstance = null;
@@ -12168,11 +12263,28 @@ ${content}
     instance.addRule("drawioMacro", {
       filter: (node) => {
         if (!(node instanceof HTMLElement)) return false;
-        return node.classList.contains("drawio-macro") || node.classList.contains("drawio-diagram") || node.dataset.macroName === "drawio";
+        const macroName = node.getAttribute("data-macro-name") || "";
+        if (node.classList.contains("drawio-macro") || node.classList.contains("drawio-diagram") || macroName === "drawio" || macroName === "drawio-sketch") {
+          return true;
+        }
+        if (node.classList.contains("conf-macro") && (macroName === "drawio" || macroName === "drawio-sketch")) {
+          return true;
+        }
+        if (node.getAttribute("data-extracted-diagram-name")) {
+          return true;
+        }
+        if (node.classList.contains("geDiagramContainer")) {
+          return true;
+        }
+        return false;
       },
       replacement: (_content, node) => {
         const el = node;
-        const diagramName = el.dataset.diagramName || el.getAttribute("data-diagram-name") || "diagram";
+        let diagramName = el.getAttribute("data-extracted-diagram-name") || el.dataset.diagramName || el.getAttribute("data-diagram-name") || "";
+        if (!diagramName) {
+          const index = el.getAttribute("data-diagram-index");
+          diagramName = index ? `diagram-${parseInt(index) + 1}` : "diagram";
+        }
         if (convertDiagrams) {
           const diagramInfo = extractDiagramFromMacro(el);
           if (diagramInfo && diagramInfo.content) {
@@ -12351,58 +12463,6 @@ ${result.join("\n")}
     }
     return instance;
   }
-  const BASE_SELECTORS_TO_REMOVE = [
-    "#likes-and-labels-container",
-    "#likes-section",
-    "#labels-section",
-    ".page-metadata-modification-info",
-    "#children-section",
-    ".plugin_pagetree",
-    ".content-action",
-    ".page-header-actions",
-    ".contributors",
-    "script",
-    "style",
-    ".expand-control",
-    ".aui-expander-trigger"
-  ];
-  function sanitizeHtml(html, options, pageId) {
-    if (!html) return "";
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    doc.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
-      el.style.display = "block";
-      el.removeAttribute("aria-hidden");
-      const expander = el.closest(".aui-expander-container, .expand-container");
-      if (expander) {
-        expander.classList.remove("collapsed");
-        expander.classList.add("expanded");
-      }
-    });
-    BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
-      doc.querySelectorAll(selector).forEach((el) => el.remove());
-    });
-    if (!options.includeComments) {
-      doc.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
-        el.remove();
-      });
-    }
-    if (!options.includeImages) {
-      doc.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
-        el.remove();
-      });
-    } else {
-      doc.querySelectorAll("img").forEach((img) => {
-        var _a, _b;
-        if (!((_a = img.alt) == null ? void 0 : _a.trim())) {
-          const src = img.src || "";
-          const filename = ((_b = src.split("/").pop()) == null ? void 0 : _b.split("?")[0]) || "image";
-          img.alt = `[Image: ${filename}]`;
-        }
-      });
-    }
-    return doc.body.innerHTML;
-  }
   function convertToMarkdown(html, options) {
     if (!html) return "";
     const turndown = getTurndown(options);
@@ -12442,7 +12502,294 @@ ${result.join("\n")}
     });
     return results;
   }
-  function buildMarkdownDocument(pages, rootNode, exportTitle, settings) {
+  async function fetchJson(url) {
+    return withRetry(async () => {
+      if (IS_TAMPERMONKEY) {
+        return gmFetchJson(url);
+      }
+      return browserFetchJson(url);
+    });
+  }
+  async function fetchBlob(url) {
+    return withRetry(async () => {
+      if (IS_TAMPERMONKEY) {
+        return gmFetchBlob(url);
+      }
+      return browserFetchBlob(url);
+    });
+  }
+  function gmFetchJson(url) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: "GET",
+        url,
+        headers: { Accept: "application/json" },
+        onload(response) {
+          if (response.status >= 200 && response.status < 300) {
+            try {
+              resolve(JSON.parse(response.responseText));
+            } catch (e) {
+              reject(new Error(`JSON parse error: ${e}`));
+            }
+          } else {
+            reject(new Error(`HTTP ${response.status}: ${response.statusText}`));
+          }
+        },
+        onerror(response) {
+          reject(new Error(`Network error: ${response.statusText || "Unknown"}`));
+        }
+      });
+    });
+  }
+  function gmFetchBlob(url) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: "GET",
+        url,
+        responseType: "blob",
+        onload(response) {
+          if (response.status >= 200 && response.status < 300) {
+            resolve(response.response);
+          } else {
+            reject(new Error(`HTTP ${response.status}: ${response.statusText}`));
+          }
+        },
+        onerror(response) {
+          reject(new Error(`Network error: ${response.statusText || "Unknown"}`));
+        }
+      });
+    });
+  }
+  async function browserFetchJson(url) {
+    const response = await fetch(url, {
+      credentials: "include",
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  }
+  async function browserFetchBlob(url) {
+    const response = await fetch(url, { credentials: "include" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.blob();
+  }
+  function extractDiagramReferences(html) {
+    const diagrams = [];
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const drawioSelectors = [
+      '[data-macro-name="drawio"]',
+      '[data-macro-name="drawio-sketch"]',
+      ".drawio-macro",
+      ".drawio-diagram",
+      '.conf-macro[data-macro-name="drawio"]',
+      '.conf-macro[data-macro-name="drawio-sketch"]'
+    ].join(", ");
+    doc.querySelectorAll(drawioSelectors).forEach((el) => {
+      var _a;
+      let name = el.dataset.diagramName || el.getAttribute("data-diagram-name") || ((_a = el.querySelector("img")) == null ? void 0 : _a.getAttribute("data-diagram-name")) || "";
+      if (!name) {
+        const script = el.querySelector("script");
+        if (script == null ? void 0 : script.textContent) {
+          const nameMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*decodeURIComponent\(['"]([^'"]+)['"]\)/);
+          if (nameMatch) {
+            try {
+              name = decodeURIComponent(nameMatch[1]);
+            } catch {
+              name = nameMatch[1];
+            }
+          }
+          if (!name) {
+            const simpleMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*['"]([^'"]+)['"]/);
+            if (simpleMatch) name = simpleMatch[1];
+          }
+        }
+      }
+      if (!name) name = "diagram";
+      diagrams.push({ type: "drawio", name });
+    });
+    doc.querySelectorAll('[data-macro-name="gliffy"], .gliffy-macro, .gliffy-diagram').forEach((el) => {
+      let name = el.dataset.diagramName || el.getAttribute("data-diagram-name") || "";
+      if (!name) {
+        const childWithName = el.querySelector("[data-diagram-name]");
+        if (childWithName) {
+          name = childWithName.getAttribute("data-diagram-name") || "";
+        }
+      }
+      if (!name) name = "diagram";
+      diagrams.push({ type: "gliffy", name });
+    });
+    return diagrams;
+  }
+  async function convertDrawioToMermaid(pageId, diagramName) {
+    try {
+      const baseUrl = getBaseUrl();
+      const attachments = await fetchPageAttachments(pageId);
+      const drawioAttachment = attachments.find(
+        (att) => att.filename === `${diagramName}.drawio` || att.filename === `${diagramName}.drawio.xml` || att.filename === diagramName
+      );
+      let xmlText;
+      if (drawioAttachment == null ? void 0 : drawioAttachment.downloadUrl) {
+        const xmlBlob = await downloadAttachment(drawioAttachment.downloadUrl);
+        xmlText = await xmlBlob.text();
+      } else {
+        const xmlUrl = `${baseUrl}/plugins/servlet/drawio/export?pageId=${pageId}&diagramName=${encodeURIComponent(diagramName)}&format=xml`;
+        try {
+          const xmlBlob = await downloadAttachment(xmlUrl);
+          xmlText = await xmlBlob.text();
+        } catch (error) {
+          if (DEBUG) ;
+          return null;
+        }
+      }
+      const result = convert(xmlText, {
+        from: "drawio",
+        to: "mermaid",
+        layout: {
+          algorithm: "dagre",
+          direction: "TB"
+        }
+      });
+      return result.output;
+    } catch (error) {
+      return null;
+    }
+  }
+  async function fetchPageAttachments(pageId) {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/rest/api/content/${pageId}/child/attachment?expand=metadata,extensions`;
+    try {
+      const response = await fetchJson(url);
+      return (response.results || []).map((att) => {
+        var _a, _b, _c, _d;
+        return {
+          id: att.id,
+          title: att.title,
+          filename: att.title,
+          mediaType: ((_a = att.extensions) == null ? void 0 : _a.mediaType) || ((_b = att.metadata) == null ? void 0 : _b.mediaType) || "application/octet-stream",
+          fileSize: ((_c = att.extensions) == null ? void 0 : _c.fileSize) || 0,
+          downloadUrl: ((_d = att._links) == null ? void 0 : _d.download) ? `${baseUrl}${att._links.download}` : "",
+          pageId
+        };
+      });
+    } catch (error) {
+      return [];
+    }
+  }
+  function identifyDiagram(attachment) {
+    const { filename, mediaType } = attachment;
+    const baseUrl = getBaseUrl();
+    if (mediaType === "application/vnd.jgraph.mxfile" || filename.endsWith(".drawio") || filename.endsWith(".drawio.xml")) {
+      const diagramName = filename.replace(/\.(drawio|drawio\.xml)$/, "");
+      return {
+        ...attachment,
+        diagramType: "drawio",
+        diagramName,
+        renderUrl: `${baseUrl}/plugins/servlet/drawio/export?pageId=${attachment.pageId}&diagramName=${encodeURIComponent(diagramName)}&format=png`
+      };
+    }
+    if (mediaType === "application/gliffy+json" || filename.endsWith(".gliffy")) {
+      const diagramName = filename.replace(/\.gliffy$/, "");
+      return {
+        ...attachment,
+        diagramType: "gliffy",
+        diagramName,
+        renderUrl: `${baseUrl}/plugins/servlet/gliffy/export?pageId=${attachment.pageId}&diagramName=${encodeURIComponent(diagramName)}&format=png`
+      };
+    }
+    return null;
+  }
+  function isImageAttachment(attachment) {
+    const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml", "image/webp"];
+    return imageTypes.includes(attachment.mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(attachment.filename);
+  }
+  async function downloadAttachment(url) {
+    return fetchBlob(url);
+  }
+  async function exportImageAttachment(attachment) {
+    if (!attachment.downloadUrl) return null;
+    try {
+      const blob = await downloadAttachment(attachment.downloadUrl);
+      return {
+        filename: attachment.filename,
+        pageId: attachment.pageId,
+        blob,
+        type: "image"
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+  async function convertDiagramsInMarkdown(markdown, pageId, format) {
+    if (format === "wikilink") {
+      return markdown;
+    }
+    let result = markdown;
+    const diagramPattern = /!\[\[([^\]]+)\.png\]\](?:%% Editable source: ([^\s]+)\.drawio %%)?/g;
+    const conversions = [];
+    let match;
+    while ((match = diagramPattern.exec(markdown)) !== null) {
+      const [fullMatch, diagramName] = match;
+      if (format === "mermaid") {
+        const mermaidCode = await convertDrawioToMermaid(pageId, diagramName);
+        if (mermaidCode) {
+          const replacement = `\`\`\`mermaid
+${mermaidCode}
+\`\`\``;
+          conversions.push({ original: fullMatch, replacement });
+        }
+      } else if (format === "drawio-xml") {
+        try {
+          const attachments = await fetchPageAttachments(pageId);
+          const drawioAttachment = attachments.find(
+            (att) => att.filename === `${diagramName}.drawio` || att.filename === `${diagramName}.drawio.xml` || att.filename === diagramName
+          );
+          if (drawioAttachment == null ? void 0 : drawioAttachment.downloadUrl) {
+            const xmlBlob = await downloadAttachment(drawioAttachment.downloadUrl);
+            const xmlText = await xmlBlob.text();
+            const replacement = `\`\`\`xml
+${xmlText}
+\`\`\``;
+            conversions.push({ original: fullMatch, replacement });
+          }
+        } catch (error) {
+          console.warn(`Failed to download Draw.io XML for ${diagramName}:`, error);
+        }
+      }
+    }
+    for (const { original, replacement } of conversions) {
+      result = result.replace(original, replacement);
+    }
+    if (format === "mermaid") {
+      const plantumlPattern = /```plantuml\n([\s\S]*?)\n```/g;
+      result = result.replace(plantumlPattern, (fullMatch, plantumlCode) => {
+        try {
+          const converted = convert(plantumlCode.trim(), {
+            from: "plantuml",
+            to: "mermaid",
+            layout: {
+              algorithm: "dagre",
+              direction: "TB"
+            }
+          });
+          if (converted.output) {
+            return `\`\`\`mermaid
+${converted.output}
+\`\`\``;
+          }
+        } catch (error) {
+          console.warn("Failed to convert PlantUML to Mermaid:", error);
+        }
+        return fullMatch;
+      });
+    }
+    return result;
+  }
+  async function buildMarkdownDocument(pages, rootNode, exportTitle, settings, diagramFormat = "wikilink") {
     const flatTree = flattenTree(rootNode);
     const treeMap = new Map(flatTree.map((n) => [n.id, n]));
     const lines = [];
@@ -12491,7 +12838,12 @@ ${result.join("\n")}
       if (page.error) {
         lines.push("*Error loading page content*");
       } else {
-        const markdown = convertToMarkdown(page.htmlContent);
+        const sanitizedHtml = sanitizeHtml(page.htmlContent, {
+          includeImages: settings.includeImages,
+          includeComments: settings.includeComments
+        }, page.id);
+        let markdown = convertToMarkdown(sanitizedHtml);
+        markdown = await convertDiagramsInMarkdown(markdown, page.id, diagramFormat);
         lines.push(markdown);
       }
       lines.push("");
@@ -15406,163 +15758,6 @@ ${result.join("\n")}
   function makeWikilink(title, displayText) {
     return `[[${title}]]`;
   }
-  async function fetchPageAttachments(pageId) {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/rest/api/content/${pageId}/child/attachment?expand=metadata,extensions`;
-    try {
-      const response = await fetchJson(url);
-      return (response.results || []).map((att) => {
-        var _a, _b, _c, _d;
-        return {
-          id: att.id,
-          title: att.title,
-          filename: att.title,
-          mediaType: ((_a = att.extensions) == null ? void 0 : _a.mediaType) || ((_b = att.metadata) == null ? void 0 : _b.mediaType) || "application/octet-stream",
-          fileSize: ((_c = att.extensions) == null ? void 0 : _c.fileSize) || 0,
-          downloadUrl: ((_d = att._links) == null ? void 0 : _d.download) ? `${baseUrl}${att._links.download}` : "",
-          pageId
-        };
-      });
-    } catch (error) {
-      return [];
-    }
-  }
-  function identifyDiagram(attachment) {
-    const { filename, mediaType } = attachment;
-    const baseUrl = getBaseUrl();
-    if (mediaType === "application/vnd.jgraph.mxfile" || filename.endsWith(".drawio") || filename.endsWith(".drawio.xml")) {
-      const diagramName = filename.replace(/\.(drawio|drawio\.xml)$/, "");
-      return {
-        ...attachment,
-        diagramType: "drawio",
-        diagramName,
-        renderUrl: `${baseUrl}/plugins/servlet/drawio/export?pageId=${attachment.pageId}&diagramName=${encodeURIComponent(diagramName)}&format=png`
-      };
-    }
-    if (mediaType === "application/gliffy+json" || filename.endsWith(".gliffy")) {
-      const diagramName = filename.replace(/\.gliffy$/, "");
-      return {
-        ...attachment,
-        diagramType: "gliffy",
-        diagramName,
-        renderUrl: `${baseUrl}/plugins/servlet/gliffy/export?pageId=${attachment.pageId}&diagramName=${encodeURIComponent(diagramName)}&format=png`
-      };
-    }
-    return null;
-  }
-  function isImageAttachment(attachment) {
-    const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml", "image/webp"];
-    return imageTypes.includes(attachment.mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(attachment.filename);
-  }
-  async function downloadAttachment(url) {
-    return withRetry(async () => {
-      if (IS_TAMPERMONKEY) {
-        return gmFetchBlob(url);
-      }
-      return browserFetchBlob(url);
-    });
-  }
-  async function exportDiagram(diagram, options) {
-    const result = {
-      name: diagram.diagramName,
-      pageId: diagram.pageId,
-      source: null,
-      preview: null,
-      type: diagram.diagramType
-    };
-    try {
-      if (options.includeSource && diagram.downloadUrl) {
-        result.source = await downloadAttachment(diagram.downloadUrl);
-      }
-      if (options.includePreview && diagram.renderUrl) {
-        const renderUrl = diagram.renderUrl + `&scale=${options.scale}`;
-        result.preview = await downloadAttachment(renderUrl);
-      }
-    } catch (error) {
-    }
-    return result;
-  }
-  async function exportImageAttachment(attachment) {
-    if (!attachment.downloadUrl) return null;
-    try {
-      const blob = await downloadAttachment(attachment.downloadUrl);
-      return {
-        filename: attachment.filename,
-        pageId: attachment.pageId,
-        blob,
-        type: "image"
-      };
-    } catch (error) {
-      return null;
-    }
-  }
-  function gmFetchBlob(url) {
-    return new Promise((resolve, reject) => {
-      GM_xmlhttpRequest({
-        method: "GET",
-        url,
-        responseType: "blob",
-        onload(response) {
-          if (response.status >= 200 && response.status < 300) {
-            resolve(response.response);
-          } else {
-            reject(new Error(`HTTP ${response.status}: ${response.statusText}`));
-          }
-        },
-        onerror(response) {
-          reject(new Error(`Network error: ${response.statusText || "Unknown"}`));
-        }
-      });
-    });
-  }
-  async function browserFetchBlob(url) {
-    const response = await fetch(url, { credentials: "include" });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response.blob();
-  }
-  function fetchJson(url) {
-    return withRetry(async () => {
-      if (IS_TAMPERMONKEY) {
-        return gmFetchJson(url);
-      }
-      return browserFetchJson(url);
-    });
-  }
-  function gmFetchJson(url) {
-    return new Promise((resolve, reject) => {
-      GM_xmlhttpRequest({
-        method: "GET",
-        url,
-        headers: { Accept: "application/json" },
-        onload(response) {
-          if (response.status >= 200 && response.status < 300) {
-            try {
-              resolve(JSON.parse(response.responseText));
-            } catch (e) {
-              reject(new Error(`JSON parse error: ${e}`));
-            }
-          } else {
-            reject(new Error(`HTTP ${response.status}: ${response.statusText}`));
-          }
-        },
-        onerror(response) {
-          reject(new Error(`Network error: ${response.statusText || "Unknown"}`));
-        }
-      });
-    });
-  }
-  async function browserFetchJson(url) {
-    const response = await fetch(url, {
-      credentials: "include",
-      headers: { Accept: "application/json" }
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-  }
   function generateFrontmatter(page, node, pageMap, settings) {
     var _a;
     const lines = ["---"];
@@ -15721,41 +15916,45 @@ ${result.join("\n")}
       let processedPages = 0;
       for (const page of pages) {
         onProgress == null ? void 0 : onProgress("Downloading attachments...", processedPages, totalPages);
-        const attachments = await fetchPageAttachments(page.id);
-        for (const att of attachments) {
-          if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
-            continue;
+        const diagramRefs = extractDiagramReferences(page.htmlContent);
+        if (settings.exportDiagrams && diagramRefs.length > 0) {
+          for (const ref of diagramRefs) {
+            try {
+              const baseUrl = getBaseUrl();
+              const format = ref.type === "gliffy" ? "gliffy" : "drawio";
+              const renderUrl = `${baseUrl}/plugins/servlet/${format}/export?pageId=${page.id}&diagramName=${encodeURIComponent(ref.name)}&format=png`;
+              const response = await fetch(renderUrl, { credentials: "include" });
+              if (response.ok) {
+                const blob = await response.blob();
+                attachmentFiles.push({
+                  path: `_attachments/${ref.name}.png`,
+                  blob
+                });
+                diagramCount++;
+                attachmentCount++;
+              }
+            } catch (error) {
+              console.error(`Failed to download diagram ${ref.name}:`, error);
+            }
           }
-          const diagram = identifyDiagram(att);
-          if (diagram && settings.exportDiagrams) {
-            const exported = await exportDiagram(diagram, {
-              includeSource: settings.includeDiagramSource,
-              includePreview: settings.includeDiagramPreview,
-              scale: settings.diagramPreviewScale
-            });
-            if (exported.preview) {
-              attachmentFiles.push({
-                path: `_attachments/page-${page.id}/${exported.name}.png`,
-                blob: exported.preview
-              });
-              attachmentCount++;
+        }
+        if (settings.downloadAttachments) {
+          const attachments = await fetchPageAttachments(page.id);
+          for (const att of attachments) {
+            if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
+              continue;
             }
-            if (exported.source) {
-              const ext = exported.type === "drawio" ? "drawio" : "gliffy";
-              attachmentFiles.push({
-                path: `_attachments/page-${page.id}/${exported.name}.${ext}`,
-                blob: exported.source
-              });
-            }
-            diagramCount++;
-          } else if (isImageAttachment(att) && settings.downloadAttachments && settings.includeImages) {
-            const exported = await exportImageAttachment(att);
-            if (exported) {
-              attachmentFiles.push({
-                path: `_attachments/page-${page.id}/${exported.filename}`,
-                blob: exported.blob
-              });
-              attachmentCount++;
+            const diagram = identifyDiagram(att);
+            if (diagram) continue;
+            if (isImageAttachment(att) && settings.includeImages) {
+              const exported = await exportImageAttachment(att);
+              if (exported) {
+                attachmentFiles.push({
+                  path: `_attachments/${exported.filename}`,
+                  blob: exported.blob
+                });
+                attachmentCount++;
+              }
             }
           }
         }
@@ -15823,7 +16022,7 @@ ${result.join("\n")}
     includeDiagramPreview: true,
     diagramPreviewScale: 2,
     convertDiagrams: true,
-    diagramTargetFormat: "mermaid",
+    diagramTargetFormat: "wikilink",
     embedDiagramsAsCode: true,
     // Attachments
     downloadAttachments: true,
@@ -15855,7 +16054,7 @@ ${result.join("\n")}
       includeDiagramSource: true,
       includeDiagramPreview: true,
       convertDiagrams: true,
-      diagramTargetFormat: "mermaid",
+      diagramTargetFormat: "wikilink",
       embedDiagramsAsCode: true,
       includeFrontmatter: true,
       includeConfluenceMetadata: true,
@@ -15884,7 +16083,7 @@ ${result.join("\n")}
       exportDiagrams: true,
       includeDiagramSource: true,
       convertDiagrams: false,
-      diagramTargetFormat: "original",
+      diagramTargetFormat: "wikilink",
       includeFrontmatter: true,
       includeConfluenceMetadata: true,
       linkStyle: "wikilink",
@@ -15996,13 +16195,25 @@ ${result.join("\n")}
     check: `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
     search: `<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`,
     close: `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
-    obsidian: `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`
+    obsidian: `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
+    sun: `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`,
+    moon: `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>`
   };
   let modalElement = null;
   let currentSettings;
   let currentObsidianSettings;
   let resolveModal = null;
   let currentRootNode = null;
+  let currentTheme = "light";
+  function getSystemTheme() {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  function applyTheme(theme) {
+    currentTheme = theme;
+    if (modalElement) {
+      modalElement.setAttribute("data-theme", theme);
+    }
+  }
   function cancelModal() {
     if (modalElement && resolveModal) {
       modalElement.remove();
@@ -16031,9 +16242,14 @@ ${result.join("\n")}
                 ${ICONS.refresh}
               </button>
             </div>
-            <button class="md-btn-icon md-close-btn" data-action="cancel" title="Close (Esc)">
-              ${ICONS.close}
-            </button>
+            <div class="md-header-actions">
+              <button class="md-btn-icon" data-action="toggle-theme" title="Toggle theme">
+                ${currentTheme === "dark" ? ICONS.sun : ICONS.moon}
+              </button>
+              <button class="md-btn-icon md-close-btn" data-action="cancel" title="Close (Esc)">
+                ${ICONS.close}
+              </button>
+            </div>
           </div>
           <p class="subtitle">
             ${ICONS.folder.replace("<svg", '<svg class="icon"')}
@@ -16154,19 +16370,20 @@ ${result.join("\n")}
             </label>
             <label class="md-checkbox-label md-indent">
               <input type="checkbox" id="setting-convert-diagrams" ${currentObsidianSettings.convertDiagrams ? "checked" : ""}>
-              <span>Convert to Mermaid</span>
+              <span>Convert diagrams</span>
             </label>
+            <div class="md-option-group md-indent">
+              <span class="md-option-label">Diagram format:</span>
+              <div class="md-radio-group">
+                <label><input type="radio" name="diagram-format" value="wikilink" ${currentObsidianSettings.diagramTargetFormat === "wikilink" ? "checked" : ""}> Wikilinks (![[name.png]])</label>
+                <label><input type="radio" name="diagram-format" value="mermaid" ${currentObsidianSettings.diagramTargetFormat === "mermaid" ? "checked" : ""}> Mermaid code</label>
+                <label><input type="radio" name="diagram-format" value="drawio-xml" ${currentObsidianSettings.diagramTargetFormat === "drawio-xml" ? "checked" : ""}> Draw.io XML</label>
+              </div>
+            </div>
             <label class="md-checkbox-label md-indent">
               <input type="checkbox" id="setting-embed-diagrams" ${currentObsidianSettings.embedDiagramsAsCode ? "checked" : ""}>
               <span>Embed as code blocks</span>
             </label>
-            <div class="md-option-group md-indent">
-              <span class="md-option-label">Target format:</span>
-              <div class="md-radio-group">
-                <label><input type="radio" name="diagram-format" value="mermaid" ${currentObsidianSettings.diagramTargetFormat === "mermaid" ? "checked" : ""}> Mermaid</label>
-                <label><input type="radio" name="diagram-format" value="original" ${currentObsidianSettings.diagramTargetFormat === "original" ? "checked" : ""}> Original</label>
-              </div>
-            </div>
             <label class="md-checkbox-label md-indent">
               <input type="checkbox" id="setting-diagram-source" ${currentObsidianSettings.includeDiagramSource ? "checked" : ""}>
               <span>Include editable source (.drawio)</span>
@@ -16241,6 +16458,7 @@ ${result.join("\n")}
           <div class="md-footer-left">
             <div class="md-shortcuts-hint">
               <span class="md-shortcut"><kbd>Esc</kbd> close</span>
+              <span class="md-shortcut"><kbd>Shift</kbd>+click select with children</span>
               <span class="md-shortcut"><kbd>Ctrl</kbd>+<kbd>A</kbd> select all</span>
               <span class="md-shortcut"><kbd>Ctrl</kbd>+<kbd>D</kbd> download</span>
             </div>
@@ -16263,6 +16481,8 @@ ${result.join("\n")}
       </div>
     `;
       document.body.appendChild(modal);
+      currentTheme = getSystemTheme();
+      applyTheme(currentTheme);
       updateSelectionCount(modal);
       updateStats(modal, rootNode);
       setTimeout(() => {
@@ -16379,6 +16599,12 @@ ${result.join("\n")}
           }
           return;
         }
+        if (action === "toggle-theme") {
+          const newTheme = currentTheme === "dark" ? "light" : "dark";
+          applyTheme(newTheme);
+          btn.innerHTML = newTheme === "dark" ? ICONS.sun : ICONS.moon;
+          return;
+        }
         if (action === "toggle-settings") {
           const content = modal.querySelector("#md-settings-content");
           const chevron = btn.querySelector(".md-chevron");
@@ -16471,25 +16697,29 @@ ${result.join("\n")}
         }
       });
       modal.addEventListener("change", (e) => {
-        var _a, _b;
         const target = e.target;
         if (!target.classList.contains("md-tree-checkbox")) return;
         const isChecked = target.checked;
         const li = target.closest("li");
-        li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
-          cb.checked = isChecked;
-        });
-        if (isChecked) {
-          let parent = (_a = li == null ? void 0 : li.parentElement) == null ? void 0 : _a.closest("li");
-          while (parent) {
-            const parentCb = parent.querySelector(":scope > .md-tree-item .md-tree-checkbox");
-            if (parentCb) parentCb.checked = true;
-            parent = (_b = parent.parentElement) == null ? void 0 : _b.closest("li");
-          }
+        if (e.shiftKey && isChecked) {
+          li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
+            cb.checked = true;
+          });
+        }
+        if (!isChecked) {
+          li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
+            cb.checked = false;
+          });
         }
         updateSelectionCount(modal);
         updateStats(modal);
       });
+      modal.addEventListener("click", (e) => {
+        const target = e.target;
+        if (target.classList.contains("md-tree-checkbox") && e.shiftKey) {
+          e.shiftKey = true;
+        }
+      }, true);
       modal.addEventListener("click", (e) => {
         const target = e.target;
         const presetBtn = target.closest("[data-preset]");
@@ -16782,8 +17012,8 @@ ${result.join("\n")}
       const childCount = hasChildren ? countNodes(node) - 1 : 0;
       const errorClass = node.error ? " error" : "";
       const togglerClass = hasChildren ? "md-tree-toggler expanded" : "md-tree-toggler empty";
-      const iconClass = hasChildren ? "md-tree-icon folder" : "md-tree-icon page";
-      const icon = hasChildren ? ICONS.folder : ICONS.page;
+      const iconClass = "md-tree-icon page";
+      const icon = ICONS.page;
       html += `<li data-page-id="${node.id}" data-level="${level}">`;
       html += `<div class="md-tree-item" data-level="${level}">`;
       html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
@@ -16942,7 +17172,13 @@ ${result.join("\n")}
         updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
       } else if (action === "copy") {
         updateModalProgress(0, 0, "convert");
-        const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+        const result = await buildMarkdownDocument(
+          pagesContent,
+          rootTree,
+          rootTitle,
+          settings,
+          obsidianSettings.diagramTargetFormat
+        );
         const success = await copyToClipboard(result);
         if (success) {
           showToast("Copied to clipboard!");
@@ -16958,7 +17194,13 @@ ${result.join("\n")}
         updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
       } else {
         updateModalProgress(0, 0, "convert");
-        const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+        const result = await buildMarkdownDocument(
+          pagesContent,
+          rootTree,
+          rootTitle,
+          settings,
+          obsidianSettings.diagramTargetFormat
+        );
         downloadMarkdown(result);
         closeModal();
         updateStatus(`Downloaded ${result.pageCount} pages`);

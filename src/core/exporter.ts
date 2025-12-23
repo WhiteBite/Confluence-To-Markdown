@@ -1,16 +1,109 @@
 import { getBaseUrl } from '@/api/confluence';
 import type { PageContentData, PageTreeNode, ExportResult } from '@/api/types';
 import type { ExportSettings } from '@/storage/types';
-import { convertToMarkdown } from './converter';
+import { convertToMarkdown, sanitizeHtml } from './converter';
 import { flattenTree } from './tree-processor';
+import { fetchPageAttachments, downloadAttachment } from './attachment-handler';
+import { convertDrawioToMermaid } from './diagrams';
+import { convert } from '@whitebite/diagram-converter';
+
+/**
+ * Post-process markdown to convert diagram wikilinks to code blocks
+ */
+async function convertDiagramsInMarkdown(
+    markdown: string,
+    pageId: string,
+    format: 'mermaid' | 'drawio-xml' | 'wikilink'
+): Promise<string> {
+    if (format === 'wikilink') {
+        return markdown; // Keep as wikilinks
+    }
+
+    let result = markdown;
+
+    // 1. Convert Draw.io wikilinks: ![[name.png]]%% Editable source: name.drawio %%
+    const diagramPattern = /!\[\[([^\]]+)\.png\]\](?:%% Editable source: ([^\s]+)\.drawio %%)?/g;
+    const conversions: Array<{ original: string; replacement: string }> = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = diagramPattern.exec(markdown)) !== null) {
+        const [fullMatch, diagramName] = match;
+
+        if (format === 'mermaid') {
+            // Try to convert Draw.io to Mermaid
+            const mermaidCode = await convertDrawioToMermaid(pageId, diagramName);
+
+            if (mermaidCode) {
+                const replacement = `\`\`\`mermaid\n${mermaidCode}\n\`\`\``;
+                conversions.push({ original: fullMatch, replacement });
+            }
+        } else if (format === 'drawio-xml') {
+            // Try to get Draw.io XML source
+            try {
+                const attachments = await fetchPageAttachments(pageId);
+                const drawioAttachment = attachments.find(
+                    att => att.filename === `${diagramName}.drawio` ||
+                        att.filename === `${diagramName}.drawio.xml` ||
+                        att.filename === diagramName
+                );
+
+                if (drawioAttachment?.downloadUrl) {
+                    const xmlBlob = await downloadAttachment(drawioAttachment.downloadUrl);
+                    const xmlText = await xmlBlob.text();
+                    const replacement = `\`\`\`xml\n${xmlText}\n\`\`\``;
+                    conversions.push({ original: fullMatch, replacement });
+                }
+            } catch (error) {
+                // Keep as wikilink if can't download
+                console.warn(`Failed to download Draw.io XML for ${diagramName}:`, error);
+            }
+        }
+    }
+
+    // Apply Draw.io conversions
+    for (const { original, replacement } of conversions) {
+        result = result.replace(original, replacement);
+    }
+
+    // 2. Convert PlantUML code blocks if format is mermaid
+    if (format === 'mermaid') {
+        const plantumlPattern = /```plantuml\n([\s\S]*?)\n```/g;
+
+        result = result.replace(plantumlPattern, (fullMatch, plantumlCode) => {
+            try {
+                // Try to convert PlantUML to Mermaid using wb-diagrams
+                const converted = convert(plantumlCode.trim(), {
+                    from: 'plantuml',
+                    to: 'mermaid',
+                    layout: {
+                        algorithm: 'dagre',
+                        direction: 'TB',
+                    },
+                });
+
+                if (converted.output) {
+                    return `\`\`\`mermaid\n${converted.output}\n\`\`\``;
+                }
+            } catch (error) {
+                console.warn('Failed to convert PlantUML to Mermaid:', error);
+            }
+
+            // Keep original if conversion failed
+            return fullMatch;
+        });
+    }
+
+    return result;
+}
 
 /** Build final Markdown document from pages */
-export function buildMarkdownDocument(
+export async function buildMarkdownDocument(
     pages: PageContentData[],
     rootNode: PageTreeNode,
     exportTitle: string,
-    settings: ExportSettings
-): ExportResult {
+    settings: ExportSettings,
+    diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink'
+): Promise<ExportResult> {
     const flatTree = flattenTree(rootNode);
     const treeMap = new Map(flatTree.map((n) => [n.id, n]));
     const lines: string[] = [];
@@ -74,7 +167,18 @@ export function buildMarkdownDocument(
         if (page.error) {
             lines.push('*Error loading page content*');
         } else {
-            const markdown = convertToMarkdown(page.htmlContent);
+            // Sanitize HTML first to extract diagram names
+            const sanitizedHtml = sanitizeHtml(page.htmlContent, {
+                includeImages: settings.includeImages,
+                includeComments: settings.includeComments,
+            }, page.id);
+
+            // Convert to markdown (diagrams will be as wikilinks)
+            let markdown = convertToMarkdown(sanitizedHtml);
+
+            // Convert diagrams based on format setting
+            markdown = await convertDiagramsInMarkdown(markdown, page.id, diagramFormat);
+
             lines.push(markdown);
         }
 
