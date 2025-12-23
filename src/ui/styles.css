@@ -725,3 +725,558 @@
 .md-tree-container::-webkit-scrollbar-thumb:hover {
     background: var(--md-text-muted);
 }
+
+
+/* ========================================
+   Obsidian Export - New UI Elements
+   ======================================== */
+
+/* Preset Buttons */
+.md-preset-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.md-preset-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--md-border);
+    border-radius: var(--md-radius);
+    background: var(--md-bg);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--md-font);
+    color: var(--md-text-subtle);
+    transition: all var(--md-transition);
+    text-align: center;
+}
+
+.md-preset-btn:hover {
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+    background: var(--md-primary-light);
+}
+
+.md-preset-btn.active {
+    border-color: var(--md-primary);
+    background: var(--md-primary);
+    color: white;
+}
+
+/* Obsidian Options */
+.md-obsidian-options {
+    padding-top: 8px;
+    border-top: 1px solid var(--md-border);
+    margin-top: 8px;
+}
+
+/* Option Group */
+.md-option-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.md-option-label {
+    font-size: 13px;
+    color: var(--md-text-subtle);
+    white-space: nowrap;
+}
+
+/* Mini Preset Buttons */
+.md-preset-mini {
+    display: flex;
+    gap: 6px;
+}
+
+.md-btn-xs {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: var(--md-bg-subtle);
+    border: 1px solid var(--md-border);
+    color: var(--md-text-subtle);
+    cursor: pointer;
+    font-family: var(--md-font);
+    transition: all var(--md-transition);
+}
+
+.md-btn-xs:hover {
+    background: var(--md-primary-light);
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+
+/* Indented checkbox */
+.md-checkbox-label.md-indent {
+    margin-left: 26px;
+}
+
+/* Radio Group */
+.md-radio-group {
+    display: flex;
+    gap: 16px;
+}
+
+.md-radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--md-text);
+    cursor: pointer;
+}
+
+.md-radio-group input[type="radio"] {
+    accent-color: var(--md-primary);
+    cursor: pointer;
+}
+
+/* Settings content - single column for complex sections */
+.md-settings-content.md-single-column {
+    grid-template-columns: 1fr;
+}
+
+/* Diagrams section specific */
+#md-diagrams-content {
+    display: block;
+}
+
+#md-diagrams-content .md-checkbox-label {
+    margin-bottom: 8px;
+}
+
+#md-diagrams-content .md-option-group {
+    margin-left: 26px;
+}
+
+/* Format section specific */
+#md-format-content {
+    display: block;
+}
+
+#md-format-content .md-checkbox-label {
+    margin-bottom: 8px;
+}
+
+/* Obsidian icon color */
+.md-settings-toggle svg[viewBox="0 0 24 24"] path[d*="L2 7"] {
+    fill: #7C3AED;
+}
+
+
+/* ========================================
+   Export Statistics
+   ======================================== */
+
+.md-stats-section {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--md-bg-subtle) 0%, var(--md-bg) 100%);
+    border-bottom: 1px solid var(--md-border);
+}
+
+.md-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.md-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background: var(--md-bg);
+    border-radius: var(--md-radius);
+    border: 1px solid var(--md-border);
+    transition: all var(--md-transition);
+}
+
+.md-stat-item:hover {
+    border-color: var(--md-primary);
+    box-shadow: 0 2px 8px rgba(0, 82, 204, 0.1);
+}
+
+.md-stat-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.md-stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--md-text);
+}
+
+.md-stat-label {
+    font-size: 11px;
+    color: var(--md-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========================================
+   Dark Theme Support
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --md-primary: #4C9AFF;
+        --md-primary-hover: #79B8FF;
+        --md-primary-light: #1C2B41;
+        --md-success: #36B37E;
+        --md-success-light: #1C3829;
+        --md-danger: #FF5630;
+        --md-danger-light: #3D1F1F;
+        --md-warning: #FFAB00;
+        --md-text: #E6E6E6;
+        --md-text-subtle: #A6A6A6;
+        --md-text-muted: #6B6B6B;
+        --md-bg: #1E1E1E;
+        --md-bg-subtle: #252526;
+        --md-bg-hover: #2D2D2D;
+        --md-border: #3C3C3C;
+    }
+
+    #md-export-modal {
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+}
+
+/* ========================================
+   Keyboard Shortcuts Hint
+   ======================================== */
+
+.md-shortcuts-hint {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--md-text-muted);
+}
+
+.md-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.md-shortcut kbd {
+    background: var(--md-bg-subtle);
+    border: 1px solid var(--md-border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: monospace;
+    font-size: 10px;
+}
+
+/* ========================================
+   Progress Details
+   ======================================== */
+
+.md-progress-details {
+    margin-top: 12px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+.md-progress-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    color: var(--md-text-subtle);
+}
+
+.md-progress-item.done {
+    color: var(--md-success);
+}
+
+.md-progress-item.active {
+    color: var(--md-primary);
+    font-weight: 500;
+}
+
+.md-progress-item.error {
+    color: var(--md-danger);
+}
+
+.md-progress-item .status-icon {
+    width: 16px;
+    text-align: center;
+}
+
+/* ========================================
+   Preview Panel (Split View)
+   ======================================== */
+
+.md-modal-content.with-preview {
+    max-width: 1200px;
+}
+
+.md-split-view {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.md-split-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--md-border);
+    min-width: 0;
+}
+
+.md-split-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.md-preview-header {
+    padding: 12px 16px;
+    background: var(--md-bg-subtle);
+    border-bottom: 1px solid var(--md-border);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--md-text-subtle);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.md-preview-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--md-bg);
+    color: var(--md-text);
+}
+
+.md-preview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--md-text-muted);
+    text-align: center;
+    padding: 24px;
+}
+
+.md-preview-placeholder .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+/* Mermaid code highlighting in preview */
+.md-preview-content .mermaid-block {
+    background: var(--md-bg-subtle);
+    border: 1px solid var(--md-border);
+    border-radius: var(--md-radius);
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.md-preview-content .mermaid-header {
+    color: var(--md-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* ========================================
+   History Panel
+   ======================================== */
+
+.md-history-section {
+    padding: 8px 24px;
+    background: var(--md-bg-subtle);
+    border-bottom: 1px solid var(--md-border);
+}
+
+.md-history-title {
+    font-size: 11px;
+    color: var(--md-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.md-history-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.md-history-item {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background: var(--md-bg);
+    border: 1px solid var(--md-border);
+    border-radius: var(--md-radius);
+    font-size: 12px;
+    color: var(--md-text-subtle);
+    cursor: pointer;
+    transition: all var(--md-transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.md-history-item:hover {
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+
+.md-history-item .date {
+    color: var(--md-text-muted);
+    font-size: 10px;
+}
+
+/* ========================================
+   Filter Chips
+   ======================================== */
+
+.md-filter-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.md-filter-chip {
+    padding: 4px 10px;
+    background: var(--md-bg);
+    border: 1px solid var(--md-border);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--md-text-subtle);
+    cursor: pointer;
+    transition: all var(--md-transition);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.md-filter-chip:hover {
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+
+.md-filter-chip.active {
+    background: var(--md-primary);
+    border-color: var(--md-primary);
+    color: white;
+}
+
+.md-filter-chip .count {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 10px;
+}
+
+.md-filter-chip.active .count {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========================================
+   Loading Skeleton
+   ======================================== */
+
+.md-skeleton {
+    background: linear-gradient(90deg, var(--md-bg-subtle) 25%, var(--md-bg-hover) 50%, var(--md-bg-subtle) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: var(--md-radius);
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.md-skeleton-text {
+    height: 14px;
+    margin: 8px 0;
+}
+
+.md-skeleton-text.short {
+    width: 60%;
+}
+
+.md-skeleton-text.medium {
+    width: 80%;
+}
+
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+
+@media (max-width: 800px) {
+    .md-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .md-split-view {
+        flex-direction: column;
+    }
+
+    .md-split-left,
+    .md-split-right {
+        border-right: none;
+        border-bottom: 1px solid var(--md-border);
+    }
+
+    .md-settings-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ========================================
+   Progress Current Page
+   ======================================== */
+
+.md-progress-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: var(--md-bg);
+    border-radius: var(--md-radius);
+    border: 1px solid var(--md-border);
+    font-size: 12px;
+    color: var(--md-text-subtle);
+    overflow: hidden;
+}
+
+.md-progress-page-icon {
+    flex-shrink: 0;
+}
+
+.md-progress-page-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--md-text);
+}

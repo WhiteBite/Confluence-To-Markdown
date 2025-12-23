@@ -3,11 +3,13 @@ declare function GM_xmlhttpRequest(details: {
     url: string;
     headers?: Record<string, string>;
     data?: string;
+    responseType?: 'blob' | 'arraybuffer' | 'json' | 'text';
     onload?: (response: {
         status: number;
         statusText: string;
         responseText: string;
         responseHeaders: string;
+        response?: unknown;
     }) => void;
     onerror?: (response: {
         status: number;

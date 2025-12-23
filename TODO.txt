@@ -1,0 +1,473 @@
+================================================================================
+OBSIDIAN VAULT EXPORT - AAA+ IMPLEMENTATION PLAN
+================================================================================
+
+GOAL: Export Confluence pages as Obsidian-compatible vault with editable diagrams
+
+================================================================================
+PHASE 1: CORE INFRASTRUCTURE
+================================================================================
+
+[x] 1.1 Add JSZip dependency
+    - npm install jszip
+    - Update package.json
+
+[x] 1.2 Create new types (src/api/types.ts)
+    - AttachmentInfo interface
+    - DiagramAttachment interface  
+    - ObsidianExportSettings interface
+    - ObsidianExportResult interface
+
+[x] 1.3 Create attachment-handler.ts (src/core/)
+    - fetchPageAttachments(pageId) - get all attachments via API
+    - downloadAttachment(url) - download as Blob
+    - downloadDiagramPng(pageId, diagramName) - get PNG render
+    - identifyDiagramType(attachment) - detect drawio/gliffy
+    - exportDiagram(diagram) -> { source: Blob, preview: Blob }
+
+================================================================================
+PHASE 2: OBSIDIAN EXPORTER
+================================================================================
+
+[x] 2.1 Create obsidian-exporter.ts (src/core/)
+    - generateFrontmatter(page, settings) - YAML metadata
+    - convertLinksToWikilinks(markdown, pageMap) - [[Page Name]] format
+    - buildFolderStructure(tree) - hierarchical or flat
+    - generateIndexFile(tree, stats) - _Index.md MOC
+    - createObsidianVault(pages, tree, settings) -> JSZip
+
+[x] 2.2 Create link-resolver.ts (src/core/)
+    - parseConfluenceLinks(html) - extract internal links
+    - resolveToWikilink(link, exportedPages) - convert or mark broken
+    - buildPageTitleMap(pages) - id -> title mapping
+
+================================================================================
+PHASE 3: CONVERTER UPDATES
+================================================================================
+
+[x] 3.1 Update converter.ts
+    - Add Obsidian callout conversion (>[!note], >[!warning], etc.)
+    - Add draw.io macro handling
+    - Add gliffy macro handling
+    - Add wikilink mode option
+    - Handle expand/collapse -> <details><summary>
+
+[x] 3.2 Update sanitizeHtml()
+    - Extract diagram references before removal
+    - Track attachment URLs for later download
+
+================================================================================
+PHASE 4: SETTINGS & STORAGE
+================================================================================
+
+[x] 4.1 Update storage/types.ts
+    - Add ObsidianExportSettings interface
+    - Add export presets (Quick, Full Vault, Documentation, Sync-friendly)
+    - Add diagram settings
+    - Add attachment settings
+
+[x] 4.2 Update storage/storage.ts
+    - saveObsidianSettings()
+    - loadObsidianSettings()
+    - Preset management
+
+================================================================================
+PHASE 5: UI UPDATES
+================================================================================
+
+[x] 5.1 Update modal.ts - Export Format Section
+    - Radio: Single file / Obsidian Vault
+    - Checkbox: Hierarchical folders
+    - Checkbox: Use [[wikilinks]]
+    - Checkbox: Obsidian callouts
+    - Checkbox: Include frontmatter
+
+[x] 5.2 Update modal.ts - Diagrams Section
+    - Checkbox: Export diagrams
+    - Checkbox: Include editable source (.drawio)
+    - Checkbox: Include preview (PNG)
+    - Radio: Preview quality 1x/2x/3x
+    - Display: "Found X diagrams"
+
+[x] 5.3 Update modal.ts - Presets
+    - Dropdown/buttons for preset selection
+    - Auto-fill settings based on preset
+
+[x] 5.4 Update styles.css
+    - New sections styling
+    - Radio button groups
+    - Preset buttons
+
+================================================================================
+PHASE 6: MAIN INTEGRATION
+================================================================================
+
+[x] 6.1 Update main.ts
+    - Add 'obsidian' action type
+    - Route to obsidian exporter when format selected
+    - Handle ZIP download
+
+[x] 6.2 Update progress tracking
+    - Phase: "Downloading attachments..."
+    - Phase: "Creating vault structure..."
+    - Phase: "Generating ZIP..."
+
+================================================================================
+PHASE 7: API EXTENSIONS
+================================================================================
+
+[x] 7.1 Update confluence.ts
+    - fetchAttachments(pageId) - list all attachments
+    - fetchAttachmentContent(url) - download blob
+    - fetchDiagramRender(pageId, name, format) - PNG/SVG export
+
+================================================================================
+OUTPUT STRUCTURE
+================================================================================
+
+Confluence Export.zip/
+├── _Index.md                    # MOC with tree links
+├── _attachments/                # All attachments
+│   ├── page-{id}/
+│   │   ├── image.png            # Regular images
+│   │   ├── diagram.png          # Draw.io PNG render
+│   │   └── diagram.drawio       # Draw.io source (editable)
+│   └── page-{id2}/
+│       └── ...
+├── Root Page.md
+├── Section A/                   # Folder for pages with children
+│   ├── Section A.md
+│   ├── Child 1.md
+│   └── Child 2.md
+└── Standalone Page.md           # Pages without children
+
+================================================================================
+FRONTMATTER FORMAT
+================================================================================
+
+---
+title: "Page Title"
+aliases: []
+confluence:
+  id: "123456789"
+  space: "TEAM"
+  url: "https://wiki.company.com/pages/viewpage.action?pageId=123"
+  version: 42
+  lastModified: "2024-01-15T10:30:00Z"
+parent: "[[Parent Page]]"
+children:
+  - "[[Child 1]]"
+  - "[[Child 2]]"
+tags:
+  - confluence/imported
+created: 2024-01-15
+---
+
+================================================================================
+SETTINGS INTERFACE
+================================================================================
+
+ObsidianExportSettings {
+  // Format
+  exportFormat: 'single' | 'obsidian'
+  folderStructure: 'hierarchical' | 'flat'
+  
+  // Links
+  linkStyle: 'wikilink' | 'markdown'
+  resolveInternalLinks: boolean
+  
+  // Frontmatter
+  includeFrontmatter: boolean
+  includeConfluenceMetadata: boolean
+  
+  // Diagrams
+  exportDiagrams: boolean
+  includeDiagramSource: boolean
+  includeDiagramPreview: boolean
+  diagramPreviewScale: 1 | 2 | 3
+  
+  // Attachments
+  downloadAttachments: boolean
+  maxAttachmentSize: number (MB)
+  
+  // Content
+  useObsidianCallouts: boolean
+  
+  // Existing settings
+  includeImages: boolean
+  includeMetadata: boolean
+  includeComments: boolean
+  includeSourceLinks: boolean
+}
+
+================================================================================
+PRESETS
+================================================================================
+
+QUICK:
+  - Flat structure
+  - No attachments download
+  - Minimal frontmatter
+  - Standard markdown links
+
+FULL_VAULT:
+  - Hierarchical folders
+  - All attachments + diagrams
+  - Full frontmatter
+  - Wikilinks
+  - Obsidian callouts
+
+DOCUMENTATION:
+  - Flat structure
+  - Images only (no diagram sources)
+  - Minimal frontmatter
+  - Standard links
+
+SYNC_FRIENDLY:
+  - Hierarchical
+  - Full metadata for version tracking
+  - Confluence IDs in frontmatter
+
+================================================================================
+IMPLEMENTATION ORDER
+================================================================================
+
+1. [x] JSZip + types
+2. [x] attachment-handler.ts (API calls)
+3. [x] link-resolver.ts
+4. [x] obsidian-exporter.ts
+5. [x] converter.ts updates
+6. [x] storage types + presets
+7. [x] modal.ts UI sections
+8. [x] styles.css
+9. [x] main.ts integration
+10. [ ] Testing & fixes
+
+================================================================================
+COMPLETED: 2024-12-22 - Phase 1: Core Obsidian Export
+================================================================================
+
+All core implementation done! Ready for testing.
+
+Build command: npm run build
+Output: dist/confluence-to-markdown.user.js (282.76 kB)
+
+TypeScript: ✅ No errors
+Build: ✅ Success
+
+================================================================================
+PHASE 2: DIAGRAM CONVERTER INTEGRATION
+================================================================================
+
+Goal: Integrate @whitebite/diagram-converter for smart diagram handling
+
+[x] 2.0 Конвертер уже опубликован в NPM: @whitebite/diagram-converter
+
+[ ] 2.1 Add diagram-converter dependency
+    - npm install @whitebite/diagram-converter
+    - Update vite config for bundling
+
+[ ] 2.2 Create diagram-processor.ts (src/core/)
+    - detectDiagramFormat(content: string) -> 'drawio' | 'mermaid' | 'plantuml' | null
+    - extractDiagramFromMacro(html: Element) -> { format, content }
+    - convertDiagram(content, fromFormat, toFormat) -> ConvertResult
+
+[ ] 2.3 Diagram export options in UI
+    - Target format selector: Original / Mermaid / Draw.io / Excalidraw
+    - "Convert all diagrams to Mermaid" checkbox
+    - "Embed as code blocks" vs "Save as files"
+
+[ ] 2.4 Update obsidian-exporter.ts
+    - Process diagrams through converter
+    - Generate Mermaid code blocks in markdown
+    - Save converted .drawio/.excalidraw files
+
+================================================================================
+PHASE 3: ENHANCED IMAGE HANDLING
+================================================================================
+
+[ ] 3.1 Smart image processing
+    - Detect image dimensions
+    - Resize large images (optional)
+    - Convert formats (WebP -> PNG for compatibility)
+
+[ ] 3.2 Image path rewriting
+    - Relative paths for Obsidian vault
+    - Configurable attachment folder name
+    - Handle duplicate filenames
+
+[ ] 3.3 Embedded images
+    - Extract base64 images from HTML
+    - Save as separate files
+    - Update references in markdown
+
+================================================================================
+PHASE 4: CONFLUENCE MACRO SUPPORT
+================================================================================
+
+[ ] 4.1 Diagram macros
+    - Draw.io macro -> Mermaid code block OR .drawio file
+    - Gliffy macro -> Convert to Mermaid/Draw.io
+    - PlantUML macro -> Code block
+    - Mermaid macro -> Code block (preserve)
+
+[ ] 4.2 Other macros
+    - {status} -> [STATUS] badge
+    - {jira} -> Jira link with issue key
+    - {anchor} -> Markdown anchor
+    - {toc} -> Auto-generate TOC
+    - {children} -> List of child page links
+    - {excerpt} -> Blockquote
+
+[ ] 4.3 Layout macros
+    - {column} / {section} -> Proper markdown structure
+    - {panel} -> Callout or blockquote
+    - {expand} -> <details><summary> (done)
+
+================================================================================
+PHASE 5: EXPORT IMPROVEMENTS
+================================================================================
+
+[ ] 5.1 Incremental sync
+    - Store page versions in frontmatter
+    - Compare versions on re-export
+    - Update only changed pages
+    - "Sync mode" preset
+
+[ ] 5.2 Error recovery
+    - Continue on page load errors
+    - Collect errors in report
+    - Show error summary at end
+    - Retry failed downloads
+
+[ ] 5.3 Export report
+    - _export-report.md with stats
+    - List of converted diagrams
+    - List of broken links
+    - List of errors/warnings
+
+[ ] 5.4 Dry-run mode
+    - Preview what will be exported
+    - Show file structure
+    - Estimate ZIP size
+    - No actual downloads
+
+================================================================================
+PHASE 6: ADVANCED FEATURES
+================================================================================
+
+[ ] 6.1 Custom templates
+    - Frontmatter template
+    - Page template (header/footer)
+    - Index page template
+
+[ ] 6.2 Batch operations
+    - Export multiple spaces
+    - Scheduled exports (via external tool)
+    - Export history
+
+[ ] 6.3 Obsidian plugin integration
+    - Generate .obsidian/plugins config
+    - Dataview-compatible frontmatter
+    - Tags from Confluence labels
+
+================================================================================
+OUTPUT STRUCTURE (Updated)
+================================================================================
+
+Confluence Export.zip/
+├── _Index.md                    # MOC with tree links
+├── _export-report.md            # Export statistics and errors
+├── _attachments/                # All attachments
+│   ├── page-{id}/
+│   │   ├── image.png            # Regular images
+│   │   ├── diagram.png          # Diagram PNG render
+│   │   ├── diagram.drawio       # Draw.io source (editable)
+│   │   └── diagram.excalidraw   # Converted to Excalidraw
+│   └── ...
+├── diagrams/                    # Standalone diagram files (optional)
+│   ├── flowchart-1.md           # Mermaid in markdown
+│   └── architecture.drawio      # Draw.io XML
+├── Root Page.md
+├── Section A/
+│   ├── Section A.md
+│   ├── Child 1.md
+│   └── Child 2.md
+└── Standalone Page.md
+
+================================================================================
+DIAGRAM CONVERSION MATRIX
+================================================================================
+
+Source (Confluence)    ->    Target (Obsidian)
+---------------------------------------------------
+Draw.io macro          ->    Mermaid code block (default)
+                       ->    .drawio file (optional)
+                       ->    .excalidraw file (optional)
+                       ->    PNG only (fallback)
+
+Gliffy macro           ->    Mermaid code block
+                       ->    PNG only (if conversion fails)
+
+PlantUML macro         ->    PlantUML code block
+                       ->    Mermaid code block (converted)
+
+Mermaid macro          ->    Mermaid code block (preserve)
+
+Embedded SVG           ->    .svg file + reference
+
+================================================================================
+SETTINGS ADDITIONS
+================================================================================
+
+DiagramExportSettings {
+  // Conversion
+  convertDiagrams: boolean           // Enable diagram conversion
+  targetFormat: 'mermaid' | 'drawio' | 'excalidraw' | 'original'
+  embedAsCodeBlocks: boolean         // Embed in markdown vs separate files
+  
+  // Fallback
+  keepOriginalOnError: boolean       // Keep original format if conversion fails
+  includePngFallback: boolean        // Always include PNG preview
+  
+  // Quality
+  pngScale: 1 | 2 | 3               // PNG export quality
+}
+
+================================================================================
+IMPLEMENTATION ORDER
+================================================================================
+
+Phase 2 (Diagram Integration):
+1. [x] Add @whitebite/diagram-converter dependency
+2. [x] Create diagram-processor.ts
+3. [x] Update converter.ts for diagram macros
+4. [x] Add UI options for diagram conversion
+5. [ ] Test with real Draw.io diagrams
+
+Phase 2.5 (Performance & UX):
+6. [x] Parallel tree scanning (8x concurrency)
+7. [x] Statistics panel (pages, images, diagrams, size estimate)
+8. [x] Keyboard shortcuts (Ctrl+A, Ctrl+D, Ctrl+C, Esc)
+9. [x] Dark theme support (auto-detect)
+10. [x] CSS improvements (stats grid, shortcuts hint, skeleton loading)
+11. [x] Filter chips (All / Errors only)
+12. [x] Enhanced progress with current page display
+13. [x] Stats update on every selection change
+
+Phase 3 (Images):
+6. [ ] Image dimension detection
+7. [ ] Path rewriting logic
+8. [ ] Base64 extraction
+
+Phase 4 (Macros):
+9. [ ] Status/Jira macros
+10. [ ] TOC generation
+11. [ ] Layout macros
+
+Phase 5 (Export):
+12. [ ] Error recovery
+13. [ ] Export report
+14. [ ] Dry-run mode
+
+================================================================================

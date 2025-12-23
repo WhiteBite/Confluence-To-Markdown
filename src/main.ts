@@ -3,6 +3,7 @@ import { buildPageTree } from '@/core/tree-processor';
 import { fetchPagesContent } from '@/core/content-loader';
 import { buildMarkdownDocument, downloadMarkdown, copyToClipboard } from '@/core/exporter';
 import { exportToPdf } from '@/core/pdf-exporter';
+import { createObsidianVault, downloadVaultZip } from '@/core/obsidian-exporter';
 import {
     showPageSelectorModal,
     updateModalProgress,
@@ -55,7 +56,7 @@ async function startExport(): Promise<void> {
         }
 
         // Show modal with refresh callback
-        const { selectedIds, cancelled, action, settings } = await showPageSelectorModal(
+        const { selectedIds, cancelled, action, settings, obsidianSettings } = await showPageSelectorModal(
             rootTree,
             rootTitle,
             {
@@ -92,12 +93,29 @@ async function startExport(): Promise<void> {
             updateModalProgress(completed, total, phase);
         });
 
-        // Build Markdown
-        updateModalProgress(0, 0, 'convert');
-        const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
-
         // Handle action
-        if (action === 'copy') {
+        if (action === 'obsidian') {
+            // Obsidian vault export
+            updateModalProgress(0, 0, 'Creating Obsidian vault...');
+
+            const vaultResult = await createObsidianVault(
+                pagesContent,
+                rootTree,
+                rootTitle,
+                obsidianSettings,
+                (phase, current, total) => {
+                    updateModalProgress(current, total, phase);
+                }
+            );
+
+            downloadVaultZip(vaultResult);
+            closeModal();
+            updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
+        } else if (action === 'copy') {
+            // Build Markdown
+            updateModalProgress(0, 0, 'convert');
+            const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+
             const success = await copyToClipboard(result);
             if (success) {
                 showToast('Copied to clipboard!');
@@ -110,8 +128,12 @@ async function startExport(): Promise<void> {
         } else if (action === 'pdf') {
             exportToPdf(pagesContent, rootTree, rootTitle, settings);
             closeModal();
-            updateStatus(`PDF preview opened for ${result.pageCount} pages`);
+            updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
         } else {
+            // Standard markdown download
+            updateModalProgress(0, 0, 'convert');
+            const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+
             downloadMarkdown(result);
             closeModal();
             updateStatus(`Downloaded ${result.pageCount} pages`);

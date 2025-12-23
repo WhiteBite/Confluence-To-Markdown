@@ -1,15 +1,40 @@
 import TurndownService from 'turndown';
 import { gfm } from 'turndown-plugin-gfm';
 import { DEBUG } from '@/config';
-import type { ExportSettings } from '@/storage/types';
+import {
+    extractDiagramFromMacro,
+    processDiagram,
+    generateMermaidCodeBlock,
+    type TargetFormat,
+} from './diagram-processor';
 
 let turndownInstance: TurndownService | null = null;
+let obsidianTurndownInstance: TurndownService | null = null;
+let diagramConvertInstance: TurndownService | null = null;
+
+export interface ConvertOptions {
+    useObsidianCallouts?: boolean;
+    /** Enable diagram conversion */
+    convertDiagrams?: boolean;
+    /** Target format for diagrams */
+    diagramTargetFormat?: TargetFormat;
+    /** Embed diagrams as code blocks (vs file references) */
+    embedDiagramsAsCode?: boolean;
+}
 
 /** Get configured Turndown instance */
-function getTurndown(): TurndownService {
-    if (turndownInstance) return turndownInstance;
+function getTurndown(options?: ConvertOptions): TurndownService {
+    const useObsidian = options?.useObsidianCallouts ?? false;
+    const convertDiagrams = options?.convertDiagrams ?? false;
+    const diagramTarget = options?.diagramTargetFormat ?? 'mermaid';
+    const embedAsCode = options?.embedDiagramsAsCode ?? true;
 
-    turndownInstance = new TurndownService({
+    // Return cached instance if available (simplified caching)
+    if (useObsidian && !convertDiagrams && obsidianTurndownInstance) return obsidianTurndownInstance;
+    if (!useObsidian && !convertDiagrams && turndownInstance) return turndownInstance;
+    if (convertDiagrams && diagramConvertInstance) return diagramConvertInstance;
+
+    const instance = new TurndownService({
         headingStyle: 'atx',
         codeBlockStyle: 'fenced',
         bulletListMarker: '-',
@@ -17,45 +42,212 @@ function getTurndown(): TurndownService {
     });
 
     // Add GFM support (tables, strikethrough, task lists)
-    turndownInstance.use(gfm);
+    instance.use(gfm);
 
-    // Rule: Confluence info/note/warning/tip macros -> blockquotes
-    turndownInstance.addRule('confluenceMacros', {
+    // Rule: Confluence info/note/warning/tip macros
+    if (useObsidian) {
+        // Obsidian callout format: > [!type] Title
+        instance.addRule('confluenceMacrosObsidian', {
+            filter: (node) => {
+                if (!(node instanceof HTMLElement)) return false;
+                return (
+                    node.classList.contains('confluence-information-macro') ||
+                    (node.tagName === 'DIV' && node.dataset.macroName === 'panel')
+                );
+            },
+            replacement: (_content, node) => {
+                const el = node as HTMLElement;
+                let type = 'info';
+
+                const macroName = el.dataset.macroName || '';
+                if (macroName.includes('note') || el.classList.contains('confluence-information-macro-note')) {
+                    type = 'note';
+                } else if (macroName.includes('tip') || el.classList.contains('confluence-information-macro-tip')) {
+                    type = 'tip';
+                } else if (macroName.includes('warning') || el.classList.contains('confluence-information-macro-warning')) {
+                    type = 'warning';
+                }
+
+                const titleEl = el.querySelector('.confluence-information-macro-title, .panelHeader');
+                const title = titleEl?.textContent?.trim() || '';
+
+                const bodyEl = el.querySelector('.confluence-information-macro-body, .panelContent');
+                const body = bodyEl?.textContent?.trim() || el.textContent?.trim() || '';
+
+                const header = title ? `> [!${type}] ${title}` : `> [!${type}]`;
+                const lines = body.split('\n').map((line) => `> ${line}`).join('\n');
+
+                return `\n${header}\n${lines}\n\n`;
+            },
+        });
+    } else {
+        // Standard blockquote format
+        instance.addRule('confluenceMacros', {
+            filter: (node) => {
+                if (!(node instanceof HTMLElement)) return false;
+                return (
+                    node.classList.contains('confluence-information-macro') ||
+                    (node.tagName === 'DIV' && node.dataset.macroName === 'panel')
+                );
+            },
+            replacement: (_content, node) => {
+                const el = node as HTMLElement;
+                let type = 'Info';
+
+                const macroName = el.dataset.macroName || '';
+                if (macroName.includes('note') || el.classList.contains('confluence-information-macro-note')) {
+                    type = 'Note';
+                } else if (macroName.includes('tip') || el.classList.contains('confluence-information-macro-tip')) {
+                    type = 'Tip';
+                } else if (macroName.includes('warning') || el.classList.contains('confluence-information-macro-warning')) {
+                    type = 'Warning';
+                }
+
+                const titleEl = el.querySelector('.confluence-information-macro-title, .panelHeader');
+                const title = titleEl?.textContent?.trim() || '';
+
+                const bodyEl = el.querySelector('.confluence-information-macro-body, .panelContent');
+                const body = bodyEl?.textContent?.trim() || el.textContent?.trim() || '';
+
+                const header = title ? `**${type}: ${title}**` : `**${type}**`;
+                const lines = body.split('\n').map((line) => `> ${line}`).join('\n');
+
+                return `\n${header}\n${lines}\n\n`;
+            },
+        });
+    }
+
+    // Rule: Expand/collapse sections -> HTML details
+    instance.addRule('expandCollapse', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
             return (
-                node.classList.contains('confluence-information-macro') ||
-                (node.tagName === 'DIV' && node.dataset.macroName === 'panel')
+                node.classList.contains('expand-container') ||
+                node.classList.contains('aui-expander-container')
             );
         },
         replacement: (_content, node) => {
             const el = node as HTMLElement;
-            let type = 'Info';
+            const titleEl = el.querySelector('.expand-control-text, .aui-expander-trigger');
+            const title = titleEl?.textContent?.trim() || 'Details';
 
-            const macroName = el.dataset.macroName || '';
-            if (macroName.includes('note') || el.classList.contains('confluence-information-macro-note')) {
-                type = 'Note';
-            } else if (macroName.includes('tip') || el.classList.contains('confluence-information-macro-tip')) {
-                type = 'Tip';
-            } else if (macroName.includes('warning') || el.classList.contains('confluence-information-macro-warning')) {
-                type = 'Warning';
+            const contentEl = el.querySelector('.expand-content, .aui-expander-content');
+            const content = contentEl?.textContent?.trim() || '';
+
+            return `\n<details>\n<summary>${title}</summary>\n\n${content}\n\n</details>\n\n`;
+        },
+    });
+
+    // Rule: Draw.io diagrams - with conversion support
+    instance.addRule('drawioMacro', {
+        filter: (node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            return (
+                node.classList.contains('drawio-macro') ||
+                node.classList.contains('drawio-diagram') ||
+                node.dataset.macroName === 'drawio'
+            );
+        },
+        replacement: (_content, node) => {
+            const el = node as HTMLElement;
+            const diagramName = el.dataset.diagramName ||
+                el.getAttribute('data-diagram-name') ||
+                'diagram';
+
+            // Try to extract and convert diagram
+            if (convertDiagrams) {
+                const diagramInfo = extractDiagramFromMacro(el);
+                if (diagramInfo && diagramInfo.content) {
+                    const processed = processDiagram(diagramInfo, {
+                        targetFormat: diagramTarget,
+                        embedAsCodeBlocks: embedAsCode,
+                        keepOriginalOnError: true,
+                        includePngFallback: true,
+                    });
+
+                    if (processed.code && embedAsCode) {
+                        return `\n${generateMermaidCodeBlock(processed.code, diagramName)}\n\n`;
+                    }
+                }
             }
 
-            const titleEl = el.querySelector('.confluence-information-macro-title, .panelHeader');
-            const title = titleEl?.textContent?.trim() || '';
+            // Fallback: file reference
+            return `\n![[${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
+        },
+    });
 
-            const bodyEl = el.querySelector('.confluence-information-macro-body, .panelContent');
-            const body = bodyEl?.textContent?.trim() || el.textContent?.trim() || '';
+    // Rule: Gliffy diagrams - with conversion support
+    instance.addRule('gliffyMacro', {
+        filter: (node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            return (
+                node.classList.contains('gliffy-macro') ||
+                node.classList.contains('gliffy-diagram') ||
+                node.dataset.macroName === 'gliffy'
+            );
+        },
+        replacement: (_content, node) => {
+            const el = node as HTMLElement;
+            const diagramName = el.dataset.diagramName ||
+                el.getAttribute('data-diagram-name') ||
+                'diagram';
 
-            const header = title ? `**${type}: ${title}**` : `**${type}**`;
-            const lines = body.split('\n').map((line) => `> ${line}`).join('\n');
+            // Gliffy conversion not yet supported, use PNG fallback
+            return `\n![[${diagramName}.png]]\n\n`;
+        },
+    });
 
-            return `\n${header}\n${lines}\n\n`;
+    // Rule: PlantUML macros - preserve as code block
+    instance.addRule('plantumlMacro', {
+        filter: (node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            return (
+                node.classList.contains('plantuml-macro') ||
+                node.dataset.macroName === 'plantuml'
+            );
+        },
+        replacement: (_content, node) => {
+            const el = node as HTMLElement;
+            const code = el.textContent?.trim() || '';
+
+            if (convertDiagrams && diagramTarget === 'mermaid' && code) {
+                // Try to convert PlantUML to Mermaid
+                const diagramInfo = { format: 'plantuml' as const, name: 'plantuml', content: code };
+                const processed = processDiagram(diagramInfo, {
+                    targetFormat: 'mermaid',
+                    embedAsCodeBlocks: true,
+                    keepOriginalOnError: true,
+                    includePngFallback: false,
+                });
+
+                if (processed.code) {
+                    return `\n${generateMermaidCodeBlock(processed.code)}\n\n`;
+                }
+            }
+
+            // Keep as PlantUML code block
+            return `\n\`\`\`plantuml\n${code}\n\`\`\`\n\n`;
+        },
+    });
+
+    // Rule: Mermaid macros - preserve as code block
+    instance.addRule('mermaidMacro', {
+        filter: (node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            return (
+                node.classList.contains('mermaid-macro') ||
+                node.dataset.macroName === 'mermaid'
+            );
+        },
+        replacement: (_content, node) => {
+            const el = node as HTMLElement;
+            const code = el.textContent?.trim() || '';
+            return `\n\`\`\`mermaid\n${code}\n\`\`\`\n\n`;
         },
     });
 
     // Rule: AUI lozenges (status badges) -> inline text
-    turndownInstance.addRule('auiLozenge', {
+    instance.addRule('auiLozenge', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
             return node.classList.contains('aui-lozenge');
@@ -66,7 +258,7 @@ function getTurndown(): TurndownService {
     });
 
     // Rule: Task lists
-    turndownInstance.addRule('taskList', {
+    instance.addRule('taskList', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
             return node.classList.contains('task-list-item');
@@ -80,7 +272,7 @@ function getTurndown(): TurndownService {
     });
 
     // Rule: Code blocks with language
-    turndownInstance.addRule('codeBlock', {
+    instance.addRule('codeBlock', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
             return (
@@ -98,7 +290,7 @@ function getTurndown(): TurndownService {
     });
 
     // Remove empty links
-    turndownInstance.addRule('emptyLinks', {
+    instance.addRule('emptyLinks', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
             return node.tagName === 'A' && !node.textContent?.trim();
@@ -107,7 +299,7 @@ function getTurndown(): TurndownService {
     });
 
     // Rule: Confluence tables
-    turndownInstance.addRule('confluenceTable', {
+    instance.addRule('confluenceTable', {
         filter: (node) => {
             if (!(node instanceof HTMLElement)) return false;
             return node.tagName === 'TABLE' && node.classList.contains('confluenceTable');
@@ -143,7 +335,16 @@ function getTurndown(): TurndownService {
         },
     });
 
-    return turndownInstance;
+    // Cache the instance (simplified - diagram conversion creates new instance each time)
+    if (convertDiagrams) {
+        diagramConvertInstance = instance;
+    } else if (useObsidian) {
+        obsidianTurndownInstance = instance;
+    } else {
+        turndownInstance = instance;
+    }
+
+    return instance;
 }
 
 /** Base selectors to always remove */
@@ -222,8 +423,8 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 }
 
 /** Convert sanitized HTML to Markdown */
-export function convertToMarkdown(html: string): string {
+export function convertToMarkdown(html: string, options?: ConvertOptions): string {
     if (!html) return '';
-    const turndown = getTurndown();
+    const turndown = getTurndown(options);
     return turndown.turndown(html);
 }

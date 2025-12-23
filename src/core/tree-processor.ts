@@ -1,10 +1,14 @@
-import { fetchPage, fetchChildren, fetchPageWithContent } from '@/api/confluence';
-import type { PageTreeNode, PageContentData, ConfluenceAncestor } from '@/api/types';
-import { BATCH_SIZE, DEBUG } from '@/config';
+import { fetchPage, fetchChildren } from '@/api/confluence';
+import type { PageTreeNode } from '@/api/types';
+import { DEBUG } from '@/config';
+import { runWithConcurrency } from '@/utils/queue';
 
 export type StatusCallback = (message: string) => void;
 
-/** Build page hierarchy tree recursively */
+/** Concurrency for tree building */
+const TREE_CONCURRENCY = 8;
+
+/** Build page hierarchy tree with parallel fetching */
 export async function buildPageTree(
     rootPageId: string,
     onStatus?: StatusCallback
@@ -22,17 +26,21 @@ export async function buildPageTree(
         }
         processedIds.add(pageId);
         counter++;
-        onStatus?.(`Collecting hierarchy: ${counter} pages... (ID: ${pageId})`);
+        onStatus?.(`Scanning: ${counter} pages found...`);
 
         try {
-            const pageInfo = await fetchPage(pageId);
-            const children = await fetchChildren(pageId);
+            // Fetch page info and children in parallel
+            const [pageInfo, children] = await Promise.all([
+                fetchPage(pageId),
+                fetchChildren(pageId),
+            ]);
 
-            const childNodes: PageTreeNode[] = [];
-            for (const child of children) {
-                const childNode = await processNode(child.id, level + 1, pageId);
-                childNodes.push(childNode);
-            }
+            // Process children in parallel with concurrency limit
+            const childNodes = await runWithConcurrency(
+                children,
+                async (child) => processNode(child.id, level + 1, pageId),
+                { concurrency: TREE_CONCURRENCY }
+            );
 
             return {
                 id: pageId,

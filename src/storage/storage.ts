@@ -1,8 +1,10 @@
-import type { PageTreeNode } from '@/api/types';
+import type { PageTreeNode, ObsidianExportSettings, ExportPreset } from '@/api/types';
 import {
     type ExportSettings,
     type CachedTree,
     DEFAULT_SETTINGS,
+    DEFAULT_OBSIDIAN_SETTINGS,
+    EXPORT_PRESETS,
     STORAGE_KEYS,
     CACHE_TTL,
 } from './types';
@@ -27,6 +29,34 @@ export function saveSettings(settings: ExportSettings): void {
     } catch (e) {
         console.warn('Failed to save settings:', e);
     }
+}
+
+/** Load Obsidian export settings */
+export function loadObsidianSettings(): ObsidianExportSettings {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEYS.OBSIDIAN_SETTINGS);
+        if (stored) {
+            return { ...DEFAULT_OBSIDIAN_SETTINGS, ...JSON.parse(stored) };
+        }
+    } catch (e) {
+        console.warn('Failed to load Obsidian settings:', e);
+    }
+    return { ...DEFAULT_OBSIDIAN_SETTINGS };
+}
+
+/** Save Obsidian export settings */
+export function saveObsidianSettings(settings: ObsidianExportSettings): void {
+    try {
+        localStorage.setItem(STORAGE_KEYS.OBSIDIAN_SETTINGS, JSON.stringify(settings));
+    } catch (e) {
+        console.warn('Failed to save Obsidian settings:', e);
+    }
+}
+
+/** Apply preset to settings */
+export function applyPreset(preset: ExportPreset): ObsidianExportSettings {
+    const presetSettings = EXPORT_PRESETS[preset];
+    return { ...DEFAULT_OBSIDIAN_SETTINGS, ...presetSettings };
 }
 
 /** Get cached tree for a root page */

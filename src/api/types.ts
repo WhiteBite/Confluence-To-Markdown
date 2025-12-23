@@ -79,3 +79,91 @@ export interface ExportResult {
     pageCount: number;
     title: string;
 }
+
+/** Attachment info from API */
+export interface AttachmentInfo {
+    id: string;
+    title: string;
+    filename: string;
+    mediaType: string;
+    fileSize: number;
+    downloadUrl: string;
+    pageId: string;
+}
+
+/** Diagram attachment with source and preview */
+export interface DiagramAttachment extends AttachmentInfo {
+    diagramType: 'drawio' | 'gliffy' | 'unknown';
+    diagramName: string;
+    renderUrl: string;
+}
+
+/** Exported diagram with blobs */
+export interface ExportedDiagram {
+    name: string;
+    pageId: string;
+    source: Blob | null;
+    preview: Blob | null;
+    type: 'drawio' | 'gliffy';
+}
+
+/** Exported attachment */
+export interface ExportedAttachment {
+    filename: string;
+    pageId: string;
+    blob: Blob;
+    type: 'image' | 'diagram-preview' | 'diagram-source' | 'file';
+}
+
+/** Obsidian export settings */
+export interface ObsidianExportSettings {
+    // Format
+    exportFormat: 'single' | 'obsidian';
+    folderStructure: 'hierarchical' | 'flat';
+
+    // Links
+    linkStyle: 'wikilink' | 'markdown';
+    resolveInternalLinks: boolean;
+
+    // Frontmatter
+    includeFrontmatter: boolean;
+    includeConfluenceMetadata: boolean;
+
+    // Diagrams
+    exportDiagrams: boolean;
+    includeDiagramSource: boolean;
+    includeDiagramPreview: boolean;
+    diagramPreviewScale: 1 | 2 | 3;
+    /** Convert diagrams to target format */
+    convertDiagrams: boolean;
+    /** Target format for diagram conversion */
+    diagramTargetFormat: 'mermaid' | 'drawio' | 'excalidraw' | 'original';
+    /** Embed diagrams as code blocks in markdown */
+    embedDiagramsAsCode: boolean;
+
+    // Attachments
+    downloadAttachments: boolean;
+    maxAttachmentSizeMB: number;
+
+    // Content
+    useObsidianCallouts: boolean;
+
+    // Existing settings
+    includeImages: boolean;
+    includeMetadata: boolean;
+    includeComments: boolean;
+    includeSourceLinks: boolean;
+}
+
+/** Export preset type */
+export type ExportPreset = 'quick' | 'full' | 'documentation' | 'sync';
+
+/** Obsidian vault export result */
+export interface ObsidianExportResult {
+    zipBlob: Blob;
+    pageCount: number;
+    attachmentCount: number;
+    diagramCount: number;
+    totalSize: number;
+    title: string;
+}
