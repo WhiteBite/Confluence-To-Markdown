@@ -137,7 +137,7 @@ export interface ObsidianExportSettings {
     /** Convert diagrams to target format */
     convertDiagrams: boolean;
     /** Target format for diagram conversion */
-    diagramTargetFormat: 'mermaid' | 'drawio' | 'excalidraw' | 'original';
+    diagramTargetFormat: 'mermaid' | 'drawio-xml' | 'wikilink';
     /** Embed diagrams as code blocks in markdown */
     embedDiagramsAsCode: boolean;
 

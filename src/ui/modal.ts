@@ -16,6 +16,8 @@ const ICONS = {
   search: `<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`,
   close: `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
   obsidian: `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
+  sun: `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`,
+  moon: `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>`,
 };
 
 export interface ModalResult {
@@ -35,6 +37,20 @@ let currentSettings: ExportSettings;
 let currentObsidianSettings: ObsidianExportSettings;
 let resolveModal: ((result: ModalResult) => void) | null = null;
 let currentRootNode: PageTreeNode | null = null;
+let currentTheme: 'light' | 'dark' = 'light';
+
+/** Detect system theme preference */
+function getSystemTheme(): 'light' | 'dark' {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+/** Apply theme to modal */
+function applyTheme(theme: 'light' | 'dark'): void {
+  currentTheme = theme;
+  if (modalElement) {
+    modalElement.setAttribute('data-theme', theme);
+  }
+}
 
 /** Close modal with cancel result */
 function cancelModal(): void {
@@ -74,9 +90,14 @@ export function showPageSelectorModal(
                 ${ICONS.refresh}
               </button>
             </div>
-            <button class="md-btn-icon md-close-btn" data-action="cancel" title="Close (Esc)">
-              ${ICONS.close}
-            </button>
+            <div class="md-header-actions">
+              <button class="md-btn-icon" data-action="toggle-theme" title="Toggle theme">
+                ${currentTheme === 'dark' ? ICONS.sun : ICONS.moon}
+              </button>
+              <button class="md-btn-icon md-close-btn" data-action="cancel" title="Close (Esc)">
+                ${ICONS.close}
+              </button>
+            </div>
           </div>
           <p class="subtitle">
             ${ICONS.folder.replace('<svg', '<svg class="icon"')}
@@ -197,19 +218,20 @@ export function showPageSelectorModal(
             </label>
             <label class="md-checkbox-label md-indent">
               <input type="checkbox" id="setting-convert-diagrams" ${currentObsidianSettings.convertDiagrams ? 'checked' : ''}>
-              <span>Convert to Mermaid</span>
+              <span>Convert diagrams</span>
             </label>
+            <div class="md-option-group md-indent">
+              <span class="md-option-label">Diagram format:</span>
+              <div class="md-radio-group">
+                <label><input type="radio" name="diagram-format" value="wikilink" ${currentObsidianSettings.diagramTargetFormat === 'wikilink' ? 'checked' : ''}> Wikilinks (![[name.png]])</label>
+                <label><input type="radio" name="diagram-format" value="mermaid" ${currentObsidianSettings.diagramTargetFormat === 'mermaid' ? 'checked' : ''}> Mermaid code</label>
+                <label><input type="radio" name="diagram-format" value="drawio-xml" ${currentObsidianSettings.diagramTargetFormat === 'drawio-xml' ? 'checked' : ''}> Draw.io XML</label>
+              </div>
+            </div>
             <label class="md-checkbox-label md-indent">
               <input type="checkbox" id="setting-embed-diagrams" ${currentObsidianSettings.embedDiagramsAsCode ? 'checked' : ''}>
               <span>Embed as code blocks</span>
             </label>
-            <div class="md-option-group md-indent">
-              <span class="md-option-label">Target format:</span>
-              <div class="md-radio-group">
-                <label><input type="radio" name="diagram-format" value="mermaid" ${currentObsidianSettings.diagramTargetFormat === 'mermaid' ? 'checked' : ''}> Mermaid</label>
-                <label><input type="radio" name="diagram-format" value="original" ${currentObsidianSettings.diagramTargetFormat === 'original' ? 'checked' : ''}> Original</label>
-              </div>
-            </div>
             <label class="md-checkbox-label md-indent">
               <input type="checkbox" id="setting-diagram-source" ${currentObsidianSettings.includeDiagramSource ? 'checked' : ''}>
               <span>Include editable source (.drawio)</span>
@@ -284,6 +306,7 @@ export function showPageSelectorModal(
           <div class="md-footer-left">
             <div class="md-shortcuts-hint">
               <span class="md-shortcut"><kbd>Esc</kbd> close</span>
+              <span class="md-shortcut"><kbd>Shift</kbd>+click select with children</span>
               <span class="md-shortcut"><kbd>Ctrl</kbd>+<kbd>A</kbd> select all</span>
               <span class="md-shortcut"><kbd>Ctrl</kbd>+<kbd>D</kbd> download</span>
             </div>
@@ -307,6 +330,11 @@ export function showPageSelectorModal(
     `;
 
     document.body.appendChild(modal);
+
+    // Initialize theme
+    currentTheme = getSystemTheme();
+    applyTheme(currentTheme);
+
     updateSelectionCount(modal);
     updateStats(modal, rootNode);
 
@@ -454,6 +482,14 @@ export function showPageSelectorModal(
         return;
       }
 
+      if (action === 'toggle-theme') {
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        // Update button icon
+        btn.innerHTML = newTheme === 'dark' ? ICONS.sun : ICONS.moon;
+        return;
+      }
+
       if (action === 'toggle-settings') {
         const content = modal.querySelector('#md-settings-content') as HTMLElement;
         const chevron = btn.querySelector('.md-chevron') as HTMLElement;
@@ -556,7 +592,7 @@ export function showPageSelectorModal(
       }
     });
 
-    // Checkbox change - cascade to children
+    // Checkbox change - NO automatic cascade, use Shift+click for cascade
     modal.addEventListener('change', (e) => {
       const target = e.target as HTMLInputElement;
       if (!target.classList.contains('md-tree-checkbox')) return;
@@ -564,22 +600,32 @@ export function showPageSelectorModal(
       const isChecked = target.checked;
       const li = target.closest('li');
 
-      li?.querySelectorAll<HTMLInputElement>(':scope > ul .md-tree-checkbox').forEach((cb) => {
-        cb.checked = isChecked;
-      });
+      // Shift+click = cascade to children
+      if ((e as any).shiftKey && isChecked) {
+        li?.querySelectorAll<HTMLInputElement>(':scope > ul .md-tree-checkbox').forEach((cb) => {
+          cb.checked = true;
+        });
+      }
 
-      if (isChecked) {
-        let parent = li?.parentElement?.closest('li');
-        while (parent) {
-          const parentCb = parent.querySelector<HTMLInputElement>(':scope > .md-tree-item .md-tree-checkbox');
-          if (parentCb) parentCb.checked = true;
-          parent = parent.parentElement?.closest('li');
-        }
+      // If unchecking, also uncheck children (to avoid orphan selections)
+      if (!isChecked) {
+        li?.querySelectorAll<HTMLInputElement>(':scope > ul .md-tree-checkbox').forEach((cb) => {
+          cb.checked = false;
+        });
       }
 
       updateSelectionCount(modal);
       updateStats(modal);
     });
+
+    // Handle Shift+click on checkbox for cascade selection
+    modal.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('md-tree-checkbox') && e.shiftKey) {
+        // Mark the event so change handler knows it was shift+click
+        (e as any).shiftKey = true;
+      }
+    }, true);
 
     // Format preset buttons
     modal.addEventListener('click', (e) => {
@@ -676,7 +722,7 @@ export function showPageSelectorModal(
       } else if (target.name === 'diagram-scale') {
         currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;
       } else if (target.name === 'diagram-format') {
-        currentObsidianSettings.diagramTargetFormat = target.value as 'mermaid' | 'original';
+        currentObsidianSettings.diagramTargetFormat = target.value as 'mermaid' | 'drawio-xml' | 'wikilink';
       }
     });
   });
@@ -964,8 +1010,10 @@ function buildTreeHtml(nodes: PageTreeNode[], level = 0): string {
     const childCount = hasChildren ? countNodes(node) - 1 : 0;
     const errorClass = node.error ? ' error' : '';
     const togglerClass = hasChildren ? 'md-tree-toggler expanded' : 'md-tree-toggler empty';
-    const iconClass = hasChildren ? 'md-tree-icon folder' : 'md-tree-icon page';
-    const icon = hasChildren ? ICONS.folder : ICONS.page;
+
+    // Always show page icon, but add folder indicator if has children
+    const iconClass = 'md-tree-icon page';
+    const icon = ICONS.page;
 
     html += `<li data-page-id="${node.id}" data-level="${level}">`;
     html += `<div class="md-tree-item" data-level="${level}">`;

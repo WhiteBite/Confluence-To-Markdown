@@ -1,0 +1,11 @@
+/* module-key = 'com.atlassian.confluence.ext.newcode-macro-plugin:code-macro-bidi-style', location = 'styles/code-macro-bidi.css' */
+.bidi-marker:before {
+    unicode-bidi: isolate;
+    background-color: #fff0b3;
+    color: #7f5f01;
+    cursor: pointer;
+    content: attr(data-charcode);
+}
+.bidi-marker[char]:before {
+    content: attr(char);
+}

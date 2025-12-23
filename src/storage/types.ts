@@ -36,7 +36,7 @@ export const DEFAULT_OBSIDIAN_SETTINGS: ObsidianExportSettings = {
     includeDiagramPreview: true,
     diagramPreviewScale: 2,
     convertDiagrams: true,
-    diagramTargetFormat: 'mermaid',
+    diagramTargetFormat: 'wikilink',
     embedDiagramsAsCode: true,
 
     // Attachments
@@ -73,7 +73,7 @@ export const EXPORT_PRESETS: Record<ExportPreset, Partial<ObsidianExportSettings
         includeDiagramSource: true,
         includeDiagramPreview: true,
         convertDiagrams: true,
-        diagramTargetFormat: 'mermaid',
+        diagramTargetFormat: 'wikilink',
         embedDiagramsAsCode: true,
         includeFrontmatter: true,
         includeConfluenceMetadata: true,
@@ -102,7 +102,7 @@ export const EXPORT_PRESETS: Record<ExportPreset, Partial<ObsidianExportSettings
         exportDiagrams: true,
         includeDiagramSource: true,
         convertDiagrams: false,
-        diagramTargetFormat: 'original',
+        diagramTargetFormat: 'wikilink',
         includeFrontmatter: true,
         includeConfluenceMetadata: true,
         linkStyle: 'wikilink',

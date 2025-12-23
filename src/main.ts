@@ -112,9 +112,15 @@ async function startExport(): Promise<void> {
             closeModal();
             updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
         } else if (action === 'copy') {
-            // Build Markdown
+            // Build Markdown with diagram conversion based on user settings
             updateModalProgress(0, 0, 'convert');
-            const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+            const result = await buildMarkdownDocument(
+                pagesContent,
+                rootTree,
+                rootTitle,
+                settings,
+                obsidianSettings.diagramTargetFormat
+            );
 
             const success = await copyToClipboard(result);
             if (success) {
@@ -130,9 +136,15 @@ async function startExport(): Promise<void> {
             closeModal();
             updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
         } else {
-            // Standard markdown download
+            // Standard markdown download with diagram conversion based on user settings
             updateModalProgress(0, 0, 'convert');
-            const result = buildMarkdownDocument(pagesContent, rootTree, rootTitle, settings);
+            const result = await buildMarkdownDocument(
+                pagesContent,
+                rootTree,
+                rootTitle,
+                settings,
+                obsidianSettings.diagramTargetFormat
+            );
 
             downloadMarkdown(result);
             closeModal();

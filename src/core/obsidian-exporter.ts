@@ -17,8 +17,8 @@ import {
     fetchPageAttachments,
     identifyDiagram,
     isImageAttachment,
-    exportDiagram,
     exportImageAttachment,
+    extractDiagramReferences,
 } from './attachment-handler';
 
 export type ProgressCallback = (phase: string, current: number, total: number) => void;
@@ -282,50 +282,59 @@ export async function createObsidianVault(
         for (const page of pages) {
             onProgress?.('Downloading attachments...', processedPages, totalPages);
 
-            const attachments = await fetchPageAttachments(page.id);
+            // Extract diagram references from HTML to get actual names used in markdown
+            const diagramRefs = extractDiagramReferences(page.htmlContent);
 
-            for (const att of attachments) {
-                // Check size limit
-                if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
-                    continue;
+            // Download diagrams directly from HTML (they may not be in attachments API)
+            if (settings.exportDiagrams && diagramRefs.length > 0) {
+                for (const ref of diagramRefs) {
+                    try {
+                        // Build render URL for diagram
+                        const baseUrl = getBaseUrl();
+                        const format = ref.type === 'gliffy' ? 'gliffy' : 'drawio';
+                        const renderUrl = `${baseUrl}/plugins/servlet/${format}/export?pageId=${page.id}&diagramName=${encodeURIComponent(ref.name)}&format=png`;
+
+                        // Download PNG preview
+                        const response = await fetch(renderUrl, { credentials: 'include' });
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            attachmentFiles.push({
+                                path: `_attachments/${ref.name}.png`,
+                                blob,
+                            });
+                            diagramCount++;
+                            attachmentCount++;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to download diagram ${ref.name}:`, error);
+                    }
                 }
+            }
 
-                const diagram = identifyDiagram(att);
+            // Download regular attachments
+            if (settings.downloadAttachments) {
+                const attachments = await fetchPageAttachments(page.id);
 
-                if (diagram && settings.exportDiagrams) {
-                    // Export diagram
-                    const exported = await exportDiagram(diagram, {
-                        includeSource: settings.includeDiagramSource,
-                        includePreview: settings.includeDiagramPreview,
-                        scale: settings.diagramPreviewScale,
-                    });
-
-                    if (exported.preview) {
-                        attachmentFiles.push({
-                            path: `_attachments/page-${page.id}/${exported.name}.png`,
-                            blob: exported.preview,
-                        });
-                        attachmentCount++;
+                for (const att of attachments) {
+                    // Check size limit
+                    if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
+                        continue;
                     }
 
-                    if (exported.source) {
-                        const ext = exported.type === 'drawio' ? 'drawio' : 'gliffy';
-                        attachmentFiles.push({
-                            path: `_attachments/page-${page.id}/${exported.name}.${ext}`,
-                            blob: exported.source,
-                        });
-                    }
+                    // Skip diagrams (already handled above)
+                    const diagram = identifyDiagram(att);
+                    if (diagram) continue;
 
-                    diagramCount++;
-                } else if (isImageAttachment(att) && settings.downloadAttachments && settings.includeImages) {
-                    // Export regular image
-                    const exported = await exportImageAttachment(att);
-                    if (exported) {
-                        attachmentFiles.push({
-                            path: `_attachments/page-${page.id}/${exported.filename}`,
-                            blob: exported.blob,
-                        });
-                        attachmentCount++;
+                    // Export regular images
+                    if (isImageAttachment(att) && settings.includeImages) {
+                        const exported = await exportImageAttachment(att);
+                        if (exported) {
+                            attachmentFiles.push({
+                                path: `_attachments/${exported.filename}`,
+                                blob: exported.blob,
+                            });
+                            attachmentCount++;
+                        }
                     }
                 }
             }

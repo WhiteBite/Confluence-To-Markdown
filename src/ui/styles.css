@@ -68,6 +68,37 @@
     animation: slideUp 0.25s ease;
 }
 
+/* Responsive modal sizing */
+@media (max-width: 768px) {
+    #md-export-modal {
+        padding: 12px;
+    }
+
+    .md-modal-content {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: var(--md-radius);
+    }
+}
+
+@media (max-width: 480px) {
+    #md-export-modal {
+        padding: 8px;
+    }
+
+    .md-modal-content {
+        max-height: 98vh;
+        border-radius: 8px;
+    }
+}
+
+/* Responsive height for very short screens */
+@media (max-height: 600px) {
+    .md-modal-content {
+        max-height: 98vh;
+    }
+}
+
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -97,6 +128,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.md-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .md-modal-header h3 {
@@ -131,7 +168,7 @@
 }
 
 .md-close-btn {
-    margin: -4px -8px 0 0;
+    margin: 0;
 }
 
 /* Icon Button */
@@ -922,28 +959,27 @@
    Dark Theme Support
    ======================================== */
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --md-primary: #4C9AFF;
-        --md-primary-hover: #79B8FF;
-        --md-primary-light: #1C2B41;
-        --md-success: #36B37E;
-        --md-success-light: #1C3829;
-        --md-danger: #FF5630;
-        --md-danger-light: #3D1F1F;
-        --md-warning: #FFAB00;
-        --md-text: #E6E6E6;
-        --md-text-subtle: #A6A6A6;
-        --md-text-muted: #6B6B6B;
-        --md-bg: #1E1E1E;
-        --md-bg-subtle: #252526;
-        --md-bg-hover: #2D2D2D;
-        --md-border: #3C3C3C;
-    }
+/* Dark theme via data attribute (manual toggle) */
+#md-export-modal[data-theme="dark"] {
+    --md-primary: #4C9AFF;
+    --md-primary-hover: #79B8FF;
+    --md-primary-light: #1C2B41;
+    --md-success: #36B37E;
+    --md-success-light: #1C3829;
+    --md-danger: #FF5630;
+    --md-danger-light: #3D1F1F;
+    --md-warning: #FFAB00;
+    --md-text: #E6E6E6;
+    --md-text-subtle: #A6A6A6;
+    --md-text-muted: #6B6B6B;
+    --md-bg: #1E1E1E;
+    --md-bg-subtle: #252526;
+    --md-bg-hover: #2D2D2D;
+    --md-border: #3C3C3C;
+}
 
-    #md-export-modal {
-        background-color: rgba(0, 0, 0, 0.7);
-    }
+#md-export-modal[data-theme="dark"] {
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 /* ========================================
@@ -1279,4 +1315,308 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--md-text);
+}
+
+
+/* ============================================================================
+   RESPONSIVE STYLES
+   ============================================================================ */
+
+/* Tablet and smaller */
+@media (max-width: 768px) {
+
+    /* Header adjustments */
+    .md-modal-header {
+        padding: 16px 16px 12px;
+    }
+
+    .md-modal-header h3 {
+        font-size: 18px;
+    }
+
+    .md-modal-header .subtitle {
+        font-size: 13px;
+    }
+
+    /* Controls */
+    .md-controls {
+        padding: 12px 16px;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .md-btn-sm {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    /* Tree container */
+    .md-tree-container {
+        padding: 12px 16px;
+    }
+
+    /* Settings panels */
+    .md-settings-panel {
+        margin: 0 16px 12px;
+    }
+
+    .md-settings-toggle {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .md-settings-content {
+        padding: 12px;
+    }
+
+    /* Footer */
+    .md-modal-footer {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .md-footer-left,
+    .md-footer-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .md-shortcuts-hint {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .md-footer-right {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .md-footer-right .md-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+
+    /* Header */
+    .md-modal-header {
+        padding: 12px 12px 10px;
+    }
+
+    .md-modal-header h3 {
+        font-size: 16px;
+    }
+
+    .md-modal-header .subtitle {
+        font-size: 12px;
+        flex-wrap: wrap;
+    }
+
+    .md-page-count {
+        font-size: 11px;
+        padding: 1px 6px;
+    }
+
+    /* Search bar */
+    .md-search-bar {
+        margin: 8px 12px;
+    }
+
+    .md-search-bar input {
+        font-size: 14px;
+        padding: 8px 32px 8px 36px;
+    }
+
+    /* Controls */
+    .md-controls {
+        padding: 8px 12px;
+        gap: 4px;
+    }
+
+    .md-btn-sm {
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+
+    .md-filter-chip {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .md-selection-count {
+        font-size: 11px;
+    }
+
+    /* Stats section */
+    .md-stats-section {
+        margin: 8px 12px;
+        padding: 10px;
+    }
+
+    .md-stats-grid {
+        gap: 8px;
+    }
+
+    .md-stat-item {
+        padding: 8px;
+    }
+
+    .md-stat-icon {
+        font-size: 18px;
+    }
+
+    .md-stat-value {
+        font-size: 16px;
+    }
+
+    .md-stat-label {
+        font-size: 10px;
+    }
+
+    /* Tree */
+    .md-tree-container {
+        padding: 8px 12px;
+    }
+
+    .md-tree-item {
+        padding: 6px 8px;
+        font-size: 13px;
+    }
+
+    .md-tree-toggler {
+        width: 20px;
+        height: 20px;
+    }
+
+    .md-tree-toggler svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .md-tree-checkbox {
+        width: 16px;
+        height: 16px;
+    }
+
+    .md-tree-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .md-child-count {
+        font-size: 10px;
+        padding: 1px 5px;
+    }
+
+    /* Settings panels */
+    .md-settings-panel {
+        margin: 0 12px 10px;
+    }
+
+    .md-settings-toggle {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .md-settings-content {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .md-checkbox-label {
+        font-size: 12px;
+    }
+
+    .md-option-label {
+        font-size: 11px;
+    }
+
+    .md-radio-group label {
+        font-size: 12px;
+    }
+
+    .md-preset-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    /* Footer */
+    .md-modal-footer {
+        padding: 10px 12px;
+    }
+
+    .md-shortcuts-hint {
+        display: none;
+        /* Hide keyboard shortcuts on mobile */
+    }
+
+    .md-btn {
+        font-size: 13px;
+        padding: 8px 14px;
+    }
+
+    .md-btn-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+    .md-modal-header h3 {
+        font-size: 15px;
+    }
+
+    .md-btn-sm {
+        padding: 4px 6px;
+        font-size: 10px;
+    }
+
+    .md-tree-item {
+        font-size: 12px;
+    }
+
+    .md-settings-toggle {
+        font-size: 11px;
+    }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .md-modal-content {
+        max-height: 98vh;
+    }
+
+    .md-modal-header {
+        padding: 10px 16px 8px;
+    }
+
+    .md-modal-header h3 {
+        font-size: 16px;
+    }
+
+    .md-stats-section {
+        display: none;
+        /* Hide stats on landscape mobile to save space */
+    }
+
+    .md-controls {
+        padding: 8px 16px;
+    }
+
+    .md-tree-container {
+        padding: 8px 16px;
+    }
+
+    .md-modal-footer {
+        padding: 8px 16px;
+    }
+
+    .md-shortcuts-hint {
+        display: none;
+    }
 }
