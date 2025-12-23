@@ -27,3 +27,6 @@ npm-debug.log*
 
 # Temp
 confluence-to-markdown-extension.zip
+
+# Examples (test data, not for repo)
+example/
