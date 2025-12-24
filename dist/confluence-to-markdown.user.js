@@ -17410,6 +17410,10 @@ ${header}${code.trim()}
         htmlEl.setAttribute("data-extracted-diagram-name", name);
       }
       htmlEl.setAttribute("data-diagram-index", String(index));
+      const img = htmlEl.querySelector("img");
+      if (img == null ? void 0 : img.src) {
+        htmlEl.setAttribute("data-original-image-url", img.src);
+      }
       const marker = cleanDoc.createElement("span");
       marker.style.display = "none";
       marker.setAttribute("data-diagram-marker", "true");
@@ -17445,12 +17449,14 @@ ${header}${code.trim()}
   let diagramConvertInstance = null;
   function getTurndown(options) {
     const useObsidian = (options == null ? void 0 : options.useObsidianCallouts) ?? false;
+    const useWikilinks = (options == null ? void 0 : options.useWikilinks) ?? true;
     const convertDiagrams = (options == null ? void 0 : options.convertDiagrams) ?? false;
     const diagramTarget = (options == null ? void 0 : options.diagramTargetFormat) ?? "mermaid";
     const embedAsCode = (options == null ? void 0 : options.embedDiagramsAsCode) ?? true;
     const exportMode = (options == null ? void 0 : options.diagramExportMode) ?? "copy-as-is";
     console.log("[Converter] getTurndown called with options:", {
       useObsidian,
+      useWikilinks,
       convertDiagrams,
       diagramTarget,
       embedAsCode,
@@ -17574,28 +17580,40 @@ ${content}
       replacement: (_content, node) => {
         var _a2, _b2, _c;
         const el = node;
-        console.log("[Draw.io] replacement called with content:", _content);
+        console.log("[Draw.io] replacement called with useWikilinks:", useWikilinks);
         let diagramName = el.getAttribute("data-extracted-diagram-name") || el.dataset.diagramName || el.getAttribute("data-diagram-name") || "";
         if (!diagramName) {
           const index = el.getAttribute("data-diagram-index");
           diagramName = index ? `diagram-${parseInt(index) + 1}` : "diagram";
         }
+        const originalImageUrl = el.getAttribute("data-original-image-url") || "";
         console.log("[Draw.io] Processing diagram:", {
           name: diagramName,
           exportMode,
+          useWikilinks,
+          originalImageUrl,
           hasElement: !!el,
           classList: Array.from(el.classList)
         });
-        if (exportMode === "copy-as-is") {
-          console.log("[Draw.io] Mode: copy-as-is, returning wikilink");
-          const result = `
-![[_attachments/${diagramName}.png]]
+        const formatDiagramImage = (name, imageUrl) => {
+          if (useWikilinks) {
+            return `
+![[_attachments/${name}.png]]
 
-%% Editable source: ${diagramName}.drawio %%
+%% Editable source: ${name}.drawio %%
 
 `;
-          console.log("[Draw.io] Returning:", result);
-          return result;
+          } else {
+            const url = imageUrl || `${name}.png`;
+            return `
+![${name}](${url})
+
+`;
+          }
+        };
+        if (exportMode === "copy-as-is") {
+          console.log("[Draw.io] Mode: copy-as-is");
+          return formatDiagramImage(diagramName, originalImageUrl);
         }
         if (exportMode === "svg-preview") {
           console.log("[Draw.io] Mode: svg-preview");
@@ -17624,13 +17642,8 @@ ${generateDiagramWithSvgPreview(processed, {
 `;
             }
           }
-          console.log("[Draw.io] SVG preview failed, returning wikilink");
-          return `
-![[_attachments/${diagramName}.png]]
-
-%% Editable source: ${diagramName}.drawio %%
-
-`;
+          console.log("[Draw.io] SVG preview failed, returning fallback");
+          return formatDiagramImage(diagramName, originalImageUrl);
         }
         if (exportMode === "convert") {
           console.log("[Draw.io] Mode: convert to", diagramTarget);
@@ -17661,22 +17674,25 @@ ${generateMermaidCodeBlock(processed.code, diagramName)}
 `;
             }
           }
-          console.log("[Draw.io] Convert failed, returning wikilink");
-          return `
+          console.log("[Draw.io] Convert failed, returning fallback");
+          if (useWikilinks) {
+            return `
 ![[_attachments/${diagramName}.png]]
 
 %% Editable source: ${diagramName}.drawio %%
 %% Note: Conversion requires Download (Obsidian vault) mode to fetch diagram source %%
 
 `;
-        }
-        console.log("[Draw.io] No mode matched, returning wikilink");
-        return `
-![[_attachments/${diagramName}.png]]
-
-%% Editable source: ${diagramName}.drawio %%
+          } else {
+            const url = originalImageUrl || `${diagramName}.png`;
+            return `
+![${diagramName}](${url})
 
 `;
+          }
+        }
+        console.log("[Draw.io] No mode matched, returning fallback");
+        return formatDiagramImage(diagramName, originalImageUrl);
       }
     });
     instance.addRule("gliffyMacro", {
@@ -17687,10 +17703,19 @@ ${generateMermaidCodeBlock(processed.code, diagramName)}
       replacement: (_content, node) => {
         const el = node;
         const diagramName = el.dataset.diagramName || el.getAttribute("data-diagram-name") || "diagram";
-        return `
+        const originalImageUrl = el.getAttribute("data-original-image-url") || "";
+        if (useWikilinks) {
+          return `
 ![[_attachments/${diagramName}.png]]
 
 `;
+        } else {
+          const url = originalImageUrl || `${diagramName}.png`;
+          return `
+![${diagramName}](${url})
+
+`;
+        }
       }
     });
     instance.addRule("plantumlMacro", {
@@ -17830,7 +17855,7 @@ ${code}
       },
       replacement: () => ""
     });
-    if (useObsidian) {
+    if (useWikilinks) {
       instance.addRule("obsidianImages", {
         filter: "img",
         replacement: (_content, node) => {
@@ -17860,6 +17885,21 @@ ${code}
           return `
 ![[_attachments/${filename}]]
 `;
+        }
+      });
+    } else {
+      instance.addRule("standardImages", {
+        filter: "img",
+        replacement: (_content, node) => {
+          const img = node;
+          const src = img.getAttribute("src") || "";
+          const alt = img.getAttribute("alt") || "image";
+          if (src) {
+            return `
+![${alt}](${src})
+`;
+          }
+          return "";
         }
       });
     }
@@ -18300,7 +18340,9 @@ ${converted.output}
         let markdown = convertToMarkdown(sanitizedHtml, {
           diagramExportMode,
           diagramTargetFormat: diagramFormat,
-          embedDiagramsAsCode: true
+          embedDiagramsAsCode: true,
+          useWikilinks: false
+          // Single file export uses standard markdown image syntax
         });
         markdown = await convertDiagramsInMarkdown(markdown, page.id, diagramFormat);
         lines.push(markdown);

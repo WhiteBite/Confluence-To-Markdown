@@ -18,6 +18,8 @@ let diagramConvertInstance: TurndownService | null = null;
 
 export interface ConvertOptions {
     useObsidianCallouts?: boolean;
+    /** Use Obsidian wikilinks format for images (![[file]]) vs standard markdown (![alt](url)) */
+    useWikilinks?: boolean;
     /** Enable diagram conversion */
     convertDiagrams?: boolean;
     /** Target format for diagrams */
@@ -33,6 +35,7 @@ export interface ConvertOptions {
 /** Get configured Turndown instance */
 function getTurndown(options?: ConvertOptions): TurndownService {
     const useObsidian = options?.useObsidianCallouts ?? false;
+    const useWikilinks = options?.useWikilinks ?? true; // Default to wikilinks for backward compatibility
     const convertDiagrams = options?.convertDiagrams ?? false;
     const diagramTarget = options?.diagramTargetFormat ?? 'mermaid';
     const embedAsCode = options?.embedDiagramsAsCode ?? true;
@@ -40,6 +43,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
 
     console.log('[Converter] getTurndown called with options:', {
         useObsidian,
+        useWikilinks,
         convertDiagrams,
         diagramTarget,
         embedAsCode,
@@ -196,7 +200,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
         replacement: (_content, node) => {
             const el = node as HTMLElement;
 
-            console.log('[Draw.io] replacement called with content:', _content);
+            console.log('[Draw.io] replacement called with useWikilinks:', useWikilinks);
 
             // Get diagram name - prefer extracted name (set before script removal)
             let diagramName = el.getAttribute('data-extracted-diagram-name') ||
@@ -210,19 +214,33 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                 diagramName = index ? `diagram-${parseInt(index) + 1}` : 'diagram';
             }
 
+            // Get original image URL from data attribute (set during sanitization)
+            const originalImageUrl = el.getAttribute('data-original-image-url') || '';
+
             console.log('[Draw.io] Processing diagram:', {
                 name: diagramName,
                 exportMode,
+                useWikilinks,
+                originalImageUrl,
                 hasElement: !!el,
                 classList: Array.from(el.classList),
             });
 
-            // Mode 1: Copy as-is (default) - always return wikilink with _attachments path
+            // Helper function to format diagram output based on useWikilinks setting
+            const formatDiagramImage = (name: string, imageUrl?: string): string => {
+                if (useWikilinks) {
+                    return `\n![[_attachments/${name}.png]]\n\n%% Editable source: ${name}.drawio %%\n\n`;
+                } else {
+                    // Standard markdown - use original URL if available, otherwise just filename
+                    const url = imageUrl || `${name}.png`;
+                    return `\n![${name}](${url})\n\n`;
+                }
+            };
+
+            // Mode 1: Copy as-is (default)
             if (exportMode === 'copy-as-is') {
-                console.log('[Draw.io] Mode: copy-as-is, returning wikilink');
-                const result = `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
-                console.log('[Draw.io] Returning:', result);
-                return result;
+                console.log('[Draw.io] Mode: copy-as-is');
+                return formatDiagramImage(diagramName, originalImageUrl);
             }
 
             // Mode 2: SVG preview + source
@@ -253,9 +271,9 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                     }
                 }
 
-                // Fallback: wikilink with _attachments path
-                console.log('[Draw.io] SVG preview failed, returning wikilink');
-                return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
+                // Fallback
+                console.log('[Draw.io] SVG preview failed, returning fallback');
+                return formatDiagramImage(diagramName, originalImageUrl);
             }
 
             // Mode 3: Convert to target format
@@ -289,14 +307,19 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                     }
                 }
 
-                // Fallback: wikilink with _attachments path (conversion requires downloading .drawio file from server)
-                console.log('[Draw.io] Convert failed, returning wikilink');
-                return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n%% Note: Conversion requires Download (Obsidian vault) mode to fetch diagram source %%\n\n`;
+                // Fallback (conversion requires downloading .drawio file from server)
+                console.log('[Draw.io] Convert failed, returning fallback');
+                if (useWikilinks) {
+                    return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n%% Note: Conversion requires Download (Obsidian vault) mode to fetch diagram source %%\n\n`;
+                } else {
+                    const url = originalImageUrl || `${diagramName}.png`;
+                    return `\n![${diagramName}](${url})\n\n`;
+                }
             }
 
-            // Default fallback with _attachments path
-            console.log('[Draw.io] No mode matched, returning wikilink');
-            return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
+            // Default fallback
+            console.log('[Draw.io] No mode matched, returning fallback');
+            return formatDiagramImage(diagramName, originalImageUrl);
         },
     });
 
@@ -315,9 +338,15 @@ function getTurndown(options?: ConvertOptions): TurndownService {
             const diagramName = el.dataset.diagramName ||
                 el.getAttribute('data-diagram-name') ||
                 'diagram';
+            const originalImageUrl = el.getAttribute('data-original-image-url') || '';
 
-            // Gliffy conversion not yet supported, use PNG fallback with _attachments path
-            return `\n![[_attachments/${diagramName}.png]]\n\n`;
+            // Gliffy conversion not yet supported, use PNG fallback
+            if (useWikilinks) {
+                return `\n![[_attachments/${diagramName}.png]]\n\n`;
+            } else {
+                const url = originalImageUrl || `${diagramName}.png`;
+                return `\n![${diagramName}](${url})\n\n`;
+            }
         },
     });
 
@@ -452,8 +481,8 @@ function getTurndown(options?: ConvertOptions): TurndownService {
         replacement: () => '',
     });
 
-    // Rule: Images - convert to Obsidian wikilinks with _attachments path
-    if (useObsidian) {
+    // Rule: Images - convert to Obsidian wikilinks or standard markdown
+    if (useWikilinks) {
         instance.addRule('obsidianImages', {
             filter: 'img',
             replacement: (_content, node) => {
@@ -487,6 +516,22 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                     return `\n![[_attachments/${filename}|${alt}]]\n`;
                 }
                 return `\n![[_attachments/${filename}]]\n`;
+            },
+        });
+    } else {
+        // Standard markdown images - keep original URL
+        instance.addRule('standardImages', {
+            filter: 'img',
+            replacement: (_content, node) => {
+                const img = node as HTMLImageElement;
+                const src = img.getAttribute('src') || '';
+                const alt = img.getAttribute('alt') || 'image';
+
+                // Keep original URL for single file export
+                if (src) {
+                    return `\n![${alt}](${src})\n`;
+                }
+                return '';
             },
         });
     }

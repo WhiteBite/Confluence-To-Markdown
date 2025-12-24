@@ -211,6 +211,12 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
         }
         htmlEl.setAttribute('data-diagram-index', String(index));
 
+        // Extract and preserve original image URL for single file export
+        const img = htmlEl.querySelector('img');
+        if (img?.src) {
+            htmlEl.setAttribute('data-original-image-url', img.src);
+        }
+
         // Add a text marker that Turndown will see (hidden from display)
         // This ensures Turndown doesn't skip empty diagram containers
         const marker = cleanDoc.createElement('span');

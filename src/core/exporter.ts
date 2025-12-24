@@ -260,10 +260,12 @@ export async function buildMarkdownDocument(
             }, page.id);
 
             // Convert to markdown with diagram export mode
+            // Single file export uses standard markdown (no wikilinks)
             let markdown = convertToMarkdown(sanitizedHtml, {
                 diagramExportMode,
                 diagramTargetFormat: diagramFormat,
                 embedDiagramsAsCode: true,
+                useWikilinks: false, // Single file export uses standard markdown image syntax
             });
 
             // Convert diagrams based on format setting
