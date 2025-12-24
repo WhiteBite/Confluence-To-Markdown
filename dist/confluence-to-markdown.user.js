@@ -7,8 +7,8 @@
 // @icon         https://www.atlassian.com/favicon.ico
 // @homepage     https://github.com/WhiteBite/Confluence-To-Markdown
 // @supportURL   https://github.com/WhiteBite/Confluence-To-Markdown/issues
-// @downloadURL  http://localhost:8765/confluence-to-markdown.user.js
-// @updateURL    http://localhost:8765/confluence-to-markdown.user.js
+// @downloadURL  https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js
+// @updateURL    https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js
 // @match        https://*.atlassian.net/wiki/*
 // @match        https://*/wiki/*
 // @match        https://*/display/*
