@@ -36,7 +36,31 @@ export function loadObsidianSettings(): ObsidianExportSettings {
     try {
         const stored = localStorage.getItem(STORAGE_KEYS.OBSIDIAN_SETTINGS);
         if (stored) {
-            return { ...DEFAULT_OBSIDIAN_SETTINGS, ...JSON.parse(stored) };
+            const storedData = JSON.parse(stored);
+            const settings = { ...DEFAULT_OBSIDIAN_SETTINGS, ...storedData };
+
+            // Check if migration is needed (old settings without diagramExportMode)
+            const needsMigration = !storedData.diagramExportMode && storedData.convertDiagrams !== undefined;
+
+            if (needsMigration) {
+                // Migrate old convertDiagrams setting to diagramExportMode
+                if (storedData.convertDiagrams === true) {
+                    settings.diagramExportMode = 'convert';
+                    console.log('[Storage] Migrated convertDiagrams=true → diagramExportMode=convert');
+                } else {
+                    settings.diagramExportMode = 'copy-as-is';
+                    console.log('[Storage] Migrated convertDiagrams=false → diagramExportMode=copy-as-is');
+                }
+
+                // Reset convertDiagrams to false (deprecated)
+                settings.convertDiagrams = false;
+
+                // Save migrated settings back to localStorage
+                saveObsidianSettings(settings);
+                console.log('[Storage] Migration saved to localStorage');
+            }
+
+            return settings;
         }
     } catch (e) {
         console.warn('Failed to load Obsidian settings:', e);

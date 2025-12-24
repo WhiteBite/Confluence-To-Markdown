@@ -124,3 +124,47 @@ export async function fetchChildren(pageId: string): Promise<ConfluencePage[]> {
 
     return children;
 }
+
+/** Page with ancestors from CQL search */
+export interface PageWithAncestors extends ConfluencePage {
+    ancestors?: Array<{ id: string; title: string }>;
+}
+
+/** CQL search response */
+interface CqlSearchResponse {
+    results: PageWithAncestors[];
+    start: number;
+    limit: number;
+    size: number;
+    _links?: { next?: string };
+}
+
+/** Fetch all descendants using CQL search (much faster than recursive) */
+export async function fetchAllDescendants(rootPageId: string): Promise<PageWithAncestors[]> {
+    const baseUrl = getBaseUrl();
+    const descendants: PageWithAncestors[] = [];
+    let start = 0;
+    const limit = 200; // CQL supports larger limits
+    let hasMore = true;
+
+    while (hasMore) {
+        const cql = encodeURIComponent(`ancestor=${rootPageId}`);
+        const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors&limit=${limit}&start=${start}`;
+
+        try {
+            const response = await fetchJson<CqlSearchResponse>(url);
+
+            if (response.results?.length) {
+                descendants.push(...response.results);
+            }
+
+            hasMore = response.results?.length === limit;
+            start += limit;
+        } catch (error) {
+            console.error('[API] CQL search failed:', error);
+            throw error;
+        }
+    }
+
+    return descendants;
+}

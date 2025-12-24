@@ -138,8 +138,49 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
     if (DEBUG) console.group(`Sanitize HTML for Page ID: ${pageId || 'N/A'}`);
 
+    // Extract only main content, ignore Confluence UI
+    const contentSelectors = [
+        '.wiki-content',           // Main Confluence content
+        '#main-content',           // Alternative selector
+        '.page-content',           // Another variant
+        '.confluence-content',     // Server/DC format
+    ];
+
+    let contentElement: Element | null = null;
+    for (const selector of contentSelectors) {
+        contentElement = doc.querySelector(selector);
+        if (contentElement) {
+            if (DEBUG) console.log(`Found content using selector: ${selector}`);
+            break;
+        }
+    }
+
+    // If no content container found, work with body but remove UI elements
+    if (!contentElement) {
+        if (DEBUG) console.warn('No content container found, using body with cleanup');
+        contentElement = doc.body;
+
+        // Remove Confluence UI elements
+        const uiSelectors = [
+            '#header', '.aui-header', '.aui-nav', '#navigation',
+            '.ia-fixed-sidebar', '.ia-splitter-left', '#breadcrumbs', '.breadcrumbs',
+            '#sidebar', '.ia-secondary-sidebar', '.space-tools-section',
+            '#footer', '.footer', '.aui-footer',
+            '#action-menu-link', '.page-metadata', '.page-metadata-banner',
+            '.aui-page-panel-nav', '.aui-page-header', '.aui-page-header-inner',
+        ];
+
+        uiSelectors.forEach(selector => {
+            contentElement?.querySelectorAll(selector).forEach(el => el.remove());
+        });
+    }
+
+    // Create a new document with only the content
+    const cleanDoc = parser.parseFromString('<html><body></body></html>', 'text/html');
+    cleanDoc.body.innerHTML = contentElement.innerHTML;
+
     // Expand collapsed content
-    doc.querySelectorAll('.aui-expander-content, .expand-content').forEach((el) => {
+    cleanDoc.querySelectorAll('.aui-expander-content, .expand-content').forEach((el) => {
         (el as HTMLElement).style.display = 'block';
         el.removeAttribute('aria-hidden');
         const expander = el.closest('.aui-expander-container, .expand-container');
@@ -150,7 +191,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
     });
 
     // IMPORTANT: Extract diagram names from scripts BEFORE removing scripts
-    doc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
+    cleanDoc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
         const htmlEl = el as HTMLElement;
 
         // Check if already has name
@@ -172,7 +213,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
         // Add a text marker that Turndown will see (hidden from display)
         // This ensures Turndown doesn't skip empty diagram containers
-        const marker = doc.createElement('span');
+        const marker = cleanDoc.createElement('span');
         marker.style.display = 'none';
         marker.setAttribute('data-diagram-marker', 'true');
         marker.textContent = `DIAGRAM:${name || `diagram-${index + 1}`}`;
@@ -181,24 +222,24 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
     // Remove base selectors (including scripts - but diagram names are now preserved)
     BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
-        doc.querySelectorAll(selector).forEach((el) => el.remove());
+        cleanDoc.querySelectorAll(selector).forEach((el) => el.remove());
     });
 
     // Conditionally remove comments
     if (!options.includeComments) {
-        doc.querySelectorAll('#comments-section, .comment-thread, .inline-comment').forEach((el) => {
+        cleanDoc.querySelectorAll('#comments-section, .comment-thread, .inline-comment').forEach((el) => {
             el.remove();
         });
     }
 
     // Conditionally remove images
     if (!options.includeImages) {
-        doc.querySelectorAll('img, .confluence-embedded-image, .image-wrap').forEach((el) => {
+        cleanDoc.querySelectorAll('img, .confluence-embedded-image, .image-wrap').forEach((el) => {
             el.remove();
         });
     } else {
         // Add alt text to images without it
-        doc.querySelectorAll('img').forEach((img) => {
+        cleanDoc.querySelectorAll('img').forEach((img) => {
             if (!img.alt?.trim()) {
                 const src = img.src || '';
                 const filename = src.split('/').pop()?.split('?')[0] || 'image';
@@ -209,5 +250,5 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
     if (DEBUG) console.groupEnd();
 
-    return doc.body.innerHTML;
+    return cleanDoc.body.innerHTML;
 }

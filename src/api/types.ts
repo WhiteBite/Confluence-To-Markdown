@@ -134,8 +134,10 @@ export interface ObsidianExportSettings {
     includeDiagramSource: boolean;
     includeDiagramPreview: boolean;
     diagramPreviewScale: 1 | 2 | 3;
-    /** Convert diagrams to target format */
+    /** @deprecated Use diagramExportMode instead */
     convertDiagrams: boolean;
+    /** Diagram export mode */
+    diagramExportMode: 'copy-as-is' | 'convert' | 'svg-preview';
     /** Target format for diagram conversion */
     diagramTargetFormat: 'mermaid' | 'drawio-xml' | 'wikilink';
     /** Embed diagrams as code blocks in markdown */

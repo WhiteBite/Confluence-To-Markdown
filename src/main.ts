@@ -5,18 +5,163 @@ import { buildMarkdownDocument, downloadMarkdown, copyToClipboard } from '@/core
 import { exportToPdf } from '@/core/pdf-exporter';
 import { createObsidianVault, downloadVaultZip } from '@/core/obsidian-exporter';
 import {
-    showPageSelectorModal,
-    updateModalProgress,
+    createExportModal,
     closeModal,
-    showToast,
-    enableModal,
 } from '@/ui/modal';
+import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import { createButton, createStatus, updateStatus, setButtonLoading } from '@/ui/components';
 import { getCurrentPageId, getErrorMessage } from '@/utils/helpers';
 import { getCachedTree, setCachedTree, clearCachedTree } from '@/storage/storage';
 import type { PageTreeNode } from '@/api/types';
 
 let exportButton: HTMLButtonElement | null = null;
+
+// ============================================================================
+// Action Handlers
+// ============================================================================
+
+/**
+ * Handle copy action
+ */
+async function handleCopy(
+    controller: ModalController,
+    ctx: ModalContext,
+    rootTree: PageTreeNode,
+    rootTitle: string
+): Promise<void> {
+    try {
+        console.log('[Main] Copy action started');
+        controller.showProgress('content', 0, ctx.selectedIds.length);
+
+        const pagesContent = await fetchPagesContent(
+            ctx.selectedIds,
+            ctx.settings,
+            (completed, total, phase) => controller.showProgress(phase, completed, total)
+        );
+
+        controller.showProgress('convert', 0, 0);
+
+        let diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink';
+        if (ctx.obsidianSettings.diagramExportMode === 'convert') {
+            diagramFormat = ctx.obsidianSettings.diagramTargetFormat;
+        }
+
+        const result = await buildMarkdownDocument(
+            pagesContent,
+            rootTree,
+            rootTitle,
+            ctx.settings,
+            diagramFormat,
+            ctx.obsidianSettings.diagramExportMode
+        );
+
+        const success = await copyToClipboard(result);
+
+        if (success) {
+            controller.showToast('Copied to clipboard!');
+            updateStatus(`Copied ${result.pageCount} pages`);
+        } else {
+            throw new Error('Failed to copy to clipboard');
+        }
+    } catch (error) {
+        console.error('[Main] Copy failed:', error);
+        controller.showToast('Copy failed!');
+        throw error;
+    }
+}
+
+/**
+ * Handle download action
+ */
+async function handleDownload(
+    controller: ModalController,
+    ctx: ModalContext,
+    rootTree: PageTreeNode,
+    rootTitle: string
+): Promise<void> {
+    controller.showProgress('content', 0, ctx.selectedIds.length);
+
+    const pagesContent = await fetchPagesContent(
+        ctx.selectedIds,
+        ctx.settings,
+        (completed, total, phase) => controller.showProgress(phase, completed, total)
+    );
+
+    controller.showProgress('convert', 0, 0);
+
+    let diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink';
+    if (ctx.obsidianSettings.diagramExportMode === 'convert') {
+        diagramFormat = ctx.obsidianSettings.diagramTargetFormat;
+    }
+
+    const result = await buildMarkdownDocument(
+        pagesContent,
+        rootTree,
+        rootTitle,
+        ctx.settings,
+        diagramFormat,
+        ctx.obsidianSettings.diagramExportMode
+    );
+
+    downloadMarkdown(result);
+    updateStatus(`Downloaded ${result.pageCount} pages`);
+}
+
+/**
+ * Handle Obsidian vault export
+ */
+async function handleObsidian(
+    controller: ModalController,
+    ctx: ModalContext,
+    rootTree: PageTreeNode,
+    rootTitle: string
+): Promise<void> {
+    controller.showProgress('content', 0, ctx.selectedIds.length);
+
+    const pagesContent = await fetchPagesContent(
+        ctx.selectedIds,
+        ctx.settings,
+        (completed, total, phase) => controller.showProgress(phase, completed, total)
+    );
+
+    controller.showProgress('vault', 0, 0);
+
+    const vaultResult = await createObsidianVault(
+        pagesContent,
+        rootTree,
+        rootTitle,
+        ctx.obsidianSettings,
+        (phase, current, total) => controller.showProgress(phase, current, total)
+    );
+
+    downloadVaultZip(vaultResult);
+    updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
+}
+
+/**
+ * Handle PDF export
+ */
+async function handlePdf(
+    controller: ModalController,
+    ctx: ModalContext,
+    rootTree: PageTreeNode,
+    rootTitle: string
+): Promise<void> {
+    controller.showProgress('content', 0, ctx.selectedIds.length);
+
+    const pagesContent = await fetchPagesContent(
+        ctx.selectedIds,
+        ctx.settings,
+        (completed, total, phase) => controller.showProgress(phase, completed, total)
+    );
+
+    exportToPdf(pagesContent, rootTree, rootTitle, ctx.settings);
+    updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
+}
+
+// ============================================================================
+// Main Export Process
+// ============================================================================
 
 /** Main export process */
 async function startExport(): Promise<void> {
@@ -55,11 +200,47 @@ async function startExport(): Promise<void> {
             updateStatus('Tree cached');
         }
 
-        // Show modal with refresh callback
-        const { selectedIds, cancelled, action, settings, obsidianSettings } = await showPageSelectorModal(
-            rootTree,
+        // Create modal with callback-based API
+        let controller: ModalController;
+
+        controller = createExportModal({
+            rootNode: rootTree,
             rootTitle,
-            {
+            callbacks: {
+                onAction: async (action: ModalAction, ctx: ModalContext) => {
+                    try {
+                        console.log('[Main] Received action:', action);
+                        console.log('[Main] ctx.obsidianSettings.exportFormat:', ctx.obsidianSettings.exportFormat);
+
+                        switch (action) {
+                            case 'copy':
+                                await handleCopy(controller, ctx, rootTree, rootTitle);
+                                // Stay open for more actions
+                                controller.setState('ready');
+                                break;
+
+                            case 'download':
+                                await handleDownload(controller, ctx, rootTree, rootTitle);
+                                controller.close();
+                                break;
+
+                            case 'obsidian':
+                                await handleObsidian(controller, ctx, rootTree, rootTitle);
+                                controller.close();
+                                break;
+
+                            case 'pdf':
+                                await handlePdf(controller, ctx, rootTree, rootTitle);
+                                controller.close();
+                                break;
+                        }
+                    } catch (error) {
+                        console.error(`[Main] ${action} failed:`, error);
+                        alert(`Export failed: ${getErrorMessage(error)}`);
+                        controller.setState('ready');
+                    }
+                },
+
                 onRefresh: async () => {
                     updateStatus('Refreshing tree...');
                     clearCachedTree(pageId);
@@ -72,84 +253,13 @@ async function startExport(): Promise<void> {
                     updateStatus('Tree refreshed');
                     return newTree;
                 },
-            }
-        );
 
-        if (cancelled) {
-            updateStatus('Cancelled');
-            return;
-        }
-
-        if (selectedIds.length === 0) {
-            closeModal();
-            updateStatus('No pages selected');
-            return;
-        }
-
-        // Fetch content with progress
-        updateModalProgress(0, selectedIds.length, 'content');
-
-        const pagesContent = await fetchPagesContent(selectedIds, settings, (completed, total, phase) => {
-            updateModalProgress(completed, total, phase);
+                onClose: () => {
+                    updateStatus('Closed');
+                },
+            },
         });
 
-        // Handle action
-        if (action === 'obsidian') {
-            // Obsidian vault export
-            updateModalProgress(0, 0, 'Creating Obsidian vault...');
-
-            const vaultResult = await createObsidianVault(
-                pagesContent,
-                rootTree,
-                rootTitle,
-                obsidianSettings,
-                (phase, current, total) => {
-                    updateModalProgress(current, total, phase);
-                }
-            );
-
-            downloadVaultZip(vaultResult);
-            closeModal();
-            updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
-        } else if (action === 'copy') {
-            // Build Markdown with diagram conversion based on user settings
-            updateModalProgress(0, 0, 'convert');
-            const result = await buildMarkdownDocument(
-                pagesContent,
-                rootTree,
-                rootTitle,
-                settings,
-                obsidianSettings.diagramTargetFormat
-            );
-
-            const success = await copyToClipboard(result);
-            if (success) {
-                showToast('Copied to clipboard!');
-                enableModal();
-                updateStatus(`Copied ${result.pageCount} pages`);
-            } else {
-                alert('Failed to copy to clipboard');
-                enableModal();
-            }
-        } else if (action === 'pdf') {
-            exportToPdf(pagesContent, rootTree, rootTitle, settings);
-            closeModal();
-            updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
-        } else {
-            // Standard markdown download with diagram conversion based on user settings
-            updateModalProgress(0, 0, 'convert');
-            const result = await buildMarkdownDocument(
-                pagesContent,
-                rootTree,
-                rootTitle,
-                settings,
-                obsidianSettings.diagramTargetFormat
-            );
-
-            downloadMarkdown(result);
-            closeModal();
-            updateStatus(`Downloaded ${result.pageCount} pages`);
-        }
     } catch (error) {
         console.error('Export error:', error);
         closeModal();
@@ -161,6 +271,10 @@ async function startExport(): Promise<void> {
         }
     }
 }
+
+// ============================================================================
+// UI Setup
+// ============================================================================
 
 /** Add export button to page */
 function addExportButton(): void {

@@ -13,7 +13,7 @@ const DRAWIO_MACRO_HTML = `
   <div id="drawio-macro-content-6ba95dff-04d7-43e1-8899-434ffbb3d3d3" class="geDiagramContainer">
     <svg>...</svg>
     <script type="text/javascript">//<![CDATA[
-      readerOpts.diagramName = decodeURIComponent('%76%73%74%72%2D%63%61%63%68%65%2D%63%6F%6E%63%65%70%74');
+      readerOpts.diagramName = decodeURIComponent('%61%72%63%68%69%74%65%63%74%75%72%65%2D%64%69%61%67%72%61%6D');
     //]]></script>
   </div>
 </div>
@@ -25,6 +25,23 @@ const DRAWIO_SKETCH_HTML = `
     <svg>...</svg>
     <script type="text/javascript">//<![CDATA[
       readerOpts.diagramName = decodeURIComponent('%73%6B%65%74%63%68%2D%64%69%61%67%72%61%6D');
+    //]]></script>
+  </div>
+</div>
+`;
+
+// New format from Confluence Server/DC with loadUrl and imageUrl
+const DRAWIO_LOADURL_FORMAT_HTML = `
+<div class="conf-macro output-block" data-hasbody="false" data-macro-name="drawio" style="display:block;">
+  <div id="drawio-macro-content-6ba95dff-04d7-43e1-8899-434ffbb3d3d3" class="geDiagramContainer">
+    <svg>...</svg>
+    <script type="text/javascript">//<![CDATA[
+      (function() {
+        var readerOpts = {};
+        readerOpts.loadUrl = '' + '/rest/drawio/1.0/diagram/crud/%31/130520250?revision=1';
+        readerOpts.imageUrl = '' + '/download/attachments/130520250/1.png' + '?version=1&api=v2';
+        readerOpts.diagramName = decodeURIComponent('%31');
+      })();
     //]]></script>
   </div>
 </div>
@@ -76,7 +93,7 @@ describe('extractDiagramReferences', () => {
 
       expect(diagrams).toHaveLength(1);
       expect(diagrams[0].type).toBe('drawio');
-      expect(diagrams[0].name).toBe('vstr-cache-concept');
+      expect(diagrams[0].name).toBe('architecture-diagram');
     });
 
     it('should extract draw.io sketch diagram', () => {
@@ -93,6 +110,15 @@ describe('extractDiagramReferences', () => {
 
       expect(diagrams).toHaveLength(1);
       expect(diagrams[0].name).toBe('diagram');
+    });
+
+    it('should extract diagram name from loadUrl format', () => {
+      const diagrams = extractDiagramReferences(DRAWIO_LOADURL_FORMAT_HTML);
+
+      expect(diagrams).toHaveLength(1);
+      expect(diagrams[0].type).toBe('drawio');
+      expect(diagrams[0].name).toBe('1'); // %31 decoded = '1'
+      expect(diagrams[0].imageUrl).toBe('/download/attachments/130520250/1.png');
     });
   });
 
@@ -148,7 +174,7 @@ describe('extractDiagramInfoFromHtml', () => {
     const diagrams = extractDiagramInfoFromHtml(DRAWIO_MACRO_HTML);
 
     expect(diagrams).toHaveLength(1);
-    expect(diagrams[0].name).toBe('vstr-cache-concept');
+    expect(diagrams[0].name).toBe('architecture-diagram');
     expect(diagrams[0].type).toBe('drawio');
   });
 
@@ -175,7 +201,7 @@ describe('sanitizeHtml preserves diagram names', () => {
     expect(sanitized).not.toContain('readerOpts');
 
     // But diagram name should be preserved in data attribute
-    expect(sanitized).toContain('data-extracted-diagram-name="vstr-cache-concept"');
+    expect(sanitized).toContain('data-extracted-diagram-name="architecture-diagram"');
   });
 
   it('should preserve multiple diagram names', () => {
@@ -201,8 +227,8 @@ describe('convertToMarkdown with diagrams', () => {
     const markdown = convertToMarkdown(sanitized);
 
     // Should contain the diagram reference with correct name
-    expect(markdown).toContain('vstr-cache-concept');
-    expect(markdown).toMatch(/!\[\[vstr-cache-concept\.png\]\]/);
+    expect(markdown).toContain('architecture-diagram');
+    expect(markdown).toMatch(/!\[\[architecture-diagram\.png\]\]/);
   });
 
   it('should convert multiple diagrams with correct names', () => {

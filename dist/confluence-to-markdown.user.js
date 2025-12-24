@@ -183,8 +183,92 @@
     }
     return children;
   }
+  async function fetchAllDescendants(rootPageId) {
+    var _a2, _b2;
+    const baseUrl = getBaseUrl();
+    const descendants = [];
+    let start = 0;
+    const limit = 200;
+    let hasMore = true;
+    while (hasMore) {
+      const cql = encodeURIComponent(`ancestor=${rootPageId}`);
+      const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors&limit=${limit}&start=${start}`;
+      try {
+        const response = await fetchJson$1(url);
+        if ((_a2 = response.results) == null ? void 0 : _a2.length) {
+          descendants.push(...response.results);
+        }
+        hasMore = ((_b2 = response.results) == null ? void 0 : _b2.length) === limit;
+        start += limit;
+      } catch (error) {
+        console.error("[API] CQL search failed:", error);
+        throw error;
+      }
+    }
+    return descendants;
+  }
   const TREE_CONCURRENCY = 8;
+  function buildTreeFromDescendants(rootPage, descendants) {
+    const pageMap = /* @__PURE__ */ new Map();
+    const rootNode = {
+      id: rootPage.id,
+      title: rootPage.title,
+      level: 0,
+      parentId: null,
+      children: [],
+      error: false
+    };
+    pageMap.set(rootPage.id, rootNode);
+    for (const page of descendants) {
+      const ancestors = page.ancestors || [];
+      const parentId = ancestors.length > 0 ? ancestors[ancestors.length - 1].id : rootPage.id;
+      const rootIndex = ancestors.findIndex((a) => a.id === rootPage.id);
+      const level = rootIndex >= 0 ? ancestors.length - rootIndex : 1;
+      const node = {
+        id: page.id,
+        title: page.title,
+        level,
+        parentId,
+        children: [],
+        error: false
+      };
+      pageMap.set(page.id, node);
+    }
+    for (const page of descendants) {
+      const node = pageMap.get(page.id);
+      if (!node) continue;
+      const parent = pageMap.get(node.parentId || rootPage.id);
+      if (parent && parent.id !== node.id) {
+        parent.children.push(node);
+      }
+    }
+    function sortChildren(node) {
+      node.children.sort((a, b) => a.title.localeCompare(b.title));
+      node.children.forEach(sortChildren);
+    }
+    sortChildren(rootNode);
+    return rootNode;
+  }
   async function buildPageTree(rootPageId, onStatus) {
+    onStatus == null ? void 0 : onStatus("Loading page tree...");
+    try {
+      const [rootPage, descendants] = await Promise.all([
+        fetchPage(rootPageId),
+        fetchAllDescendants(rootPageId)
+      ]);
+      onStatus == null ? void 0 : onStatus(`Found ${descendants.length + 1} pages`);
+      if (DEBUG) ;
+      return buildTreeFromDescendants(
+        { id: rootPage.id, title: rootPage.title },
+        descendants
+      );
+    } catch (error) {
+      console.warn("[Tree] CQL search failed, falling back to recursive:", error);
+      onStatus == null ? void 0 : onStatus("Scanning pages (slow mode)...");
+      return buildPageTreeRecursive(rootPageId, onStatus);
+    }
+  }
+  async function buildPageTreeRecursive(rootPageId, onStatus) {
     const processedIds = /* @__PURE__ */ new Set();
     let counter = 0;
     async function processNode(pageId, level, parentId) {
@@ -21026,8 +21110,11 @@ ${converted.output}
         saveCurrentSettings(element);
         setState("processing");
         disableModalInteraction(element);
+        console.log("[Modal] Export action:", action);
+        console.log("[Modal] exportFormat:", currentObsidianSettings.exportFormat);
         const isObsidian = currentObsidianSettings.exportFormat === "obsidian" && action === "download";
         const modalAction = isObsidian ? "obsidian" : action;
+        console.log("[Modal] isObsidian:", isObsidian, "→ modalAction:", modalAction);
         const ctx = {
           selectedIds,
           settings: currentSettings,
@@ -21867,6 +21954,8 @@ ${converted.output}
         callbacks: {
           onAction: async (action, ctx) => {
             try {
+              console.log("[Main] Received action:", action);
+              console.log("[Main] ctx.obsidianSettings.exportFormat:", ctx.obsidianSettings.exportFormat);
               switch (action) {
                 case "copy":
                   await handleCopy(controller, ctx, rootTree, rootTitle);

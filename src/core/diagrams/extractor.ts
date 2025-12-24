@@ -22,11 +22,13 @@ export function extractDiagramReferences(html: string): DiagramReference[] {
             el.getAttribute('data-diagram-name') ||
             el.querySelector('img')?.getAttribute('data-diagram-name') ||
             '';
+        let imageUrl: string | undefined;
 
         // Try to extract from script content (Confluence Server/DC format)
         if (!name) {
             const script = el.querySelector('script');
             if (script?.textContent) {
+                // Try diagramName first (older format)
                 const nameMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*decodeURIComponent\(['"]([^'"]+)['"]\)/);
                 if (nameMatch) {
                     try {
@@ -39,11 +41,35 @@ export function extractDiagramReferences(html: string): DiagramReference[] {
                     const simpleMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*['"]([^'"]+)['"]/);
                     if (simpleMatch) name = simpleMatch[1];
                 }
+
+                // Try to extract from loadUrl (newer format: /rest/drawio/1.0/diagram/crud/%31/pageId)
+                if (!name) {
+                    // Format: readerOpts.loadUrl = '' + '/rest/drawio/1.0/diagram/crud/%31/130520250?revision=1';
+                    const loadUrlMatch = script.textContent.match(/readerOpts\.loadUrl\s*=\s*''\s*\+\s*'([^']+)'/);
+                    if (loadUrlMatch) {
+                        const urlPath = loadUrlMatch[1];
+                        const crudMatch = urlPath.match(/\/diagram\/crud\/([^/]+)\//);
+                        if (crudMatch) {
+                            try {
+                                name = decodeURIComponent(crudMatch[1]);
+                            } catch {
+                                name = crudMatch[1];
+                            }
+                        }
+                    }
+                }
+
+                // Extract imageUrl for direct PNG download
+                // Format: readerOpts.imageUrl = '' + '/download/attachments/130520250/1.png' + '?version=1&api=v2';
+                const imageUrlMatch = script.textContent.match(/readerOpts\.imageUrl\s*=\s*''\s*\+\s*'([^']+)'/);
+                if (imageUrlMatch) {
+                    imageUrl = imageUrlMatch[1];
+                }
             }
         }
 
         if (!name) name = 'diagram';
-        diagrams.push({ type: 'drawio', name });
+        diagrams.push({ type: 'drawio', name, imageUrl });
     });
 
     // Gliffy macros

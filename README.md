@@ -15,6 +15,31 @@ Export Confluence pages to clean Markdown for LLM consumption.
 - 🎯 **Selective Export** — Choose specific pages/branches via tree checkboxes
 - 📊 **Progress Feedback** — Real-time progress bar during export
 - 🎨 **Modern UI** — Clean Atlassian-inspired design
+- 📐 **Diagram Export Modes** — Three modes for handling diagrams (copy-as-is, SVG preview, convert)
+
+## Diagram Export Modes
+
+Confluence to Markdown supports three modes for exporting diagrams:
+
+### 1. Copy As-Is (Default)
+Preserves diagrams in their original format without conversion.
+- Draw.io → `.drawio` file reference
+- PlantUML → code block
+- Mermaid → code block
+
+### 2. SVG Preview
+Exports inline SVG preview + original source file.
+- ✅ See diagram preview directly in markdown
+- ✅ Scalable vector graphics
+- ✅ Keep editable source
+
+### 3. Convert
+Converts diagrams to target format (e.g., Mermaid).
+- Draw.io → Mermaid
+- PlantUML → Mermaid
+- Unified format for all diagrams
+
+📖 **[Full Documentation](./DIAGRAM-EXPORT-MODES.md)**
 
 ## Installation
 

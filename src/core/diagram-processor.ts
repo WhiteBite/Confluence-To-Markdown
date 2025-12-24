@@ -9,11 +9,19 @@ import { DEBUG } from '@/config';
 export type DiagramFormat = 'drawio' | 'mermaid' | 'plantuml' | 'gliffy' | 'unknown';
 export type TargetFormat = 'mermaid' | 'drawio' | 'excalidraw' | 'original';
 
+/** Diagram export mode */
+export type DiagramExportMode =
+    | 'copy-as-is'      // Keep original format (drawio → drawio, plantuml → plantuml)
+    | 'convert'         // Convert to target format (drawio → mermaid)
+    | 'svg-preview';    // Export SVG preview + original source
+
 export interface DiagramInfo {
     format: DiagramFormat;
     name: string;
     content: string;
     sourceElement?: Element;
+    /** Rendered SVG (if available from DOM) */
+    renderedSvg?: string;
 }
 
 export interface ProcessedDiagram {
@@ -26,6 +34,8 @@ export interface ProcessedDiagram {
     fileContent?: string;
     /** File extension for saving */
     fileExtension?: string;
+    /** SVG preview content */
+    svgPreview?: string;
     /** PNG preview blob */
     preview?: Blob;
     /** Conversion warnings */
@@ -39,6 +49,8 @@ export interface DiagramProcessorOptions {
     embedAsCodeBlocks: boolean;
     keepOriginalOnError: boolean;
     includePngFallback: boolean;
+    /** Export mode for diagrams */
+    exportMode?: DiagramExportMode;
 }
 
 const DEFAULT_OPTIONS: DiagramProcessorOptions = {
@@ -46,6 +58,7 @@ const DEFAULT_OPTIONS: DiagramProcessorOptions = {
     embedAsCodeBlocks: true,
     keepOriginalOnError: true,
     includePngFallback: true,
+    exportMode: 'copy-as-is',
 };
 
 /**
@@ -102,11 +115,15 @@ export function extractDiagramFromMacro(element: Element): DiagramInfo | null {
             element.querySelector('[data-diagram-content]')?.getAttribute('data-diagram-content') ||
             '';
 
+        // Try to extract rendered SVG from DOM
+        const renderedSvg = extractRenderedSvg(element);
+
         return {
             format: 'drawio',
             name,
             content,
             sourceElement: element,
+            renderedSvg,
         };
     }
 
@@ -127,11 +144,16 @@ export function extractDiagramFromMacro(element: Element): DiagramInfo | null {
     // PlantUML
     if (macroName === 'plantuml' || classList.contains('plantuml-macro')) {
         const content = element.textContent || '';
+
+        // Try to extract rendered SVG
+        const renderedSvg = extractRenderedSvg(element);
+
         return {
             format: 'plantuml',
             name: 'plantuml-diagram',
             content,
             sourceElement: element,
+            renderedSvg,
         };
     }
 
@@ -147,6 +169,42 @@ export function extractDiagramFromMacro(element: Element): DiagramInfo | null {
     }
 
     return null;
+}
+
+/**
+ * Extract rendered SVG from diagram element
+ */
+function extractRenderedSvg(element: Element): string | undefined {
+    // Look for SVG in geDiagramContainer (draw.io)
+    const container = element.querySelector('.geDiagramContainer');
+    if (container) {
+        const svg = container.querySelector('svg');
+        if (svg) {
+            return svg.outerHTML;
+        }
+    }
+
+    // Look for direct SVG child
+    const svg = element.querySelector('svg');
+    if (svg) {
+        return svg.outerHTML;
+    }
+
+    // Look for SVG in img with data-uri
+    const img = element.querySelector('img[src^="data:image/svg"]');
+    if (img) {
+        const src = img.getAttribute('src');
+        if (src?.startsWith('data:image/svg+xml')) {
+            try {
+                const base64Data = src.split(',')[1];
+                return atob(base64Data);
+            } catch {
+                // Failed to decode
+            }
+        }
+    }
+
+    return undefined;
 }
 
 /**
@@ -199,42 +257,67 @@ export function processDiagram(
         targetFormat: opts.targetFormat,
     };
 
-    // If keeping original or format is unknown
-    if (opts.targetFormat === 'original' || info.format === 'unknown') {
+    // Mode 1: Copy as-is (keep original format)
+    if (opts.exportMode === 'copy-as-is') {
         result.fileContent = info.content;
         result.fileExtension = getFileExtension(info.format);
         return result;
     }
 
-    // Try conversion
-    if (info.content) {
-        const converted = convertDiagram(info.content, info.format, opts.targetFormat);
-
-        if (converted) {
-            result.code = converted.output;
-            result.warnings = converted.warnings;
-
-            if (opts.targetFormat === 'mermaid' && opts.embedAsCodeBlocks) {
-                // Will be embedded as code block in markdown
-                result.code = converted.output;
-            } else {
-                // Save as file
-                result.fileContent = converted.output;
-                result.fileExtension = getFileExtension(opts.targetFormat);
-            }
-        } else if (opts.keepOriginalOnError) {
-            // Conversion failed, keep original
-            result.fileContent = info.content;
-            result.fileExtension = getFileExtension(info.format);
-            result.error = 'Conversion failed, keeping original format';
-        } else {
-            result.error = 'Conversion failed';
+    // Mode 2: SVG preview + original source
+    if (opts.exportMode === 'svg-preview') {
+        if (info.renderedSvg) {
+            result.svgPreview = info.renderedSvg;
         }
-    } else {
-        // No content available (need to download from attachment)
-        result.error = 'No diagram content available';
+        result.fileContent = info.content;
+        result.fileExtension = getFileExtension(info.format);
+        return result;
     }
 
+    // Mode 3: Convert to target format
+    if (opts.exportMode === 'convert') {
+        // If keeping original or format is unknown
+        if (opts.targetFormat === 'original' || info.format === 'unknown') {
+            result.fileContent = info.content;
+            result.fileExtension = getFileExtension(info.format);
+            return result;
+        }
+
+        // Try conversion
+        if (info.content) {
+            const converted = convertDiagram(info.content, info.format, opts.targetFormat);
+
+            if (converted) {
+                result.code = converted.output;
+                result.warnings = converted.warnings;
+
+                if (opts.targetFormat === 'mermaid' && opts.embedAsCodeBlocks) {
+                    // Will be embedded as code block in markdown
+                    result.code = converted.output;
+                } else {
+                    // Save as file
+                    result.fileContent = converted.output;
+                    result.fileExtension = getFileExtension(opts.targetFormat);
+                }
+            } else if (opts.keepOriginalOnError) {
+                // Conversion failed, keep original
+                result.fileContent = info.content;
+                result.fileExtension = getFileExtension(info.format);
+                result.error = 'Conversion failed, keeping original format';
+            } else {
+                result.error = 'Conversion failed';
+            }
+        } else {
+            // No content available (need to download from attachment)
+            result.error = 'No diagram content available';
+        }
+
+        return result;
+    }
+
+    // Default: copy as-is
+    result.fileContent = info.content;
+    result.fileExtension = getFileExtension(info.format);
     return result;
 }
 
@@ -261,6 +344,42 @@ export function generateDiagramReference(
     const ext = diagram.fileExtension || 'png';
     const filename = `${diagram.name}.${ext}`;
     return `![[${attachmentPath}/${filename}]]`;
+}
+
+/**
+ * Generate markdown with SVG preview and source reference
+ */
+export function generateDiagramWithSvgPreview(
+    diagram: ProcessedDiagram,
+    options: {
+        inlineSvg?: boolean;
+        includeSourceLink?: boolean;
+    } = {}
+): string {
+    const { inlineSvg = true, includeSourceLink = true } = options;
+    const parts: string[] = [];
+
+    // SVG preview
+    if (diagram.svgPreview) {
+        if (inlineSvg) {
+            // Inline SVG in markdown
+            parts.push(`<details open>`);
+            parts.push(`<summary>Preview</summary>\n`);
+            parts.push(diagram.svgPreview);
+            parts.push(`</details>\n`);
+        } else {
+            // Save as separate file
+            parts.push(`![[${diagram.name}.svg]]`);
+        }
+    }
+
+    // Source file reference
+    if (includeSourceLink && diagram.fileExtension) {
+        const sourceExt = diagram.fileExtension;
+        parts.push(`%% Editable source: ${diagram.name}.${sourceExt} %%`);
+    }
+
+    return parts.join('\n');
 }
 
 /**

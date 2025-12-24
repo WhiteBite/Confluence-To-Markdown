@@ -8,6 +8,72 @@ import { convertDrawioToMermaid } from './diagrams';
 import { convert } from '@whitebite/diagram-converter';
 
 /**
+ * Check if mermaid output is empty (just header, no content)
+ * Empty diagrams look like: "flowchart TB" or "flowchart LR" with no nodes/edges
+ */
+function isEmptyMermaidOutput(mermaidCode: string): boolean {
+    const trimmed = mermaidCode.trim();
+
+    // Match empty flowchart patterns: "flowchart TB", "flowchart LR", etc.
+    const emptyFlowchartPattern = /^flowchart\s+(TB|BT|LR|RL|TD)\s*$/;
+    if (emptyFlowchartPattern.test(trimmed)) {
+        return true;
+    }
+
+    // Check if there are any node definitions or edges after header
+    const lines = trimmed.split('\n').slice(1); // Skip header line
+    const hasContent = lines.some(line => {
+        const l = line.trim();
+        // Skip empty lines, comments, and subgraph/end keywords
+        if (!l || l.startsWith('%%') || l === 'end') return false;
+        // Has actual content (node definition or edge)
+        return l.length > 0;
+    });
+
+    return !hasContent;
+}
+
+/**
+ * Check if PlantUML code is valid (not a placeholder or garbage)
+ * Valid PlantUML should have @startuml/@enduml or be a recognizable diagram type
+ */
+function isValidPlantUmlCode(code: string): boolean {
+    const trimmed = code.trim();
+
+    // Must have @startuml or be a known diagram type
+    if (trimmed.includes('@startuml') || trimmed.includes('@startmindmap') ||
+        trimmed.includes('@startwbs') || trimmed.includes('@startgantt') ||
+        trimmed.includes('@startsalt') || trimmed.includes('@startjson') ||
+        trimmed.includes('@startyaml')) {
+        return true;
+    }
+
+    // Check for common PlantUML patterns without explicit start tag
+    // e.g., "A -> B" or "class Foo"
+    const hasArrow = /\w+\s*-+>|<-+\s*\w+/.test(trimmed);
+    const hasClassDef = /^(class|interface|abstract|enum)\s+\w+/m.test(trimmed);
+    const hasUseCaseDef = /^\s*\([^)]+\)\s*$/m.test(trimmed);
+
+    if (hasArrow || hasClassDef || hasUseCaseDef) {
+        return true;
+    }
+
+    // Reject if it looks like placeholder text from Confluence
+    if (trimmed.includes('Welcome to PlantUML') ||
+        trimmed.includes('You can start with') ||
+        trimmed.includes('plantuml.com')) {
+        return false;
+    }
+
+    // Reject if too short or no recognizable structure
+    if (trimmed.length < 10) {
+        return false;
+    }
+
+    return false;
+}
+
+/**
  * Post-process markdown to convert diagram wikilinks to code blocks
  */
 async function convertDiagramsInMarkdown(
@@ -21,21 +87,27 @@ async function convertDiagramsInMarkdown(
 
     let result = markdown;
 
-    // 1. Convert Draw.io wikilinks: ![[name.png]]%% Editable source: name.drawio %%
-    const diagramPattern = /!\[\[([^\]]+)\.png\]\](?:%% Editable source: ([^\s]+)\.drawio %%)?/g;
+    // 1. Convert Draw.io wikilinks: ![[name.png]] followed by %% Editable source: name.drawio %%
+    // Pattern handles newlines between wikilink and comment
+    const diagramPattern = /!\[\[([^\]]+)\.png\]\]\s*(?:\n\s*)*(?:%% Editable source: ([^\s]+)\.drawio %%)?(?:\s*%% Note:[^%]*%%)?/g;
     const conversions: Array<{ original: string; replacement: string }> = [];
     let match: RegExpExecArray | null;
 
     while ((match = diagramPattern.exec(markdown)) !== null) {
         const [fullMatch, diagramName] = match;
 
+        console.log(`[Exporter] Found diagram: ${diagramName}, converting to ${format}`);
+
         if (format === 'mermaid') {
             // Try to convert Draw.io to Mermaid
             const mermaidCode = await convertDrawioToMermaid(pageId, diagramName);
 
             if (mermaidCode) {
+                console.log(`[Exporter] Successfully converted ${diagramName} to Mermaid`);
                 const replacement = `\`\`\`mermaid\n${mermaidCode}\n\`\`\``;
                 conversions.push({ original: fullMatch, replacement });
+            } else {
+                console.log(`[Exporter] Failed to convert ${diagramName}, keeping wikilink`);
             }
         } else if (format === 'drawio-xml') {
             // Try to get Draw.io XML source
@@ -50,6 +122,7 @@ async function convertDiagramsInMarkdown(
                 if (drawioAttachment?.downloadUrl) {
                     const xmlBlob = await downloadAttachment(drawioAttachment.downloadUrl);
                     const xmlText = await xmlBlob.text();
+                    console.log(`[Exporter] Successfully downloaded ${diagramName} XML`);
                     const replacement = `\`\`\`xml\n${xmlText}\n\`\`\``;
                     conversions.push({ original: fullMatch, replacement });
                 }
@@ -70,9 +143,17 @@ async function convertDiagramsInMarkdown(
         const plantumlPattern = /```plantuml\n([\s\S]*?)\n```/g;
 
         result = result.replace(plantumlPattern, (fullMatch, plantumlCode) => {
+            const code = plantumlCode.trim();
+
+            // Skip invalid/placeholder PlantUML code
+            if (!isValidPlantUmlCode(code)) {
+                console.warn('[Exporter] Invalid PlantUML code (placeholder or garbage), keeping original');
+                return fullMatch;
+            }
+
             try {
                 // Try to convert PlantUML to Mermaid using wb-diagrams
-                const converted = convert(plantumlCode.trim(), {
+                const converted = convert(code, {
                     from: 'plantuml',
                     to: 'mermaid',
                     layout: {
@@ -81,14 +162,18 @@ async function convertDiagramsInMarkdown(
                     },
                 });
 
-                if (converted.output) {
+                // Check if conversion produced valid (non-empty) mermaid
+                if (converted.output && !isEmptyMermaidOutput(converted.output)) {
+                    console.log('[Exporter] Successfully converted PlantUML to Mermaid');
                     return `\`\`\`mermaid\n${converted.output}\n\`\`\``;
+                } else {
+                    console.warn('[Exporter] PlantUML conversion produced empty diagram, keeping original');
                 }
             } catch (error) {
                 console.warn('Failed to convert PlantUML to Mermaid:', error);
             }
 
-            // Keep original if conversion failed
+            // Keep original if conversion failed or produced empty result
             return fullMatch;
         });
     }
@@ -102,7 +187,8 @@ export async function buildMarkdownDocument(
     rootNode: PageTreeNode,
     exportTitle: string,
     settings: ExportSettings,
-    diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink'
+    diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink',
+    diagramExportMode: 'copy-as-is' | 'convert' | 'svg-preview' = 'copy-as-is'
 ): Promise<ExportResult> {
     const flatTree = flattenTree(rootNode);
     const treeMap = new Map(flatTree.map((n) => [n.id, n]));
@@ -173,8 +259,12 @@ export async function buildMarkdownDocument(
                 includeComments: settings.includeComments,
             }, page.id);
 
-            // Convert to markdown (diagrams will be as wikilinks)
-            let markdown = convertToMarkdown(sanitizedHtml);
+            // Convert to markdown with diagram export mode
+            let markdown = convertToMarkdown(sanitizedHtml, {
+                diagramExportMode,
+                diagramTargetFormat: diagramFormat,
+                embedDiagramsAsCode: true,
+            });
 
             // Convert diagrams based on format setting
             markdown = await convertDiagramsInMarkdown(markdown, page.id, diagramFormat);
