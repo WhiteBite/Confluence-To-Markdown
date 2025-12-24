@@ -1,10 +1,10 @@
 import TurndownService from 'turndown';
 import { gfm } from 'turndown-plugin-gfm';
-import { DEBUG } from '@/config';
 import {
     extractDiagramFromMacro,
     processDiagram,
     generateMermaidCodeBlock,
+    generateDiagramWithSvgPreview,
     type TargetFormat,
 } from './diagram-processor';
 import type { DiagramInfo } from './sanitizer';
@@ -24,6 +24,8 @@ export interface ConvertOptions {
     diagramTargetFormat?: TargetFormat;
     /** Embed diagrams as code blocks (vs file references) */
     embedDiagramsAsCode?: boolean;
+    /** Diagram export mode */
+    diagramExportMode?: 'copy-as-is' | 'convert' | 'svg-preview';
     /** Pre-extracted diagram info (extracted before sanitization) */
     diagramInfo?: DiagramInfo[];
 }
@@ -34,6 +36,16 @@ function getTurndown(options?: ConvertOptions): TurndownService {
     const convertDiagrams = options?.convertDiagrams ?? false;
     const diagramTarget = options?.diagramTargetFormat ?? 'mermaid';
     const embedAsCode = options?.embedDiagramsAsCode ?? true;
+    const exportMode = options?.diagramExportMode ?? 'copy-as-is';
+
+    console.log('[Converter] getTurndown called with options:', {
+        useObsidian,
+        convertDiagrams,
+        diagramTarget,
+        embedAsCode,
+        exportMode,
+        rawExportMode: options?.diagramExportMode,
+    });
 
     // Return cached instance if available (simplified caching)
     if (useObsidian && !convertDiagrams && obsidianTurndownInstance) return obsidianTurndownInstance;
@@ -184,6 +196,8 @@ function getTurndown(options?: ConvertOptions): TurndownService {
         replacement: (_content, node) => {
             const el = node as HTMLElement;
 
+            console.log('[Draw.io] replacement called with content:', _content);
+
             // Get diagram name - prefer extracted name (set before script removal)
             let diagramName = el.getAttribute('data-extracted-diagram-name') ||
                 el.dataset.diagramName ||
@@ -196,25 +210,93 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                 diagramName = index ? `diagram-${parseInt(index) + 1}` : 'diagram';
             }
 
-            // Try to extract and convert diagram
-            if (convertDiagrams) {
+            console.log('[Draw.io] Processing diagram:', {
+                name: diagramName,
+                exportMode,
+                hasElement: !!el,
+                classList: Array.from(el.classList),
+            });
+
+            // Mode 1: Copy as-is (default) - always return wikilink with _attachments path
+            if (exportMode === 'copy-as-is') {
+                console.log('[Draw.io] Mode: copy-as-is, returning wikilink');
+                const result = `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
+                console.log('[Draw.io] Returning:', result);
+                return result;
+            }
+
+            // Mode 2: SVG preview + source
+            if (exportMode === 'svg-preview') {
+                console.log('[Draw.io] Mode: svg-preview');
                 const diagramInfo = extractDiagramFromMacro(el);
+                console.log('[Draw.io] Extracted info:', {
+                    hasInfo: !!diagramInfo,
+                    hasSvg: !!diagramInfo?.renderedSvg,
+                    svgLength: diagramInfo?.renderedSvg?.length,
+                });
+
+                if (diagramInfo) {
+                    const processed = processDiagram(diagramInfo, {
+                        targetFormat: diagramTarget,
+                        embedAsCodeBlocks: embedAsCode,
+                        keepOriginalOnError: true,
+                        includePngFallback: true,
+                        exportMode: 'svg-preview',
+                    });
+
+                    if (processed.svgPreview) {
+                        console.log('[Draw.io] Returning SVG preview');
+                        return `\n${generateDiagramWithSvgPreview(processed, {
+                            inlineSvg: true,
+                            includeSourceLink: true,
+                        })}\n\n`;
+                    }
+                }
+
+                // Fallback: wikilink with _attachments path
+                console.log('[Draw.io] SVG preview failed, returning wikilink');
+                return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
+            }
+
+            // Mode 3: Convert to target format
+            if (exportMode === 'convert') {
+                console.log('[Draw.io] Mode: convert to', diagramTarget);
+                const diagramInfo = extractDiagramFromMacro(el);
+                console.log('[Draw.io] Extracted info:', {
+                    hasInfo: !!diagramInfo,
+                    hasContent: !!diagramInfo?.content,
+                    contentLength: diagramInfo?.content?.length,
+                });
+
                 if (diagramInfo && diagramInfo.content) {
                     const processed = processDiagram(diagramInfo, {
                         targetFormat: diagramTarget,
                         embedAsCodeBlocks: embedAsCode,
                         keepOriginalOnError: true,
                         includePngFallback: true,
+                        exportMode: 'convert',
+                    });
+
+                    console.log('[Draw.io] Processed:', {
+                        hasCode: !!processed.code,
+                        codeLength: processed.code?.length,
+                        error: processed.error,
                     });
 
                     if (processed.code && embedAsCode) {
+                        console.log('[Draw.io] Returning mermaid code block');
                         return `\n${generateMermaidCodeBlock(processed.code, diagramName)}\n\n`;
                     }
                 }
+
+                // Fallback: wikilink with _attachments path (conversion requires downloading .drawio file from server)
+                console.log('[Draw.io] Convert failed, returning wikilink');
+                return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n%% Note: Conversion requires Download (Obsidian vault) mode to fetch diagram source %%\n\n`;
             }
 
-            // Fallback: file reference
-            return `\n![[${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
+            // Default fallback with _attachments path
+            console.log('[Draw.io] No mode matched, returning wikilink');
+            return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n\n`;
         },
     });
 
@@ -234,8 +316,8 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                 el.getAttribute('data-diagram-name') ||
                 'diagram';
 
-            // Gliffy conversion not yet supported, use PNG fallback
-            return `\n![[${diagramName}.png]]\n\n`;
+            // Gliffy conversion not yet supported, use PNG fallback with _attachments path
+            return `\n![[_attachments/${diagramName}.png]]\n\n`;
         },
     });
 
@@ -252,14 +334,44 @@ function getTurndown(options?: ConvertOptions): TurndownService {
             const el = node as HTMLElement;
             const code = el.textContent?.trim() || '';
 
-            if (convertDiagrams && diagramTarget === 'mermaid' && code) {
-                // Try to convert PlantUML to Mermaid
+            // Mode 1: Copy as-is
+            if (exportMode === 'copy-as-is') {
+                return `\n\`\`\`plantuml\n${code}\n\`\`\`\n\n`;
+            }
+
+            // Mode 2: SVG preview + source
+            if (exportMode === 'svg-preview') {
+                const diagramInfo = extractDiagramFromMacro(el);
+                if (diagramInfo && diagramInfo.renderedSvg) {
+                    const processed = processDiagram(diagramInfo, {
+                        targetFormat: 'original',
+                        embedAsCodeBlocks: true,
+                        keepOriginalOnError: true,
+                        includePngFallback: false,
+                        exportMode: 'svg-preview',
+                    });
+
+                    if (processed.svgPreview) {
+                        return `\n${generateDiagramWithSvgPreview(processed, {
+                            inlineSvg: true,
+                            includeSourceLink: false,
+                        })}\n\n\`\`\`plantuml\n${code}\n\`\`\`\n\n`;
+                    }
+                }
+
+                // Fallback: code block only
+                return `\n\`\`\`plantuml\n${code}\n\`\`\`\n\n`;
+            }
+
+            // Mode 3: Convert to target format
+            if (exportMode === 'convert' && diagramTarget === 'mermaid' && code) {
                 const diagramInfo = { format: 'plantuml' as const, name: 'plantuml', content: code };
                 const processed = processDiagram(diagramInfo, {
                     targetFormat: 'mermaid',
                     embedAsCodeBlocks: true,
                     keepOriginalOnError: true,
                     includePngFallback: false,
+                    exportMode: 'convert',
                 });
 
                 if (processed.code) {
@@ -267,7 +379,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                 }
             }
 
-            // Keep as PlantUML code block
+            // Default: Keep as PlantUML code block
             return `\n\`\`\`plantuml\n${code}\n\`\`\`\n\n`;
         },
     });
@@ -339,6 +451,45 @@ function getTurndown(options?: ConvertOptions): TurndownService {
         },
         replacement: () => '',
     });
+
+    // Rule: Images - convert to Obsidian wikilinks with _attachments path
+    if (useObsidian) {
+        instance.addRule('obsidianImages', {
+            filter: 'img',
+            replacement: (_content, node) => {
+                const img = node as HTMLImageElement;
+                const src = img.getAttribute('src') || '';
+                const alt = img.getAttribute('alt') || '';
+
+                // Extract filename from URL
+                let filename = '';
+                try {
+                    const url = new URL(src, 'https://example.com');
+                    // Get filename from path
+                    const pathParts = url.pathname.split('/');
+                    filename = pathParts[pathParts.length - 1];
+                    // Remove query params from filename
+                    filename = filename.split('?')[0];
+                    // Decode URI components
+                    filename = decodeURIComponent(filename);
+                } catch {
+                    // Fallback: extract from src directly
+                    filename = src.split('/').pop()?.split('?')[0] || 'image.png';
+                    try {
+                        filename = decodeURIComponent(filename);
+                    } catch {
+                        // Keep as is
+                    }
+                }
+
+                // Use wikilink format with _attachments path
+                if (alt && alt !== `[Image: ${filename}]`) {
+                    return `\n![[_attachments/${filename}|${alt}]]\n`;
+                }
+                return `\n![[_attachments/${filename}]]\n`;
+            },
+        });
+    }
 
     // Rule: Confluence tables
     instance.addRule('confluenceTable', {

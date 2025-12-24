@@ -5,14 +5,16 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build",
+        "build": "vite build && echo Script ready at http://localhost:8765/confluence-to-markdown.user.js",
         "build:ext": "vite build --config vite.config.extension.ts && vite build --config vite.config.background.ts && node scripts/copy-assets.js",
         "preview": "vite preview",
+        "serve": "http-server dist -p 8765 --cors -c-1",
         "test": "vitest run",
         "test:watch": "vitest"
     },
     "dependencies": {
-        "@whitebite/diagram-converter": "^0.1.1",
+        "@whitebite/diagram-converter": "^0.2.0",
+        "fflate": "^0.8.2",
         "jszip": "^3.10.1",
         "turndown": "^7.2.0",
         "turndown-plugin-gfm": "^1.0.2"
@@ -21,6 +23,7 @@
         "@types/chrome": "^0.0.268",
         "@types/turndown": "^5.0.5",
         "jsdom": "^24.0.0",
+        "playwright": "^1.57.0",
         "typescript": "^5.3.3",
         "vite": "^5.4.11",
         "vite-plugin-monkey": "^4.0.6",

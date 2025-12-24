@@ -1,4 +1,4 @@
-import JSZip from 'jszip';
+import { zipSync, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
 import type {
     PageContentData,
@@ -15,10 +15,8 @@ import {
 } from './link-resolver';
 import {
     fetchPageAttachments,
-    identifyDiagram,
     isImageAttachment,
     exportImageAttachment,
-    extractDiagramReferences,
 } from './attachment-handler';
 
 export type ProgressCallback = (phase: string, current: number, total: number) => void;
@@ -104,7 +102,7 @@ function convertPageContent(
     // Convert to markdown with Obsidian options and diagram conversion
     let markdown = convertToMarkdown(sanitizedHtml, {
         useObsidianCallouts: settings.useObsidianCallouts,
-        convertDiagrams: settings.convertDiagrams,
+        diagramExportMode: settings.diagramExportMode,
         diagramTargetFormat: settings.diagramTargetFormat,
         embedDiagramsAsCode: settings.embedDiagramsAsCode,
     });
@@ -225,7 +223,8 @@ export async function createObsidianVault(
     settings: ObsidianExportSettings,
     onProgress?: ProgressCallback
 ): Promise<ObsidianExportResult> {
-    const zip = new JSZip();
+    // Using fflate instead of JSZip for better Tampermonkey compatibility
+    const zipFiles: Record<string, Uint8Array> = {};
     const flatTree = flattenTree(rootNode);
     const nodeMap = new Map(flatTree.map((n) => [n.id, n]));
     const pageMap = new Map(pages.map((p) => [p.id, p.title]));
@@ -282,51 +281,56 @@ export async function createObsidianVault(
         for (const page of pages) {
             onProgress?.('Downloading attachments...', processedPages, totalPages);
 
-            // Extract diagram references from HTML to get actual names used in markdown
-            const diagramRefs = extractDiagramReferences(page.htmlContent);
+            // Fetch all attachments for this page
+            console.log(`[Export] Fetching attachments for page ${page.id}`);
+            const attachments = await fetchPageAttachments(page.id);
+            console.log(`[Export] Found ${attachments.length} attachments`);
 
-            // Download diagrams directly from HTML (they may not be in attachments API)
-            if (settings.exportDiagrams && diagramRefs.length > 0) {
-                for (const ref of diagramRefs) {
-                    try {
-                        // Build render URL for diagram
-                        const baseUrl = getBaseUrl();
-                        const format = ref.type === 'gliffy' ? 'gliffy' : 'drawio';
-                        const renderUrl = `${baseUrl}/plugins/servlet/${format}/export?pageId=${page.id}&diagramName=${encodeURIComponent(ref.name)}&format=png`;
-
-                        // Download PNG preview
-                        const response = await fetch(renderUrl, { credentials: 'include' });
-                        if (response.ok) {
-                            const blob = await response.blob();
-                            attachmentFiles.push({
-                                path: `_attachments/${ref.name}.png`,
-                                blob,
-                            });
-                            diagramCount++;
-                            attachmentCount++;
-                        }
-                    } catch (error) {
-                        console.error(`Failed to download diagram ${ref.name}:`, error);
-                    }
+            // Build a set of diagram source filenames (without extension)
+            // Draw.io diagrams have mediaType 'application/vnd.jgraph.mxfile'
+            const diagramSourceNames = new Set<string>();
+            for (const att of attachments) {
+                if (att.mediaType === 'application/vnd.jgraph.mxfile') {
+                    diagramSourceNames.add(att.filename);
+                    console.log(`[Export] Found diagram source: ${att.filename}`);
                 }
             }
 
-            // Download regular attachments
-            if (settings.downloadAttachments) {
-                const attachments = await fetchPageAttachments(page.id);
+            for (const att of attachments) {
+                // Check size limit
+                if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
+                    console.log(`[Export] Skipping ${att.filename} - too large`);
+                    continue;
+                }
 
-                for (const att of attachments) {
-                    // Check size limit
-                    if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
-                        continue;
+                // Skip Draw.io source files (XML) - we only want PNG previews
+                if (att.mediaType === 'application/vnd.jgraph.mxfile') {
+                    continue;
+                }
+
+                // Check if this is a diagram PNG (has corresponding .mxfile source)
+                const nameWithoutExt = att.filename.replace(/\.png$/i, '');
+                const isDiagramPng = diagramSourceNames.has(nameWithoutExt);
+
+                if (isDiagramPng) {
+                    // This is a Draw.io diagram PNG preview
+                    if (settings.exportDiagrams) {
+                        console.log(`[Export] Downloading diagram PNG: ${att.filename}`);
+                        const exported = await exportImageAttachment(att);
+                        if (exported) {
+                            attachmentFiles.push({
+                                path: `_attachments/${exported.filename}`,
+                                blob: exported.blob,
+                            });
+                            diagramCount++;
+                            attachmentCount++;
+                            console.log(`[Export] Downloaded diagram: ${att.filename}`);
+                        }
                     }
-
-                    // Skip diagrams (already handled above)
-                    const diagram = identifyDiagram(att);
-                    if (diagram) continue;
-
-                    // Export regular images
-                    if (isImageAttachment(att) && settings.includeImages) {
+                } else if (isImageAttachment(att)) {
+                    // Regular image attachment
+                    if (settings.downloadAttachments && settings.includeImages) {
+                        console.log(`[Export] Downloading image: ${att.filename}`);
                         const exported = await exportImageAttachment(att);
                         if (exported) {
                             attachmentFiles.push({
@@ -334,6 +338,7 @@ export async function createObsidianVault(
                                 blob: exported.blob,
                             });
                             attachmentCount++;
+                            console.log(`[Export] Downloaded image: ${att.filename}`);
                         }
                     }
                 }
@@ -343,32 +348,53 @@ export async function createObsidianVault(
         }
     }
 
-    // Phase 3: Build ZIP
+    // Phase 3: Build ZIP using fflate (synchronous, works in Tampermonkey)
+    console.log(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentFiles.length} attachments`);
     onProgress?.('Creating ZIP archive...', 0, 1);
 
-    // Add page files
+    // Add page files (convert string to Uint8Array)
     for (const file of pageFiles) {
-        zip.file(file.path, file.content);
+        console.log(`[Export] Adding page: ${file.path}`);
+        zipFiles[file.path] = strToU8(file.content);
     }
 
-    // Add attachment files
+    // Add attachment files - convert blob to Uint8Array
     for (const file of attachmentFiles) {
-        zip.file(file.path, file.blob);
+        console.log(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
+        try {
+            const arrayBuffer = await file.blob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            console.log(`[Export] Converted to Uint8Array: ${uint8Array.length} bytes`);
+            zipFiles[file.path] = uint8Array;
+        } catch (err) {
+            console.error(`[Export] Failed to convert blob for ${file.path}:`, err);
+            throw err;
+        }
     }
+    console.log(`[Export] All ${attachmentFiles.length} attachments added to ZIP object`);
 
     // Add index file
     const indexContent = generateIndexFile(rootNode, pages, {
         attachments: attachmentCount,
         diagrams: diagramCount,
     });
-    zip.file('_Index.md', indexContent);
+    zipFiles['_Index.md'] = strToU8(indexContent);
 
-    // Generate ZIP blob
-    const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 },
-    });
+    // Generate ZIP blob using fflate (synchronous!)
+    console.log('[Export] Starting ZIP generation with fflate...');
+    console.log(`[Export] Total files in ZIP:`, Object.keys(zipFiles).length);
+
+    let zipBlob: Blob;
+    try {
+        console.log('[Export] Calling zipSync...');
+        const zipData = zipSync(zipFiles, { level: 0 }); // level 0 = no compression (STORE)
+        console.log(`[Export] zipSync completed! Length: ${zipData.length}`);
+        zipBlob = new Blob([zipData], { type: 'application/zip' });
+    } catch (error) {
+        console.error('[Export] ZIP generation failed:', error);
+        throw error;
+    }
+    console.log(`[Export] ZIP generated, size: ${zipBlob.size} bytes`);
 
     onProgress?.('Done!', 1, 1);
 

@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Confluence to Markdown Exporter
 // @namespace    https://github.com/WhiteBite/confluence-to-markdown
-// @version      2.3.1
+// @version      2.5.0
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown for LLM consumption
 // @icon         https://www.atlassian.com/favicon.ico
 // @homepage     https://github.com/WhiteBite/Confluence-To-Markdown
 // @supportURL   https://github.com/WhiteBite/Confluence-To-Markdown/issues
-// @downloadURL  https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js
-// @updateURL    https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js
+// @downloadURL  http://localhost:8765/confluence-to-markdown.user.js
+// @updateURL    http://localhost:8765/confluence-to-markdown.user.js
 // @match        https://*.atlassian.net/wiki/*
 // @match        https://*/wiki/*
 // @match        https://*/display/*
@@ -18,11 +18,14 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const e=document.createElement("style");e.textContent=r,document.head.append(e)})(' :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-danger-light: #FFEBE6;--md-warning: #FF991F;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-radius: 6px;--md-radius-lg: 12px;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;--md-transition: .15s ease}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box;font-family:var(--md-font);animation:fadeIn .2s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}.md-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:100%;max-width:780px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--md-shadow);overflow:hidden;position:relative;animation:slideUp .25s ease}@media (max-width: 768px){#md-export-modal{padding:12px}.md-modal-content{max-width:100%;max-height:95vh;border-radius:var(--md-radius)}}@media (max-width: 480px){#md-export-modal{padding:8px}.md-modal-content{max-height:98vh;border-radius:8px}}@media (max-height: 600px){.md-modal-content{max-height:98vh}}@keyframes slideUp{0%{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.md-modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--md-border);flex-shrink:0}.md-header-row{display:flex;justify-content:space-between;align-items:flex-start}.md-header-title{display:flex;align-items:center;gap:8px}.md-header-actions{display:flex;align-items:center;gap:4px}.md-modal-header h3{margin:0;color:var(--md-text);font-size:20px;font-weight:600}.md-modal-header .subtitle{color:var(--md-text-subtle);font-size:14px;margin:8px 0 0;display:flex;align-items:center;gap:6px}.md-modal-header .subtitle svg{width:16px;height:16px;fill:var(--md-text-muted)}.md-page-count{background:var(--md-bg-subtle);padding:2px 8px;border-radius:10px;font-size:12px;color:var(--md-text-muted);margin-left:8px}.md-close-btn{margin:0}.md-btn-icon{width:32px;height:32px;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all var(--md-transition)}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:20px;height:20px;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-search-bar{display:flex;align-items:center;padding:8px 24px;background:var(--md-bg);border-bottom:1px solid var(--md-border);gap:8px}.md-search-icon{color:var(--md-text-muted);display:flex}.md-search-icon svg{width:18px;height:18px;fill:currentColor}.md-search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:var(--md-font);color:var(--md-text);background:transparent}.md-search-bar input::placeholder{color:var(--md-text-muted)}.md-search-clear{width:24px;height:24px;padding:0;border:none;background:var(--md-bg-subtle);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);transition:all var(--md-transition)}.md-search-clear:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-search-clear svg{width:14px;height:14px;fill:currentColor}.md-controls{display:flex;gap:6px;padding:10px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-controls-divider{width:1px;height:20px;background:var(--md-border);margin:0 4px}.md-tree-container{flex:1;overflow-y:auto;padding:8px 16px;min-height:200px;max-height:400px}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:20px;padding-left:12px;border-left:1px solid var(--md-border)}.md-tree li{margin:0;transition:opacity var(--md-transition)}.md-tree li.hidden{display:none}.md-tree li.highlight>.md-tree-item{background:var(--md-primary-light)}.md-tree-item{display:flex;align-items:center;padding:6px 10px;margin:1px 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color var(--md-transition);gap:6px}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform var(--md-transition);border-radius:4px}.md-tree-toggler:hover{background:var(--md-bg-subtle)}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:16px;height:16px;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:16px;height:16px}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:13px;line-height:1.4;-webkit-user-select:none;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-tree-label.error{color:var(--md-danger)}.md-child-count{font-size:11px;color:var(--md-text-muted);background:var(--md-bg-subtle);padding:1px 6px;border-radius:8px;margin-left:4px}.md-error-badge{font-size:10px;color:var(--md-danger);background:var(--md-danger-light);padding:2px 6px;border-radius:4px;font-weight:500}.md-tree ul.collapsed{display:none}.md-tree ul{overflow:hidden}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:12px 24px;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color var(--md-transition)}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:18px;height:18px;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:16px 24px;background:var(--md-bg);display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.md-checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--md-text)}.md-checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--md-primary);cursor:pointer}.md-progress-section{padding:16px 24px;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--md-text-subtle)}.md-progress-bar{height:6px;background:var(--md-border);border-radius:3px;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:3px;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-toast{position:absolute;bottom:80px;left:50%;transform:translate(-50%) translateY(20px);background:var(--md-success);color:#fff;padding:12px 20px;border-radius:var(--md-radius);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:18px;height:18px;fill:currentColor}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--md-border);background:var(--md-bg);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;gap:8px;align-items:center}.md-hint{font-size:12px;color:var(--md-text-muted)}.md-btn{padding:8px 14px;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);transition:all var(--md-transition);display:inline-flex;align-items:center;gap:6px;position:relative}.md-btn svg{width:16px;height:16px;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-subtle);border-color:var(--md-text-muted)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:8px 12px}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:5px 10px;font-size:12px}.md-btn-badge{background:#fff3;padding:1px 6px;border-radius:8px;font-size:11px;min-width:18px;text-align:center}.md-btn-badge.has-count{background:#ffffff4d}.md-selection-count{font-size:12px;color:var(--md-text-subtle);padding:5px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);margin-left:auto;transition:all var(--md-transition)}@keyframes shake{0%,to{transform:translate(0)}20%,60%{transform:translate(-5px)}40%,80%{transform:translate(5px)}}.shake{animation:shake .5s ease;background:var(--md-danger-light)!important;border-color:var(--md-danger)!important;color:var(--md-danger)!important}#md-export-status{margin-left:12px;color:var(--md-text-subtle);font-size:13px;font-family:var(--md-font)}#md-export-trigger{margin-left:10px}.md-tree-container::-webkit-scrollbar{width:8px}.md-tree-container::-webkit-scrollbar-track{background:var(--md-bg-subtle);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb{background:var(--md-border);border-radius:4px}.md-tree-container::-webkit-scrollbar-thumb:hover{background:var(--md-text-muted)}.md-preset-buttons{display:flex;gap:8px;margin-bottom:16px}.md-preset-btn{flex:1;padding:12px 16px;border:2px solid var(--md-border);border-radius:var(--md-radius);background:var(--md-bg);cursor:pointer;font-size:13px;font-weight:500;font-family:var(--md-font);color:var(--md-text-subtle);transition:all var(--md-transition);text-align:center}.md-preset-btn:hover{border-color:var(--md-primary);color:var(--md-primary);background:var(--md-primary-light)}.md-preset-btn.active{border-color:var(--md-primary);background:var(--md-primary);color:#fff}.md-obsidian-options{padding-top:8px;border-top:1px solid var(--md-border);margin-top:8px}.md-option-group{display:flex;align-items:center;gap:12px;margin:8px 0}.md-option-label{font-size:13px;color:var(--md-text-subtle);white-space:nowrap}.md-preset-mini{display:flex;gap:6px}.md-btn-xs{padding:4px 8px;font-size:11px;border-radius:4px;background:var(--md-bg-subtle);border:1px solid var(--md-border);color:var(--md-text-subtle);cursor:pointer;font-family:var(--md-font);transition:all var(--md-transition)}.md-btn-xs:hover{background:var(--md-primary-light);border-color:var(--md-primary);color:var(--md-primary)}.md-checkbox-label.md-indent{margin-left:26px}.md-radio-group{display:flex;gap:16px}.md-radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--md-text);cursor:pointer}.md-radio-group input[type=radio]{accent-color:var(--md-primary);cursor:pointer}.md-settings-content.md-single-column{grid-template-columns:1fr}#md-diagrams-content{display:block}#md-diagrams-content .md-checkbox-label{margin-bottom:8px}#md-diagrams-content .md-option-group{margin-left:26px}#md-format-content{display:block}#md-format-content .md-checkbox-label{margin-bottom:8px}.md-settings-toggle svg[viewBox="0 0 24 24"] path[d*="L2 7"]{fill:#7c3aed}.md-stats-section{padding:12px 24px;background:linear-gradient(135deg,var(--md-bg-subtle) 0%,var(--md-bg) 100%);border-bottom:1px solid var(--md-border)}.md-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.md-stat-item{display:flex;flex-direction:column;align-items:center;padding:8px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);transition:all var(--md-transition)}.md-stat-item:hover{border-color:var(--md-primary);box-shadow:0 2px 8px #0052cc1a}.md-stat-icon{font-size:20px;margin-bottom:4px}.md-stat-value{font-size:18px;font-weight:600;color:var(--md-text)}.md-stat-label{font-size:11px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px}#md-export-modal[data-theme=dark]{--md-primary: #4C9AFF;--md-primary-hover: #79B8FF;--md-primary-light: #1C2B41;--md-success: #36B37E;--md-success-light: #1C3829;--md-danger: #FF5630;--md-danger-light: #3D1F1F;--md-warning: #FFAB00;--md-text: #E6E6E6;--md-text-subtle: #A6A6A6;--md-text-muted: #6B6B6B;--md-bg: #1E1E1E;--md-bg-subtle: #252526;--md-bg-hover: #2D2D2D;--md-border: #3C3C3C}#md-export-modal[data-theme=dark]{background-color:#000000b3}.md-shortcuts-hint{display:flex;gap:12px;font-size:11px;color:var(--md-text-muted)}.md-shortcut{display:flex;align-items:center;gap:4px}.md-shortcut kbd{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:3px;padding:1px 5px;font-family:monospace;font-size:10px}.md-progress-details{margin-top:12px;max-height:120px;overflow-y:auto;font-size:12px}.md-progress-item{display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--md-text-subtle)}.md-progress-item.done{color:var(--md-success)}.md-progress-item.active{color:var(--md-primary);font-weight:500}.md-progress-item.error{color:var(--md-danger)}.md-progress-item .status-icon{width:16px;text-align:center}.md-modal-content.with-preview{max-width:1200px}.md-split-view{display:flex;flex:1;min-height:0;overflow:hidden}.md-split-left{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--md-border);min-width:0}.md-split-right{flex:1;display:flex;flex-direction:column;min-width:0}.md-preview-header{padding:12px 16px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);font-size:13px;font-weight:500;color:var(--md-text-subtle);display:flex;align-items:center;gap:8px}.md-preview-content{flex:1;overflow-y:auto;padding:16px;font-family:SF Mono,Monaco,Cascadia Code,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:var(--md-bg);color:var(--md-text)}.md-preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--md-text-muted);text-align:center;padding:24px}.md-preview-placeholder .icon{font-size:48px;margin-bottom:12px;opacity:.5}.md-preview-content .mermaid-block{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:12px;margin:8px 0}.md-preview-content .mermaid-header{color:var(--md-primary);font-weight:500;margin-bottom:8px}.md-history-section{padding:8px 24px;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border)}.md-history-title{font-size:11px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}.md-history-list{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.md-history-item{flex-shrink:0;padding:6px 12px;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);font-size:12px;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:6px}.md-history-item:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-history-item .date{color:var(--md-text-muted);font-size:10px}.md-filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.md-filter-chip{padding:4px 10px;background:var(--md-bg);border:1px solid var(--md-border);border-radius:12px;font-size:11px;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:4px}.md-filter-chip:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-filter-chip.active{background:var(--md-primary);border-color:var(--md-primary);color:#fff}.md-filter-chip .count{background:#0000001a;padding:1px 5px;border-radius:8px;font-size:10px}.md-filter-chip.active .count{background:#fff3}.md-skeleton{background:linear-gradient(90deg,var(--md-bg-subtle) 25%,var(--md-bg-hover) 50%,var(--md-bg-subtle) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite;border-radius:var(--md-radius)}@keyframes skeleton-loading{0%{background-position:200% 0}to{background-position:-200% 0}}.md-skeleton-text{height:14px;margin:8px 0}.md-skeleton-text.short{width:60%}.md-skeleton-text.medium{width:80%}@media (max-width: 800px){.md-stats-grid{grid-template-columns:repeat(2,1fr)}.md-split-view{flex-direction:column}.md-split-left,.md-split-right{border-right:none;border-bottom:1px solid var(--md-border)}.md-settings-content{grid-template-columns:1fr}}.md-progress-current{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);font-size:12px;color:var(--md-text-subtle);overflow:hidden}.md-progress-page-icon{flex-shrink:0}.md-progress-page-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--md-text)}@media (max-width: 768px){.md-modal-header{padding:16px 16px 12px}.md-modal-header h3{font-size:18px}.md-modal-header .subtitle{font-size:13px}.md-controls{padding:12px 16px;gap:6px;flex-wrap:wrap}.md-btn-sm{padding:6px 10px;font-size:12px}.md-tree-container{padding:12px 16px}.md-settings-panel{margin:0 16px 12px}.md-settings-toggle{padding:10px 12px;font-size:13px}.md-settings-content{padding:12px}.md-modal-footer{padding:12px 16px;flex-direction:column;gap:12px}.md-footer-left,.md-footer-right{width:100%;justify-content:center}.md-shortcuts-hint{flex-wrap:wrap;justify-content:center}.md-footer-right{flex-direction:column;gap:8px}.md-footer-right .md-btn{width:100%;justify-content:center}}@media (max-width: 480px){.md-modal-header{padding:12px 12px 10px}.md-modal-header h3{font-size:16px}.md-modal-header .subtitle{font-size:12px;flex-wrap:wrap}.md-page-count{font-size:11px;padding:1px 6px}.md-search-bar{margin:8px 12px}.md-search-bar input{font-size:14px;padding:8px 32px 8px 36px}.md-controls{padding:8px 12px;gap:4px}.md-btn-sm{padding:5px 8px;font-size:11px}.md-filter-chip{padding:4px 8px;font-size:11px}.md-selection-count{font-size:11px}.md-stats-section{margin:8px 12px;padding:10px}.md-stats-grid{gap:8px}.md-stat-item{padding:8px}.md-stat-icon{font-size:18px}.md-stat-value{font-size:16px}.md-stat-label{font-size:10px}.md-tree-container{padding:8px 12px}.md-tree-item{padding:6px 8px;font-size:13px}.md-tree-toggler{width:20px;height:20px}.md-tree-toggler svg{width:14px;height:14px}.md-tree-checkbox{width:16px;height:16px}.md-tree-icon svg{width:16px;height:16px}.md-child-count{font-size:10px;padding:1px 5px}.md-settings-panel{margin:0 12px 10px}.md-settings-toggle{padding:8px 10px;font-size:12px}.md-settings-content{padding:10px;font-size:12px}.md-checkbox-label{font-size:12px}.md-option-label{font-size:11px}.md-radio-group label{font-size:12px}.md-preset-btn{padding:8px 12px;font-size:12px}.md-modal-footer{padding:10px 12px}.md-shortcuts-hint{display:none}.md-btn{font-size:13px;padding:8px 14px}.md-btn-badge{width:18px;height:18px;font-size:11px}}@media (max-width: 360px){.md-modal-header h3{font-size:15px}.md-btn-sm{padding:4px 6px;font-size:10px}.md-tree-item{font-size:12px}.md-settings-toggle{font-size:11px}}@media (max-height: 500px) and (orientation: landscape){.md-modal-content{max-height:98vh}.md-modal-header{padding:10px 16px 8px}.md-modal-header h3{font-size:16px}.md-stats-section{display:none}.md-controls,.md-tree-container,.md-modal-footer{padding:8px 16px}.md-shortcuts-hint{display:none}} ');
+(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const e=document.createElement("style");e.textContent=r,document.head.append(e)})(` :root{--md-primary: #0052CC;--md-primary-hover: #0065FF;--md-primary-light: #DEEBFF;--md-primary-dark: #003D99;--md-success: #00875A;--md-success-light: #E3FCEF;--md-danger: #DE350B;--md-danger-light: #FFEBE6;--md-warning: #FF991F;--md-warning-light: #FFF7E6;--md-text: #172B4D;--md-text-subtle: #5E6C84;--md-text-muted: #97A0AF;--md-bg: #FFFFFF;--md-bg-subtle: #F4F5F7;--md-bg-hover: #EBECF0;--md-border: #DFE1E6;--md-shadow: 0 8px 32px rgba(9, 30, 66, .25);--md-shadow-sm: 0 1px 3px rgba(9, 30, 66, .12);--md-shadow-lg: 0 12px 48px rgba(9, 30, 66, .3);--md-radius: .375rem;--md-radius-lg: .75rem;--md-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;--md-transition: .15s ease;--md-modal-width: 56.25rem;--md-modal-height: 40.625rem;--md-header-height: 3.5rem;--md-footer-height: 4rem;--md-left-column: 38%;--md-right-column: 62%}#md-export-modal{position:fixed;top:0;right:0;bottom:0;left:0;background-color:#091e428a;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);z-index:10000;display:flex;justify-content:center;align-items:center;padding:1.5rem;box-sizing:border-box;font-family:var(--md-font);animation:fadeIn .2s ease}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}@keyframes slideUp{0%{opacity:0;transform:translateY(1.25rem) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.md-modal-content{background-color:var(--md-bg);border-radius:var(--md-radius-lg);width:var(--md-modal-width);max-width:95vw;height:var(--md-modal-height);max-height:90vh;display:grid;grid-template-rows:var(--md-header-height) 1fr var(--md-footer-height);box-shadow:var(--md-shadow-lg);overflow:hidden;position:relative;animation:slideUp .25s ease}.md-modal-header{display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;border-bottom:1px solid var(--md-border);background:var(--md-bg);height:var(--md-header-height)}.md-header-title{display:flex;align-items:center;gap:.5rem}.md-modal-header h3{margin:0;color:var(--md-text);font-size:1.125rem;font-weight:600}.md-modal-header .subtitle{display:none}.md-header-actions{display:flex;align-items:center;gap:.25rem}.md-btn-icon{width:2rem;height:2rem;padding:0;border:none;background:transparent;border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);transition:all var(--md-transition)}.md-btn-icon:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-icon svg{width:1.25rem;height:1.25rem;fill:currentColor}.md-btn-icon.spinning svg{animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.md-page-count{background:var(--md-bg-subtle);padding:.125rem .5rem;border-radius:.625rem;font-size:.75rem;color:var(--md-text-muted);margin-left:.5rem}.md-modal-body{display:grid;grid-template-columns:var(--md-left-column) var(--md-right-column);overflow:hidden}.md-source-panel{display:flex;flex-direction:column;border-right:1px solid var(--md-border);background:var(--md-bg-subtle);overflow:hidden}.md-search-bar{display:flex;align-items:center;padding:.625rem 1rem;background:var(--md-bg);border-bottom:1px solid var(--md-border);gap:.5rem;flex-shrink:0}.md-search-icon{color:var(--md-text-muted);display:flex;flex-shrink:0}.md-search-icon svg{width:1rem;height:1rem;fill:currentColor}.md-search-bar input{flex:1;border:none;outline:none;font-size:.8125rem;font-family:var(--md-font);color:var(--md-text);background:transparent;min-width:0}.md-search-bar input::placeholder{color:var(--md-text-muted)}.md-search-clear{width:1.375rem;height:1.375rem;padding:0;border:none;background:var(--md-bg-subtle);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);transition:all var(--md-transition);flex-shrink:0}.md-search-clear:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-search-clear svg{width:.75rem;height:.75rem;fill:currentColor}.md-controls{display:flex;gap:.375rem;padding:.5rem 1rem;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);flex-shrink:0;flex-wrap:wrap;align-items:center}.md-controls-divider{width:1px;height:1.25rem;background:var(--md-border);margin:0 .25rem}.md-segmented-control{display:flex;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:.125rem;gap:.125rem}.md-segment{padding:.25rem .625rem;background:transparent;border:none;border-radius:calc(var(--md-radius) - .125rem);font-size:.6875rem;font-weight:500;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);font-family:var(--md-font);white-space:nowrap}.md-segment:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-segment.active{background:var(--md-primary);color:#fff}.md-segment .count{margin-left:.25rem;opacity:.7}.md-tree-container{flex:1;overflow-y:auto;padding:.5rem;min-height:0}.md-tree ul{list-style:none;padding:0;margin:0}.md-tree ul ul{margin-left:1rem;padding-left:.75rem;border-left:1px solid var(--md-border)}.md-tree li{margin:0;transition:opacity var(--md-transition)}.md-tree li.hidden{display:none}.md-tree li.highlight>.md-tree-item{background:var(--md-primary-light)}.md-tree-item{display:flex;align-items:center;padding:.375rem .5rem;margin:.0625rem 0;border-radius:var(--md-radius);cursor:pointer;transition:background-color var(--md-transition);gap:.375rem}.md-tree-item:hover{background-color:var(--md-bg-hover)}.md-tree-toggler{width:1.125rem;height:1.125rem;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);flex-shrink:0;transition:transform var(--md-transition);border-radius:.25rem}.md-tree-toggler:hover{background:var(--md-bg)}.md-tree-toggler.expanded{transform:rotate(90deg)}.md-tree-toggler svg{width:.875rem;height:.875rem;fill:currentColor}.md-tree-toggler.empty{visibility:hidden}.md-tree-checkbox{width:.875rem;height:.875rem;margin:0;cursor:pointer;accent-color:var(--md-primary);flex-shrink:0}.md-tree-icon{width:1rem;height:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}.md-tree-icon svg{width:.875rem;height:.875rem}.md-tree-icon.folder svg{fill:#ffab00}.md-tree-icon.page svg{fill:var(--md-primary)}.md-tree-label{flex:1;color:var(--md-text);font-size:.8125rem;line-height:1.4;-webkit-user-select:none;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-tree-label.error{color:var(--md-danger)}.md-child-count{font-size:.625rem;color:var(--md-text-muted);background:var(--md-bg);padding:.0625rem .375rem;border-radius:.5rem;margin-left:.25rem}.md-error-badge{font-size:.625rem;color:var(--md-danger);background:var(--md-danger-light);padding:.125rem .375rem;border-radius:.25rem;font-weight:500}.md-tree ul.collapsed{display:none}.md-stats-bar{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;background:var(--md-bg);border-top:1px solid var(--md-border);font-size:.6875rem;color:var(--md-text-muted);flex-shrink:0}.md-stats-bar .stat{display:flex;align-items:center;gap:.25rem}.md-stats-bar .stat-value{font-weight:600;color:var(--md-text-subtle)}.md-stats-bar .stat-icon{font-size:.875rem}.md-selection-count{font-size:.6875rem;color:var(--md-text-subtle);padding:.25rem .5rem;background:var(--md-primary-light);border-radius:var(--md-radius);font-weight:500}.md-config-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--md-bg)}.md-config-tabs{display:flex;border-bottom:1px solid var(--md-border);background:var(--md-bg-subtle);flex-shrink:0}.md-config-tab{flex:1;padding:.75rem 1rem;border:none;background:transparent;font-size:.8125rem;font-weight:500;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);font-family:var(--md-font);position:relative}.md-config-tab:hover{color:var(--md-text);background:var(--md-bg-hover)}.md-config-tab.active{color:var(--md-primary);background:var(--md-bg)}.md-config-tab.active:after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--md-primary)}.md-config-content{flex:1;overflow-y:auto;padding:1rem 1.25rem}.md-settings-section{margin-bottom:1.25rem}.md-settings-section:last-child{margin-bottom:0}.md-settings-title{font-size:.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem}.md-settings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem}.md-settings-grid.single-column{grid-template-columns:1fr}.md-checkbox-label{display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8125rem;color:var(--md-text);padding:.375rem .5rem;border-radius:var(--md-radius);transition:background-color var(--md-transition)}.md-checkbox-label:hover{background:var(--md-bg-subtle)}.md-checkbox-label input[type=checkbox]{width:.875rem;height:.875rem;accent-color:var(--md-primary);cursor:pointer;flex-shrink:0}.md-checkbox-label.md-indent{margin-left:1.5rem}.md-radio-group{display:flex;gap:1rem;padding:.375rem .5rem}.md-radio-group label{display:flex;align-items:center;gap:.25rem;font-size:.8125rem;color:var(--md-text);cursor:pointer}.md-radio-group input[type=radio]{accent-color:var(--md-primary);cursor:pointer}.md-option-group{display:flex;align-items:center;gap:.75rem;padding:.375rem .5rem}.md-option-label{font-size:.8125rem;color:var(--md-text-subtle);white-space:nowrap}.md-preset-buttons{display:flex;gap:.5rem;margin-bottom:1rem}.md-preset-btn{flex:1;padding:.625rem .75rem;border:2px solid var(--md-border);border-radius:var(--md-radius);background:var(--md-bg);cursor:pointer;font-size:.8125rem;font-weight:500;font-family:var(--md-font);color:var(--md-text-subtle);transition:all var(--md-transition);text-align:center}.md-preset-btn:hover{border-color:var(--md-primary);color:var(--md-primary);background:var(--md-primary-light)}.md-preset-btn.active{border-color:var(--md-primary);background:var(--md-primary);color:#fff}.md-preset-mini{display:flex;gap:.375rem}.md-btn-xs{padding:.25rem .5rem;font-size:.6875rem;border-radius:.25rem;background:var(--md-bg-subtle);border:1px solid var(--md-border);color:var(--md-text-subtle);cursor:pointer;font-family:var(--md-font);transition:all var(--md-transition)}.md-btn-xs:hover{background:var(--md-primary-light);border-color:var(--md-primary);color:var(--md-primary)}.md-convert-warning{margin:.5rem 0 .5rem 1.5rem;padding:.5rem .75rem;background:var(--md-warning-light);border:1px solid var(--md-warning);border-radius:var(--md-radius);font-size:.75rem;color:var(--md-text);line-height:1.4}.md-convert-warning strong{color:var(--md-primary)}.md-modal-footer{display:flex;justify-content:space-between;align-items:center;padding:0 1.25rem;border-top:1px solid var(--md-border);background:var(--md-bg);height:var(--md-footer-height);flex-shrink:0}.md-footer-left,.md-footer-right{display:flex;align-items:center;gap:.5rem}.md-btn{padding:.5rem .875rem;border-radius:var(--md-radius);border:none;cursor:pointer;font-size:.8125rem;font-weight:500;font-family:var(--md-font);transition:all var(--md-transition);display:inline-flex;align-items:center;gap:.375rem;position:relative}.md-btn svg{width:1rem;height:1rem;fill:currentColor}.md-btn-primary{background-color:var(--md-primary);color:#fff}.md-btn-primary:hover:not(:disabled){background-color:var(--md-primary-hover)}.md-btn-primary:disabled{background-color:#b3d4ff;cursor:not-allowed}.md-btn-secondary{background-color:var(--md-bg);color:var(--md-text);border:1px solid var(--md-border)}.md-btn-secondary:hover:not(:disabled){background-color:var(--md-bg-subtle);border-color:var(--md-text-muted)}.md-btn-secondary:disabled{opacity:.6;cursor:not-allowed}.md-btn-link{background:none;color:var(--md-text-subtle);padding:.5rem .75rem}.md-btn-link:hover{color:var(--md-text);background-color:var(--md-bg-subtle)}.md-btn-sm{padding:.3125rem .625rem;font-size:.75rem}.md-btn-badge{background:#fff3;padding:.0625rem .375rem;border-radius:.5rem;font-size:.6875rem;min-width:1.125rem;text-align:center}.md-btn-badge.has-count{background:#ffffff4d}.md-help-btn{width:1.75rem;height:1.75rem;padding:0;border:1px solid var(--md-border);background:var(--md-bg);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);font-size:.75rem;font-weight:600;transition:all var(--md-transition)}.md-help-btn:hover{background:var(--md-bg-subtle);color:var(--md-text);border-color:var(--md-text-muted)}.md-shortcuts-tooltip{display:none;position:absolute;bottom:100%;left:0;margin-bottom:.5rem;padding:.75rem 1rem;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);box-shadow:var(--md-shadow-sm);font-size:.6875rem;color:var(--md-text-muted);white-space:nowrap;z-index:100}.md-help-btn:hover+.md-shortcuts-tooltip,.md-shortcuts-tooltip:hover{display:block}.md-shortcut{display:flex;align-items:center;gap:.25rem;margin-bottom:.25rem}.md-shortcut:last-child{margin-bottom:0}.md-shortcut kbd{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:.1875rem;padding:.0625rem .3125rem;font-family:monospace;font-size:.625rem}.md-progress-section{padding:1rem 1.25rem;background:var(--md-bg-subtle);border-top:1px solid var(--md-border);flex-shrink:0}.md-progress-label{display:flex;justify-content:space-between;margin-bottom:.5rem;font-size:.8125rem;color:var(--md-text-subtle)}.md-progress-bar{height:.375rem;background:var(--md-border);border-radius:.1875rem;overflow:hidden}.md-progress-fill{height:100%;background:linear-gradient(90deg,var(--md-primary),var(--md-primary-hover));border-radius:.1875rem;transition:width .3s ease;width:0%}.md-progress-fill.indeterminate{width:30%;animation:indeterminate 1.5s ease-in-out infinite}@keyframes indeterminate{0%{transform:translate(-100%)}to{transform:translate(400%)}}.md-progress-current{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;padding:.375rem .625rem;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);font-size:.75rem;color:var(--md-text-subtle);overflow:hidden}.md-progress-page-icon{flex-shrink:0}.md-progress-page-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--md-text)}.md-toast{position:absolute;bottom:5rem;left:50%;transform:translate(-50%) translateY(1.25rem);background:var(--md-success);color:#fff;padding:.75rem 1.25rem;border-radius:var(--md-radius);display:flex;align-items:center;gap:.5rem;font-size:.875rem;font-weight:500;box-shadow:var(--md-shadow-sm);opacity:0;transition:all .3s ease;z-index:10}.md-toast.show{opacity:1;transform:translate(-50%) translateY(0)}.md-toast svg{width:1.125rem;height:1.125rem;fill:currentColor}.md-skeleton{background:linear-gradient(90deg,var(--md-bg-subtle) 25%,var(--md-bg-hover) 50%,var(--md-bg-subtle) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite;border-radius:var(--md-radius)}@keyframes skeleton-loading{0%{background-position:200% 0}to{background-position:-200% 0}}.md-skeleton-text{height:.875rem;margin:.5rem 0}.md-skeleton-text.short{width:60%}.md-skeleton-text.medium{width:80%}@keyframes shake{0%,to{transform:translate(0)}20%,60%{transform:translate(-.3125rem)}40%,80%{transform:translate(.3125rem)}}.shake{animation:shake .5s ease;background:var(--md-danger-light)!important;border-color:var(--md-danger)!important;color:var(--md-danger)!important}.md-tree-container::-webkit-scrollbar,.md-config-content::-webkit-scrollbar{width:.5rem}.md-tree-container::-webkit-scrollbar-track,.md-config-content::-webkit-scrollbar-track{background:var(--md-bg-subtle);border-radius:.25rem}.md-tree-container::-webkit-scrollbar-thumb,.md-config-content::-webkit-scrollbar-thumb{background:var(--md-border);border-radius:.25rem}.md-tree-container::-webkit-scrollbar-thumb:hover,.md-config-content::-webkit-scrollbar-thumb:hover{background:var(--md-text-muted)}#md-export-modal[data-theme=dark]{--md-primary: #4C9AFF;--md-primary-hover: #79B8FF;--md-primary-light: #1C2B41;--md-primary-dark: #0052CC;--md-success: #36B37E;--md-success-light: #1C3829;--md-danger: #FF5630;--md-danger-light: #3D1F1F;--md-warning: #FFAB00;--md-warning-light: #3D3519;--md-text: #E6E6E6;--md-text-subtle: #A6A6A6;--md-text-muted: #6B6B6B;--md-bg: #1D2125;--md-bg-subtle: #22272B;--md-bg-hover: #2D2D2D;--md-border: #3C3C3C}#md-export-modal[data-theme=dark]{background-color:#000000b3}#md-export-modal[data-theme=dark] .md-tree-icon.folder svg{fill:#ffd54f}.md-settings-panel{border-top:1px solid var(--md-border);flex-shrink:0}.md-settings-toggle{width:100%;padding:.75rem 1.25rem;border:none;background:var(--md-bg-subtle);cursor:pointer;display:flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:500;color:var(--md-text-subtle);font-family:var(--md-font);transition:background-color var(--md-transition)}.md-settings-toggle:hover{background:var(--md-bg-hover)}.md-settings-toggle svg{width:1.125rem;height:1.125rem;fill:currentColor}.md-settings-toggle .md-chevron{margin-left:auto;transition:transform .2s ease}.md-settings-toggle .md-chevron.expanded{transform:rotate(90deg)}.md-settings-content{padding:1rem 1.25rem;background:var(--md-bg);display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem}.md-settings-content.md-single-column{grid-template-columns:1fr}.md-filter-chips{display:flex;gap:.375rem;flex-wrap:wrap;margin-left:auto}.md-filter-chip{padding:.25rem .625rem;background:var(--md-bg);border:1px solid var(--md-border);border-radius:.75rem;font-size:.6875rem;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:.25rem}.md-filter-chip:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-filter-chip.active{background:var(--md-primary);border-color:var(--md-primary);color:#fff}.md-filter-chip .count{background:#0000001a;padding:.0625rem .3125rem;border-radius:.5rem;font-size:.625rem}.md-filter-chip.active .count{background:#fff3}.md-stats-section{padding:.75rem 1.5rem;background:linear-gradient(135deg,var(--md-bg-subtle) 0%,var(--md-bg) 100%);border-bottom:1px solid var(--md-border)}.md-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}.md-stat-item{display:flex;flex-direction:column;align-items:center;padding:.5rem;background:var(--md-bg);border-radius:var(--md-radius);border:1px solid var(--md-border);transition:all var(--md-transition)}.md-stat-item:hover{border-color:var(--md-primary);box-shadow:0 .125rem .5rem #0052cc1a}.md-stat-icon{font-size:1.25rem;margin-bottom:.25rem}.md-stat-value{font-size:1.125rem;font-weight:600;color:var(--md-text)}.md-stat-label{font-size:.6875rem;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px}.md-shortcuts-hint{display:none}.md-header-row{display:flex;justify-content:space-between;align-items:flex-start}.md-obsidian-options{padding-top:.5rem;border-top:1px solid var(--md-border);margin-top:.5rem}#md-export-status{margin-left:.75rem;color:var(--md-text-subtle);font-size:.8125rem;font-family:var(--md-font)}#md-export-trigger{margin-left:.625rem}.md-hint{font-size:.75rem;color:var(--md-text-muted)}@media (max-width: 768px){:root{--md-modal-width: 100%;--md-modal-height: auto;--md-header-height: 3rem;--md-footer-height: auto}#md-export-modal{padding:.75rem}.md-modal-content{max-height:95vh;grid-template-rows:var(--md-header-height) 1fr auto}.md-modal-body{grid-template-columns:1fr;grid-template-rows:auto 1fr}.md-source-panel{border-right:none;border-bottom:1px solid var(--md-border);max-height:40vh}.md-config-panel{max-height:50vh}.md-modal-header{padding:0 1rem}.md-modal-header h3{font-size:1rem}.md-controls{padding:.5rem .75rem}.md-segmented-control{flex-wrap:wrap}.md-tree-container{max-height:25vh;min-height:8rem}.md-config-content{padding:.75rem 1rem}.md-settings-grid{grid-template-columns:1fr}.md-modal-footer{flex-direction:column;padding:.75rem 1rem;gap:.75rem;height:auto}.md-footer-left,.md-footer-right{width:100%;justify-content:center}.md-footer-right{flex-direction:column;gap:.5rem}.md-footer-right .md-btn{width:100%;justify-content:center}.md-help-btn{display:none}}@media (max-width: 480px){#md-export-modal{padding:.5rem}.md-modal-header h3{font-size:.9375rem}.md-btn-icon{width:1.75rem;height:1.75rem}.md-btn-icon svg{width:1rem;height:1rem}.md-tree-item{padding:.3125rem .375rem;font-size:.75rem}.md-checkbox-label{font-size:.75rem}.md-btn{padding:.625rem 1rem;font-size:.875rem}.md-preset-btn{padding:.5rem;font-size:.75rem}}@media (max-height: 700px){:root{--md-header-height: 3rem;--md-footer-height: 3.5rem}.md-modal-content{max-height:95vh}.md-modal-header h3{font-size:1rem}.md-tree-container{min-height:6rem}.md-config-content{padding:.75rem 1rem}.md-settings-section{margin-bottom:.75rem}.md-checkbox-label{padding:.25rem .375rem}.md-btn{padding:.375rem .75rem}}@media (max-height: 600px){:root{--md-header-height: 2.75rem;--md-footer-height: 3rem}.md-modal-content{max-height:98vh}.md-modal-header h3{font-size:.9375rem}.md-page-count{display:none}.md-controls{padding:.375rem .75rem}.md-tree-container{min-height:5rem}.md-tree-item{padding:.25rem .375rem;font-size:.75rem}.md-config-content{padding:.5rem .75rem}.md-settings-title{font-size:.625rem;margin-bottom:.5rem}.md-checkbox-label{font-size:.75rem;padding:.1875rem .25rem}.md-preset-btn{padding:.375rem .5rem;font-size:.75rem}.md-btn{padding:.3125rem .625rem;font-size:.75rem}.md-stats-bar{display:none}}@media (max-height: 500px){.md-modal-content{max-height:98vh}.md-modal-header h3{font-size:.875rem}.md-search-bar{padding:.375rem .75rem}.md-tree-container{min-height:4rem;max-height:30vh}.md-config-tabs{display:none}.md-settings-section{margin-bottom:.5rem}.md-modal-footer{padding:0 .75rem}}@media (max-height: 500px) and (orientation: landscape){.md-modal-body{grid-template-columns:45% 55%}.md-source-panel,.md-config-panel{max-height:none}}.md-modal-content.with-preview{--md-modal-width: 75rem}.md-split-view{display:flex;flex:1;min-height:0;overflow:hidden}.md-split-left{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--md-border);min-width:0}.md-split-right{flex:1;display:flex;flex-direction:column;min-width:0}.md-preview-header{padding:.75rem 1rem;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);font-size:.8125rem;font-weight:500;color:var(--md-text-subtle);display:flex;align-items:center;gap:.5rem}.md-preview-content{flex:1;overflow-y:auto;padding:1rem;font-family:SF Mono,Monaco,Cascadia Code,monospace;font-size:.75rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:var(--md-bg);color:var(--md-text)}.md-preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--md-text-muted);text-align:center;padding:1.5rem}.md-preview-placeholder .icon{font-size:3rem;margin-bottom:.75rem;opacity:.5}.md-preview-content .mermaid-block{background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:.75rem;margin:.5rem 0}.md-preview-content .mermaid-header{color:var(--md-primary);font-weight:500;margin-bottom:.5rem}@media (max-width: 800px){.md-split-view{flex-direction:column}.md-split-left,.md-split-right{border-right:none;border-bottom:1px solid var(--md-border)}}.md-history-section{padding:.5rem 1.5rem;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border)}.md-history-title{font-size:.6875rem;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem}.md-history-list{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.25rem}.md-history-item{flex-shrink:0;padding:.375rem .75rem;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);font-size:.75rem;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);display:flex;align-items:center;gap:.375rem}.md-history-item:hover{border-color:var(--md-primary);color:var(--md-primary)}.md-history-item .date{color:var(--md-text-muted);font-size:.625rem}.md-progress-details{margin-top:.75rem;max-height:7.5rem;overflow-y:auto;font-size:.75rem}.md-progress-item{display:flex;align-items:center;gap:.5rem;padding:.25rem 0;color:var(--md-text-subtle)}.md-progress-item.done{color:var(--md-success)}.md-progress-item.active{color:var(--md-primary);font-weight:500}.md-progress-item.error{color:var(--md-danger)}.md-progress-item .status-icon{width:1rem;text-align:center}.md-header-subtitle{display:flex;align-items:center;gap:.375rem;font-size:.75rem;color:var(--md-text-muted);margin:0;padding:0}.md-header-subtitle .icon{width:.875rem;height:.875rem;fill:currentColor}.md-header-row{display:flex;justify-content:space-between;align-items:center;width:100%}.md-modal-header{flex-direction:column;justify-content:center;gap:.25rem}.md-source-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);gap:.5rem;flex-shrink:0}.md-filter-tabs{display:flex;background:var(--md-bg);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:.125rem;gap:.125rem}.md-filter-tab{padding:.25rem .625rem;background:transparent;border:none;border-radius:calc(var(--md-radius) - .125rem);font-size:.6875rem;font-weight:500;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);font-family:var(--md-font);white-space:nowrap}.md-filter-tab:hover{background:var(--md-bg-hover);color:var(--md-text)}.md-filter-tab.active{background:var(--md-primary);color:#fff}.md-tree-controls{display:flex;gap:.25rem}.md-btn-icon-sm{width:1.5rem;height:1.5rem;padding:0;border:1px solid var(--md-border);background:var(--md-bg);border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-muted);transition:all var(--md-transition)}.md-btn-icon-sm:hover:not(:disabled){background:var(--md-bg-hover);color:var(--md-text);border-color:var(--md-text-muted)}.md-btn-icon-sm:disabled{opacity:.5;cursor:not-allowed}.md-btn-icon-sm svg{width:.875rem;height:.875rem;fill:currentColor}.md-status-bar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.25rem;padding:.5rem .75rem;background:var(--md-bg);border-top:1px solid var(--md-border);font-size:.6875rem;color:var(--md-text-muted);flex-shrink:0}.md-status-item{display:flex;align-items:center;gap:.25rem}.md-status-icon{font-size:.75rem}.md-status-divider{color:var(--md-border);margin:0 .125rem}.md-config-panel{padding:1rem 1.25rem;overflow-y:auto}.md-config-section{margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--md-border)}.md-config-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}.md-config-label{display:block;font-size:.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem}.md-config-hint{font-size:.6875rem;color:var(--md-text-muted);margin-top:.375rem;margin-bottom:0}.md-select-wrapper{position:relative}.md-select{width:100%;padding:.5rem 2rem .5rem .75rem;border:1px solid var(--md-border);border-radius:var(--md-radius);background:var(--md-bg);font-size:.8125rem;font-family:var(--md-font);color:var(--md-text);cursor:pointer;-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235E6C84'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .5rem center;background-size:1.25rem}.md-select:hover{border-color:var(--md-text-muted)}.md-select:focus{outline:none;border-color:var(--md-primary);box-shadow:0 0 0 2px var(--md-primary-light)}.md-section-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem}.md-section-icon{font-size:1rem}.md-section-icon .icon{width:1rem;height:1rem;fill:var(--md-text-muted)}.md-section-title{font-size:.8125rem;font-weight:600;color:var(--md-text);flex:1}.md-toggle-switch{position:relative;display:inline-block;width:2.25rem;height:1.25rem}.md-toggle-switch input{opacity:0;width:0;height:0}.md-toggle-slider{position:absolute;cursor:pointer;top:0;right:0;bottom:0;left:0;background-color:var(--md-border);border-radius:.625rem;transition:all var(--md-transition)}.md-toggle-slider:before{position:absolute;content:"";height:.875rem;width:.875rem;left:.1875rem;bottom:.1875rem;background-color:#fff;border-radius:50%;transition:all var(--md-transition);box-shadow:var(--md-shadow-sm)}.md-toggle-switch input:checked+.md-toggle-slider{background-color:var(--md-primary)}.md-toggle-switch input:checked+.md-toggle-slider:before{transform:translate(1rem)}.md-card-select{display:flex;gap:.5rem;margin-bottom:.75rem}.md-card-option{flex:1;display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.625rem .5rem;border:2px solid var(--md-border);border-radius:var(--md-radius);background:var(--md-bg);cursor:pointer;transition:all var(--md-transition);font-family:var(--md-font)}.md-card-option:hover{border-color:var(--md-primary);background:var(--md-primary-light)}.md-card-option.active{border-color:var(--md-primary);background:var(--md-primary-light);color:var(--md-primary)}.md-card-icon{font-size:1.25rem}.md-card-label{font-size:.6875rem;font-weight:500;color:var(--md-text-subtle)}.md-card-option.active .md-card-label{color:var(--md-primary)}.md-inline-option{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}.md-option-label{font-size:.75rem;color:var(--md-text-subtle);white-space:nowrap}.md-toggle-group{display:flex;background:var(--md-bg-subtle);border:1px solid var(--md-border);border-radius:var(--md-radius);padding:.125rem}.md-toggle-btn{padding:.25rem .625rem;border:none;background:transparent;border-radius:calc(var(--md-radius) - .125rem);font-size:.6875rem;font-weight:500;color:var(--md-text-subtle);cursor:pointer;transition:all var(--md-transition);font-family:var(--md-font)}.md-toggle-btn:hover{color:var(--md-text)}.md-toggle-btn.active{background:var(--md-bg);color:var(--md-primary);box-shadow:var(--md-shadow-sm)}.md-options-grid{display:grid;gap:.375rem}.md-options-2col{grid-template-columns:repeat(2,1fr)}.md-options-3col{grid-template-columns:repeat(3,1fr)}.md-checkbox-compact{display:flex;align-items:center;gap:.375rem;cursor:pointer;font-size:.75rem;color:var(--md-text);padding:.25rem .375rem;border-radius:var(--md-radius);transition:background-color var(--md-transition)}.md-checkbox-compact:hover{background:var(--md-bg-subtle)}.md-checkbox-compact input[type=checkbox]{width:.875rem;height:.875rem;accent-color:var(--md-primary);cursor:pointer;flex-shrink:0;margin:0}.md-diagrams-options{padding-top:.5rem}.md-btn-text{display:inline-flex;align-items:center;gap:.375rem;padding:.375rem .625rem;border:none;background:transparent;color:var(--md-text-subtle);font-size:.75rem;font-family:var(--md-font);cursor:pointer;border-radius:var(--md-radius);transition:all var(--md-transition)}.md-btn-text:hover{background:var(--md-bg-subtle);color:var(--md-text)}.md-btn-text .icon{width:.875rem;height:.875rem;fill:currentColor}@media (max-width: 768px){.md-source-toolbar{flex-wrap:wrap}.md-filter-tabs{order:2;width:100%;justify-content:center}.md-tree-controls{order:1}.md-status-bar{font-size:.625rem}.md-card-select{flex-direction:column}.md-options-2col{grid-template-columns:1fr}}@media (max-height: 600px){.md-status-bar{padding:.375rem .5rem}.md-config-section{margin-bottom:.75rem;padding-bottom:.75rem}}.md-checkbox-compact.disabled{opacity:.5;pointer-events:none}.md-checkbox-compact.disabled input{cursor:not-allowed}.md-diagrams-options.disabled{opacity:.4;pointer-events:none}.md-card-option.active{border-color:var(--md-primary);background:#0052cc1a;color:var(--md-primary)}#md-export-modal[data-theme=dark] .md-card-option.active{background:#4c9aff26}.md-status-bar{color:var(--md-text-muted);opacity:.85}.md-status-item{font-size:.6875rem}.md-btn-secondary:disabled{opacity:.5;cursor:not-allowed}.md-btn-secondary:disabled:hover{background-color:var(--md-bg);border-color:var(--md-border)}.md-tree-container{scrollbar-width:thin;scrollbar-color:var(--md-border) transparent}.md-tree-item .md-tree-icon.error svg,.md-tree-label.error+.md-tree-icon svg{fill:var(--md-warning)}.md-tree li[data-has-error=true] .md-tree-icon svg{fill:var(--md-warning)}.md-tree-label.draft:after{content:" \u270F\uFE0F";font-size:.625rem;opacity:.6}.md-btn-lang{min-width:2rem;height:2rem;padding:0 .375rem;border:1px solid var(--md-border);background:var(--md-bg);border-radius:var(--md-radius);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md-text-subtle);font-size:.6875rem;font-weight:600;font-family:var(--md-font);text-transform:uppercase;letter-spacing:.5px;transition:all var(--md-transition)}.md-btn-lang:hover{background:var(--md-bg-subtle);color:var(--md-text);border-color:var(--md-text-muted)}.md-btn-lang:active{background:var(--md-primary-light);border-color:var(--md-primary);color:var(--md-primary)}.md-status-approx{opacity:.6} `);
 
 (function () {
   'use strict';
 
+  var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
   const MAX_CONCURRENCY = 6;
   const PAGE_LIMIT = 50;
   const DEBUG = false;
@@ -76,11 +79,11 @@
     throw lastError;
   }
   function getEnvironment() {
-    var _a;
+    var _a2;
     if (typeof GM_xmlhttpRequest !== "undefined") {
       return "tampermonkey";
     }
-    if (typeof chrome !== "undefined" && ((_a = chrome.runtime) == null ? void 0 : _a.id)) {
+    if (typeof chrome !== "undefined" && ((_a2 = chrome.runtime) == null ? void 0 : _a2.id)) {
       return "extension";
     }
     return "browser";
@@ -117,7 +120,7 @@
     });
   }
   async function browserFetch(url) {
-    var _a;
+    var _a2;
     try {
       const response = await fetch(url, {
         credentials: "include",
@@ -131,7 +134,7 @@
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     } catch (error) {
-      if (typeof chrome !== "undefined" && ((_a = chrome.runtime) == null ? void 0 : _a.sendMessage)) {
+      if (typeof chrome !== "undefined" && ((_a2 = chrome.runtime) == null ? void 0 : _a2.sendMessage)) {
         const result = await chrome.runtime.sendMessage({
           type: "FETCH",
           url
@@ -164,7 +167,7 @@
     return fetchJson$1(url);
   }
   async function fetchChildren(pageId) {
-    var _a, _b;
+    var _a2, _b2;
     const baseUrl = getBaseUrl();
     const children = [];
     let start = 0;
@@ -172,10 +175,10 @@
     while (hasMore) {
       const url = `${baseUrl}/rest/api/content/${pageId}/child/page?limit=${PAGE_LIMIT}&start=${start}`;
       const response = await fetchJson$1(url);
-      if ((_a = response.results) == null ? void 0 : _a.length) {
+      if ((_a2 = response.results) == null ? void 0 : _a2.length) {
         children.push(...response.results);
       }
-      hasMore = ((_b = response.results) == null ? void 0 : _b.length) === PAGE_LIMIT;
+      hasMore = ((_b2 = response.results) == null ? void 0 : _b2.length) === PAGE_LIMIT;
       start += PAGE_LIMIT;
     }
     return children;
@@ -863,7 +866,7 @@
         );
       }
       if (input === "") return "";
-      var output = process$1.call(this, new RootNode(input, this.options));
+      var output = process.call(this, new RootNode(input, this.options));
       return postProcess.call(this, output);
     },
     /**
@@ -930,7 +933,7 @@
       }, string);
     }
   };
-  function process$1(parentNode) {
+  function process(parentNode) {
     var self2 = this;
     return reduce.call(parentNode.childNodes, function(output, node) {
       node = new Node(node, self2.options);
@@ -954,7 +957,7 @@
   }
   function replacementForNode(node) {
     var rule = this.rules.forNode(node);
-    var content = process$1.call(this, node);
+    var content = process.call(this, node);
     var whitespace = node.flankingWhitespace;
     if (whitespace.leading || whitespace.trailing) content = content.trim();
     return whitespace.leading + rule.replacement(content, node, this.options) + whitespace.trailing;
@@ -1238,30 +1241,40 @@
     return { shape: "rectangle", label: trimmed };
   }
   function generateMermaidShape(shape, label) {
+    const cleanLabel = cleanMermaidLabel(label);
+    const safeLabel = cleanLabel || "node";
     switch (shape) {
       case "rectangle":
-        return `[${label}]`;
+        return `["${safeLabel}"]`;
       case "rounded-rectangle":
-        return `(${label})`;
+        return `("${safeLabel}")`;
       case "circle":
-        return `((${label}))`;
+        return `(("${safeLabel}"))`;
       case "ellipse":
-        return `([${label}])`;
+        return `(["${safeLabel}"])`;
       case "diamond":
-        return `{${label}}`;
+        return `{"${safeLabel}"}`;
       case "hexagon":
-        return `{{${label}}}`;
+        return `{{"${safeLabel}"}}`;
       case "parallelogram":
-        return `[/${label}/]`;
+        return `[/"${safeLabel}"/]`;
       case "trapezoid":
-        return `[/${label}\\]`;
+        return `[/"${safeLabel}"\\]`;
       case "cylinder":
-        return `[(${label})]`;
+        return `[("${safeLabel}")]`;
       case "note":
-        return `>${label}]`;
+        return `["${safeLabel}"]`;
       default:
-        return `[${label}]`;
+        return `["${safeLabel}"]`;
     }
+  }
+  function cleanMermaidLabel(label) {
+    if (!label) return "";
+    let clean = label.replace(/<[^>]*>/g, "");
+    clean = clean.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+    clean = clean.replace(/"/g, "'").replace(/\[/g, "(").replace(/\]/g, ")").replace(/\{/g, "(").replace(/\}/g, ")").replace(/\|/g, "/").replace(/#/g, "").replace(/\n/g, " ").replace(/\r/g, "");
+    clean = clean.trim().replace(/\s+/g, " ");
+    return clean;
   }
   var DRAWIO_SHAPE_MAP = {
     "rectangle": "rounded=0",
@@ -1364,10 +1377,10 @@
     "custom": "rectangle"
   };
   function getNodeBounds(node, defaultSize) {
-    var _a, _b, _c, _d;
+    var _a2, _b2, _c, _d;
     return {
-      x: ((_a = node.position) == null ? void 0 : _a.x) ?? 0,
-      y: ((_b = node.position) == null ? void 0 : _b.y) ?? 0,
+      x: ((_a2 = node.position) == null ? void 0 : _a2.x) ?? 0,
+      y: ((_b2 = node.position) == null ? void 0 : _b2.y) ?? 0,
       width: ((_c = node.size) == null ? void 0 : _c.width) ?? defaultSize.width,
       height: ((_d = node.size) == null ? void 0 : _d.height) ?? defaultSize.height
     };
@@ -1659,6 +1672,4170 @@
   function escapeXml(text) {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
   }
+  /*! pako 2.1.0 https://github.com/nodeca/pako @license (MIT AND Zlib) */
+  const Z_FIXED$1 = 4;
+  const Z_BINARY = 0;
+  const Z_TEXT = 1;
+  const Z_UNKNOWN$1 = 2;
+  function zero$1(buf) {
+    let len = buf.length;
+    while (--len >= 0) {
+      buf[len] = 0;
+    }
+  }
+  const STORED_BLOCK = 0;
+  const STATIC_TREES = 1;
+  const DYN_TREES = 2;
+  const MIN_MATCH$1 = 3;
+  const MAX_MATCH$1 = 258;
+  const LENGTH_CODES$1 = 29;
+  const LITERALS$1 = 256;
+  const L_CODES$1 = LITERALS$1 + 1 + LENGTH_CODES$1;
+  const D_CODES$1 = 30;
+  const BL_CODES$1 = 19;
+  const HEAP_SIZE$1 = 2 * L_CODES$1 + 1;
+  const MAX_BITS$1 = 15;
+  const Buf_size = 16;
+  const MAX_BL_BITS = 7;
+  const END_BLOCK = 256;
+  const REP_3_6 = 16;
+  const REPZ_3_10 = 17;
+  const REPZ_11_138 = 18;
+  const extra_lbits = (
+    /* extra bits for each length code */
+    new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0])
+  );
+  const extra_dbits = (
+    /* extra bits for each distance code */
+    new Uint8Array([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13])
+  );
+  const extra_blbits = (
+    /* extra bits for each bit length code */
+    new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7])
+  );
+  const bl_order = new Uint8Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+  const DIST_CODE_LEN = 512;
+  const static_ltree = new Array((L_CODES$1 + 2) * 2);
+  zero$1(static_ltree);
+  const static_dtree = new Array(D_CODES$1 * 2);
+  zero$1(static_dtree);
+  const _dist_code = new Array(DIST_CODE_LEN);
+  zero$1(_dist_code);
+  const _length_code = new Array(MAX_MATCH$1 - MIN_MATCH$1 + 1);
+  zero$1(_length_code);
+  const base_length = new Array(LENGTH_CODES$1);
+  zero$1(base_length);
+  const base_dist = new Array(D_CODES$1);
+  zero$1(base_dist);
+  function StaticTreeDesc(static_tree, extra_bits, extra_base, elems, max_length) {
+    this.static_tree = static_tree;
+    this.extra_bits = extra_bits;
+    this.extra_base = extra_base;
+    this.elems = elems;
+    this.max_length = max_length;
+    this.has_stree = static_tree && static_tree.length;
+  }
+  let static_l_desc;
+  let static_d_desc;
+  let static_bl_desc;
+  function TreeDesc(dyn_tree, stat_desc) {
+    this.dyn_tree = dyn_tree;
+    this.max_code = 0;
+    this.stat_desc = stat_desc;
+  }
+  const d_code = (dist) => {
+    return dist < 256 ? _dist_code[dist] : _dist_code[256 + (dist >>> 7)];
+  };
+  const put_short = (s, w) => {
+    s.pending_buf[s.pending++] = w & 255;
+    s.pending_buf[s.pending++] = w >>> 8 & 255;
+  };
+  const send_bits = (s, value, length) => {
+    if (s.bi_valid > Buf_size - length) {
+      s.bi_buf |= value << s.bi_valid & 65535;
+      put_short(s, s.bi_buf);
+      s.bi_buf = value >> Buf_size - s.bi_valid;
+      s.bi_valid += length - Buf_size;
+    } else {
+      s.bi_buf |= value << s.bi_valid & 65535;
+      s.bi_valid += length;
+    }
+  };
+  const send_code = (s, c, tree) => {
+    send_bits(
+      s,
+      tree[c * 2],
+      tree[c * 2 + 1]
+      /*.Len*/
+    );
+  };
+  const bi_reverse = (code, len) => {
+    let res = 0;
+    do {
+      res |= code & 1;
+      code >>>= 1;
+      res <<= 1;
+    } while (--len > 0);
+    return res >>> 1;
+  };
+  const bi_flush = (s) => {
+    if (s.bi_valid === 16) {
+      put_short(s, s.bi_buf);
+      s.bi_buf = 0;
+      s.bi_valid = 0;
+    } else if (s.bi_valid >= 8) {
+      s.pending_buf[s.pending++] = s.bi_buf & 255;
+      s.bi_buf >>= 8;
+      s.bi_valid -= 8;
+    }
+  };
+  const gen_bitlen = (s, desc) => {
+    const tree = desc.dyn_tree;
+    const max_code = desc.max_code;
+    const stree = desc.stat_desc.static_tree;
+    const has_stree = desc.stat_desc.has_stree;
+    const extra = desc.stat_desc.extra_bits;
+    const base = desc.stat_desc.extra_base;
+    const max_length = desc.stat_desc.max_length;
+    let h;
+    let n, m;
+    let bits;
+    let xbits;
+    let f;
+    let overflow = 0;
+    for (bits = 0; bits <= MAX_BITS$1; bits++) {
+      s.bl_count[bits] = 0;
+    }
+    tree[s.heap[s.heap_max] * 2 + 1] = 0;
+    for (h = s.heap_max + 1; h < HEAP_SIZE$1; h++) {
+      n = s.heap[h];
+      bits = tree[tree[n * 2 + 1] * 2 + 1] + 1;
+      if (bits > max_length) {
+        bits = max_length;
+        overflow++;
+      }
+      tree[n * 2 + 1] = bits;
+      if (n > max_code) {
+        continue;
+      }
+      s.bl_count[bits]++;
+      xbits = 0;
+      if (n >= base) {
+        xbits = extra[n - base];
+      }
+      f = tree[n * 2];
+      s.opt_len += f * (bits + xbits);
+      if (has_stree) {
+        s.static_len += f * (stree[n * 2 + 1] + xbits);
+      }
+    }
+    if (overflow === 0) {
+      return;
+    }
+    do {
+      bits = max_length - 1;
+      while (s.bl_count[bits] === 0) {
+        bits--;
+      }
+      s.bl_count[bits]--;
+      s.bl_count[bits + 1] += 2;
+      s.bl_count[max_length]--;
+      overflow -= 2;
+    } while (overflow > 0);
+    for (bits = max_length; bits !== 0; bits--) {
+      n = s.bl_count[bits];
+      while (n !== 0) {
+        m = s.heap[--h];
+        if (m > max_code) {
+          continue;
+        }
+        if (tree[m * 2 + 1] !== bits) {
+          s.opt_len += (bits - tree[m * 2 + 1]) * tree[m * 2];
+          tree[m * 2 + 1] = bits;
+        }
+        n--;
+      }
+    }
+  };
+  const gen_codes = (tree, max_code, bl_count) => {
+    const next_code = new Array(MAX_BITS$1 + 1);
+    let code = 0;
+    let bits;
+    let n;
+    for (bits = 1; bits <= MAX_BITS$1; bits++) {
+      code = code + bl_count[bits - 1] << 1;
+      next_code[bits] = code;
+    }
+    for (n = 0; n <= max_code; n++) {
+      let len = tree[n * 2 + 1];
+      if (len === 0) {
+        continue;
+      }
+      tree[n * 2] = bi_reverse(next_code[len]++, len);
+    }
+  };
+  const tr_static_init = () => {
+    let n;
+    let bits;
+    let length;
+    let code;
+    let dist;
+    const bl_count = new Array(MAX_BITS$1 + 1);
+    length = 0;
+    for (code = 0; code < LENGTH_CODES$1 - 1; code++) {
+      base_length[code] = length;
+      for (n = 0; n < 1 << extra_lbits[code]; n++) {
+        _length_code[length++] = code;
+      }
+    }
+    _length_code[length - 1] = code;
+    dist = 0;
+    for (code = 0; code < 16; code++) {
+      base_dist[code] = dist;
+      for (n = 0; n < 1 << extra_dbits[code]; n++) {
+        _dist_code[dist++] = code;
+      }
+    }
+    dist >>= 7;
+    for (; code < D_CODES$1; code++) {
+      base_dist[code] = dist << 7;
+      for (n = 0; n < 1 << extra_dbits[code] - 7; n++) {
+        _dist_code[256 + dist++] = code;
+      }
+    }
+    for (bits = 0; bits <= MAX_BITS$1; bits++) {
+      bl_count[bits] = 0;
+    }
+    n = 0;
+    while (n <= 143) {
+      static_ltree[n * 2 + 1] = 8;
+      n++;
+      bl_count[8]++;
+    }
+    while (n <= 255) {
+      static_ltree[n * 2 + 1] = 9;
+      n++;
+      bl_count[9]++;
+    }
+    while (n <= 279) {
+      static_ltree[n * 2 + 1] = 7;
+      n++;
+      bl_count[7]++;
+    }
+    while (n <= 287) {
+      static_ltree[n * 2 + 1] = 8;
+      n++;
+      bl_count[8]++;
+    }
+    gen_codes(static_ltree, L_CODES$1 + 1, bl_count);
+    for (n = 0; n < D_CODES$1; n++) {
+      static_dtree[n * 2 + 1] = 5;
+      static_dtree[n * 2] = bi_reverse(n, 5);
+    }
+    static_l_desc = new StaticTreeDesc(static_ltree, extra_lbits, LITERALS$1 + 1, L_CODES$1, MAX_BITS$1);
+    static_d_desc = new StaticTreeDesc(static_dtree, extra_dbits, 0, D_CODES$1, MAX_BITS$1);
+    static_bl_desc = new StaticTreeDesc(new Array(0), extra_blbits, 0, BL_CODES$1, MAX_BL_BITS);
+  };
+  const init_block = (s) => {
+    let n;
+    for (n = 0; n < L_CODES$1; n++) {
+      s.dyn_ltree[n * 2] = 0;
+    }
+    for (n = 0; n < D_CODES$1; n++) {
+      s.dyn_dtree[n * 2] = 0;
+    }
+    for (n = 0; n < BL_CODES$1; n++) {
+      s.bl_tree[n * 2] = 0;
+    }
+    s.dyn_ltree[END_BLOCK * 2] = 1;
+    s.opt_len = s.static_len = 0;
+    s.sym_next = s.matches = 0;
+  };
+  const bi_windup = (s) => {
+    if (s.bi_valid > 8) {
+      put_short(s, s.bi_buf);
+    } else if (s.bi_valid > 0) {
+      s.pending_buf[s.pending++] = s.bi_buf;
+    }
+    s.bi_buf = 0;
+    s.bi_valid = 0;
+  };
+  const smaller = (tree, n, m, depth) => {
+    const _n2 = n * 2;
+    const _m2 = m * 2;
+    return tree[_n2] < tree[_m2] || tree[_n2] === tree[_m2] && depth[n] <= depth[m];
+  };
+  const pqdownheap = (s, tree, k) => {
+    const v = s.heap[k];
+    let j = k << 1;
+    while (j <= s.heap_len) {
+      if (j < s.heap_len && smaller(tree, s.heap[j + 1], s.heap[j], s.depth)) {
+        j++;
+      }
+      if (smaller(tree, v, s.heap[j], s.depth)) {
+        break;
+      }
+      s.heap[k] = s.heap[j];
+      k = j;
+      j <<= 1;
+    }
+    s.heap[k] = v;
+  };
+  const compress_block = (s, ltree, dtree) => {
+    let dist;
+    let lc2;
+    let sx = 0;
+    let code;
+    let extra;
+    if (s.sym_next !== 0) {
+      do {
+        dist = s.pending_buf[s.sym_buf + sx++] & 255;
+        dist += (s.pending_buf[s.sym_buf + sx++] & 255) << 8;
+        lc2 = s.pending_buf[s.sym_buf + sx++];
+        if (dist === 0) {
+          send_code(s, lc2, ltree);
+        } else {
+          code = _length_code[lc2];
+          send_code(s, code + LITERALS$1 + 1, ltree);
+          extra = extra_lbits[code];
+          if (extra !== 0) {
+            lc2 -= base_length[code];
+            send_bits(s, lc2, extra);
+          }
+          dist--;
+          code = d_code(dist);
+          send_code(s, code, dtree);
+          extra = extra_dbits[code];
+          if (extra !== 0) {
+            dist -= base_dist[code];
+            send_bits(s, dist, extra);
+          }
+        }
+      } while (sx < s.sym_next);
+    }
+    send_code(s, END_BLOCK, ltree);
+  };
+  const build_tree = (s, desc) => {
+    const tree = desc.dyn_tree;
+    const stree = desc.stat_desc.static_tree;
+    const has_stree = desc.stat_desc.has_stree;
+    const elems = desc.stat_desc.elems;
+    let n, m;
+    let max_code = -1;
+    let node;
+    s.heap_len = 0;
+    s.heap_max = HEAP_SIZE$1;
+    for (n = 0; n < elems; n++) {
+      if (tree[n * 2] !== 0) {
+        s.heap[++s.heap_len] = max_code = n;
+        s.depth[n] = 0;
+      } else {
+        tree[n * 2 + 1] = 0;
+      }
+    }
+    while (s.heap_len < 2) {
+      node = s.heap[++s.heap_len] = max_code < 2 ? ++max_code : 0;
+      tree[node * 2] = 1;
+      s.depth[node] = 0;
+      s.opt_len--;
+      if (has_stree) {
+        s.static_len -= stree[node * 2 + 1];
+      }
+    }
+    desc.max_code = max_code;
+    for (n = s.heap_len >> 1; n >= 1; n--) {
+      pqdownheap(s, tree, n);
+    }
+    node = elems;
+    do {
+      n = s.heap[
+        1
+        /*SMALLEST*/
+      ];
+      s.heap[
+        1
+        /*SMALLEST*/
+      ] = s.heap[s.heap_len--];
+      pqdownheap(
+        s,
+        tree,
+        1
+        /*SMALLEST*/
+      );
+      m = s.heap[
+        1
+        /*SMALLEST*/
+      ];
+      s.heap[--s.heap_max] = n;
+      s.heap[--s.heap_max] = m;
+      tree[node * 2] = tree[n * 2] + tree[m * 2];
+      s.depth[node] = (s.depth[n] >= s.depth[m] ? s.depth[n] : s.depth[m]) + 1;
+      tree[n * 2 + 1] = tree[m * 2 + 1] = node;
+      s.heap[
+        1
+        /*SMALLEST*/
+      ] = node++;
+      pqdownheap(
+        s,
+        tree,
+        1
+        /*SMALLEST*/
+      );
+    } while (s.heap_len >= 2);
+    s.heap[--s.heap_max] = s.heap[
+      1
+      /*SMALLEST*/
+    ];
+    gen_bitlen(s, desc);
+    gen_codes(tree, max_code, s.bl_count);
+  };
+  const scan_tree = (s, tree, max_code) => {
+    let n;
+    let prevlen = -1;
+    let curlen;
+    let nextlen = tree[0 * 2 + 1];
+    let count = 0;
+    let max_count = 7;
+    let min_count = 4;
+    if (nextlen === 0) {
+      max_count = 138;
+      min_count = 3;
+    }
+    tree[(max_code + 1) * 2 + 1] = 65535;
+    for (n = 0; n <= max_code; n++) {
+      curlen = nextlen;
+      nextlen = tree[(n + 1) * 2 + 1];
+      if (++count < max_count && curlen === nextlen) {
+        continue;
+      } else if (count < min_count) {
+        s.bl_tree[curlen * 2] += count;
+      } else if (curlen !== 0) {
+        if (curlen !== prevlen) {
+          s.bl_tree[curlen * 2]++;
+        }
+        s.bl_tree[REP_3_6 * 2]++;
+      } else if (count <= 10) {
+        s.bl_tree[REPZ_3_10 * 2]++;
+      } else {
+        s.bl_tree[REPZ_11_138 * 2]++;
+      }
+      count = 0;
+      prevlen = curlen;
+      if (nextlen === 0) {
+        max_count = 138;
+        min_count = 3;
+      } else if (curlen === nextlen) {
+        max_count = 6;
+        min_count = 3;
+      } else {
+        max_count = 7;
+        min_count = 4;
+      }
+    }
+  };
+  const send_tree = (s, tree, max_code) => {
+    let n;
+    let prevlen = -1;
+    let curlen;
+    let nextlen = tree[0 * 2 + 1];
+    let count = 0;
+    let max_count = 7;
+    let min_count = 4;
+    if (nextlen === 0) {
+      max_count = 138;
+      min_count = 3;
+    }
+    for (n = 0; n <= max_code; n++) {
+      curlen = nextlen;
+      nextlen = tree[(n + 1) * 2 + 1];
+      if (++count < max_count && curlen === nextlen) {
+        continue;
+      } else if (count < min_count) {
+        do {
+          send_code(s, curlen, s.bl_tree);
+        } while (--count !== 0);
+      } else if (curlen !== 0) {
+        if (curlen !== prevlen) {
+          send_code(s, curlen, s.bl_tree);
+          count--;
+        }
+        send_code(s, REP_3_6, s.bl_tree);
+        send_bits(s, count - 3, 2);
+      } else if (count <= 10) {
+        send_code(s, REPZ_3_10, s.bl_tree);
+        send_bits(s, count - 3, 3);
+      } else {
+        send_code(s, REPZ_11_138, s.bl_tree);
+        send_bits(s, count - 11, 7);
+      }
+      count = 0;
+      prevlen = curlen;
+      if (nextlen === 0) {
+        max_count = 138;
+        min_count = 3;
+      } else if (curlen === nextlen) {
+        max_count = 6;
+        min_count = 3;
+      } else {
+        max_count = 7;
+        min_count = 4;
+      }
+    }
+  };
+  const build_bl_tree = (s) => {
+    let max_blindex;
+    scan_tree(s, s.dyn_ltree, s.l_desc.max_code);
+    scan_tree(s, s.dyn_dtree, s.d_desc.max_code);
+    build_tree(s, s.bl_desc);
+    for (max_blindex = BL_CODES$1 - 1; max_blindex >= 3; max_blindex--) {
+      if (s.bl_tree[bl_order[max_blindex] * 2 + 1] !== 0) {
+        break;
+      }
+    }
+    s.opt_len += 3 * (max_blindex + 1) + 5 + 5 + 4;
+    return max_blindex;
+  };
+  const send_all_trees = (s, lcodes, dcodes, blcodes) => {
+    let rank2;
+    send_bits(s, lcodes - 257, 5);
+    send_bits(s, dcodes - 1, 5);
+    send_bits(s, blcodes - 4, 4);
+    for (rank2 = 0; rank2 < blcodes; rank2++) {
+      send_bits(s, s.bl_tree[bl_order[rank2] * 2 + 1], 3);
+    }
+    send_tree(s, s.dyn_ltree, lcodes - 1);
+    send_tree(s, s.dyn_dtree, dcodes - 1);
+  };
+  const detect_data_type = (s) => {
+    let block_mask = 4093624447;
+    let n;
+    for (n = 0; n <= 31; n++, block_mask >>>= 1) {
+      if (block_mask & 1 && s.dyn_ltree[n * 2] !== 0) {
+        return Z_BINARY;
+      }
+    }
+    if (s.dyn_ltree[9 * 2] !== 0 || s.dyn_ltree[10 * 2] !== 0 || s.dyn_ltree[13 * 2] !== 0) {
+      return Z_TEXT;
+    }
+    for (n = 32; n < LITERALS$1; n++) {
+      if (s.dyn_ltree[n * 2] !== 0) {
+        return Z_TEXT;
+      }
+    }
+    return Z_BINARY;
+  };
+  let static_init_done = false;
+  const _tr_init$1 = (s) => {
+    if (!static_init_done) {
+      tr_static_init();
+      static_init_done = true;
+    }
+    s.l_desc = new TreeDesc(s.dyn_ltree, static_l_desc);
+    s.d_desc = new TreeDesc(s.dyn_dtree, static_d_desc);
+    s.bl_desc = new TreeDesc(s.bl_tree, static_bl_desc);
+    s.bi_buf = 0;
+    s.bi_valid = 0;
+    init_block(s);
+  };
+  const _tr_stored_block$1 = (s, buf, stored_len, last) => {
+    send_bits(s, (STORED_BLOCK << 1) + (last ? 1 : 0), 3);
+    bi_windup(s);
+    put_short(s, stored_len);
+    put_short(s, ~stored_len);
+    if (stored_len) {
+      s.pending_buf.set(s.window.subarray(buf, buf + stored_len), s.pending);
+    }
+    s.pending += stored_len;
+  };
+  const _tr_align$1 = (s) => {
+    send_bits(s, STATIC_TREES << 1, 3);
+    send_code(s, END_BLOCK, static_ltree);
+    bi_flush(s);
+  };
+  const _tr_flush_block$1 = (s, buf, stored_len, last) => {
+    let opt_lenb, static_lenb;
+    let max_blindex = 0;
+    if (s.level > 0) {
+      if (s.strm.data_type === Z_UNKNOWN$1) {
+        s.strm.data_type = detect_data_type(s);
+      }
+      build_tree(s, s.l_desc);
+      build_tree(s, s.d_desc);
+      max_blindex = build_bl_tree(s);
+      opt_lenb = s.opt_len + 3 + 7 >>> 3;
+      static_lenb = s.static_len + 3 + 7 >>> 3;
+      if (static_lenb <= opt_lenb) {
+        opt_lenb = static_lenb;
+      }
+    } else {
+      opt_lenb = static_lenb = stored_len + 5;
+    }
+    if (stored_len + 4 <= opt_lenb && buf !== -1) {
+      _tr_stored_block$1(s, buf, stored_len, last);
+    } else if (s.strategy === Z_FIXED$1 || static_lenb === opt_lenb) {
+      send_bits(s, (STATIC_TREES << 1) + (last ? 1 : 0), 3);
+      compress_block(s, static_ltree, static_dtree);
+    } else {
+      send_bits(s, (DYN_TREES << 1) + (last ? 1 : 0), 3);
+      send_all_trees(s, s.l_desc.max_code + 1, s.d_desc.max_code + 1, max_blindex + 1);
+      compress_block(s, s.dyn_ltree, s.dyn_dtree);
+    }
+    init_block(s);
+    if (last) {
+      bi_windup(s);
+    }
+  };
+  const _tr_tally$1 = (s, dist, lc2) => {
+    s.pending_buf[s.sym_buf + s.sym_next++] = dist;
+    s.pending_buf[s.sym_buf + s.sym_next++] = dist >> 8;
+    s.pending_buf[s.sym_buf + s.sym_next++] = lc2;
+    if (dist === 0) {
+      s.dyn_ltree[lc2 * 2]++;
+    } else {
+      s.matches++;
+      dist--;
+      s.dyn_ltree[(_length_code[lc2] + LITERALS$1 + 1) * 2]++;
+      s.dyn_dtree[d_code(dist) * 2]++;
+    }
+    return s.sym_next === s.sym_end;
+  };
+  var _tr_init_1 = _tr_init$1;
+  var _tr_stored_block_1 = _tr_stored_block$1;
+  var _tr_flush_block_1 = _tr_flush_block$1;
+  var _tr_tally_1 = _tr_tally$1;
+  var _tr_align_1 = _tr_align$1;
+  var trees = {
+    _tr_init: _tr_init_1,
+    _tr_stored_block: _tr_stored_block_1,
+    _tr_flush_block: _tr_flush_block_1,
+    _tr_tally: _tr_tally_1,
+    _tr_align: _tr_align_1
+  };
+  const adler32 = (adler, buf, len, pos) => {
+    let s1 = adler & 65535 | 0, s2 = adler >>> 16 & 65535 | 0, n = 0;
+    while (len !== 0) {
+      n = len > 2e3 ? 2e3 : len;
+      len -= n;
+      do {
+        s1 = s1 + buf[pos++] | 0;
+        s2 = s2 + s1 | 0;
+      } while (--n);
+      s1 %= 65521;
+      s2 %= 65521;
+    }
+    return s1 | s2 << 16 | 0;
+  };
+  var adler32_1 = adler32;
+  const makeTable = () => {
+    let c, table = [];
+    for (var n = 0; n < 256; n++) {
+      c = n;
+      for (var k = 0; k < 8; k++) {
+        c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+      }
+      table[n] = c;
+    }
+    return table;
+  };
+  const crcTable = new Uint32Array(makeTable());
+  const crc32 = (crc2, buf, len, pos) => {
+    const t2 = crcTable;
+    const end = pos + len;
+    crc2 ^= -1;
+    for (let i = pos; i < end; i++) {
+      crc2 = crc2 >>> 8 ^ t2[(crc2 ^ buf[i]) & 255];
+    }
+    return crc2 ^ -1;
+  };
+  var crc32_1 = crc32;
+  var messages = {
+    2: "need dictionary",
+    /* Z_NEED_DICT       2  */
+    1: "stream end",
+    /* Z_STREAM_END      1  */
+    0: "",
+    /* Z_OK              0  */
+    "-1": "file error",
+    /* Z_ERRNO         (-1) */
+    "-2": "stream error",
+    /* Z_STREAM_ERROR  (-2) */
+    "-3": "data error",
+    /* Z_DATA_ERROR    (-3) */
+    "-4": "insufficient memory",
+    /* Z_MEM_ERROR     (-4) */
+    "-5": "buffer error",
+    /* Z_BUF_ERROR     (-5) */
+    "-6": "incompatible version"
+    /* Z_VERSION_ERROR (-6) */
+  };
+  var constants$2 = {
+    /* Allowed flush values; see deflate() and inflate() below for details */
+    Z_NO_FLUSH: 0,
+    Z_PARTIAL_FLUSH: 1,
+    Z_SYNC_FLUSH: 2,
+    Z_FULL_FLUSH: 3,
+    Z_FINISH: 4,
+    Z_BLOCK: 5,
+    Z_TREES: 6,
+    /* Return codes for the compression/decompression functions. Negative values
+    * are errors, positive values are used for special but normal events.
+    */
+    Z_OK: 0,
+    Z_STREAM_END: 1,
+    Z_NEED_DICT: 2,
+    Z_ERRNO: -1,
+    Z_STREAM_ERROR: -2,
+    Z_DATA_ERROR: -3,
+    Z_MEM_ERROR: -4,
+    Z_BUF_ERROR: -5,
+    //Z_VERSION_ERROR: -6,
+    /* compression levels */
+    Z_NO_COMPRESSION: 0,
+    Z_BEST_SPEED: 1,
+    Z_BEST_COMPRESSION: 9,
+    Z_DEFAULT_COMPRESSION: -1,
+    Z_FILTERED: 1,
+    Z_HUFFMAN_ONLY: 2,
+    Z_RLE: 3,
+    Z_FIXED: 4,
+    Z_DEFAULT_STRATEGY: 0,
+    /* Possible values of the data_type field (though see inflate()) */
+    Z_BINARY: 0,
+    Z_TEXT: 1,
+    //Z_ASCII:                1, // = Z_TEXT (deprecated)
+    Z_UNKNOWN: 2,
+    /* The deflate compression method */
+    Z_DEFLATED: 8
+    //Z_NULL:                 null // Use -1 or null inline, depending on var type
+  };
+  const { _tr_init, _tr_stored_block, _tr_flush_block, _tr_tally, _tr_align } = trees;
+  const {
+    Z_NO_FLUSH: Z_NO_FLUSH$2,
+    Z_PARTIAL_FLUSH,
+    Z_FULL_FLUSH: Z_FULL_FLUSH$1,
+    Z_FINISH: Z_FINISH$3,
+    Z_BLOCK: Z_BLOCK$1,
+    Z_OK: Z_OK$3,
+    Z_STREAM_END: Z_STREAM_END$3,
+    Z_STREAM_ERROR: Z_STREAM_ERROR$2,
+    Z_DATA_ERROR: Z_DATA_ERROR$2,
+    Z_BUF_ERROR: Z_BUF_ERROR$1,
+    Z_DEFAULT_COMPRESSION: Z_DEFAULT_COMPRESSION$1,
+    Z_FILTERED,
+    Z_HUFFMAN_ONLY,
+    Z_RLE,
+    Z_FIXED,
+    Z_DEFAULT_STRATEGY: Z_DEFAULT_STRATEGY$1,
+    Z_UNKNOWN,
+    Z_DEFLATED: Z_DEFLATED$2
+  } = constants$2;
+  const MAX_MEM_LEVEL = 9;
+  const MAX_WBITS$1 = 15;
+  const DEF_MEM_LEVEL = 8;
+  const LENGTH_CODES = 29;
+  const LITERALS = 256;
+  const L_CODES = LITERALS + 1 + LENGTH_CODES;
+  const D_CODES = 30;
+  const BL_CODES = 19;
+  const HEAP_SIZE = 2 * L_CODES + 1;
+  const MAX_BITS = 15;
+  const MIN_MATCH = 3;
+  const MAX_MATCH = 258;
+  const MIN_LOOKAHEAD = MAX_MATCH + MIN_MATCH + 1;
+  const PRESET_DICT = 32;
+  const INIT_STATE = 42;
+  const GZIP_STATE = 57;
+  const EXTRA_STATE = 69;
+  const NAME_STATE = 73;
+  const COMMENT_STATE = 91;
+  const HCRC_STATE = 103;
+  const BUSY_STATE = 113;
+  const FINISH_STATE = 666;
+  const BS_NEED_MORE = 1;
+  const BS_BLOCK_DONE = 2;
+  const BS_FINISH_STARTED = 3;
+  const BS_FINISH_DONE = 4;
+  const OS_CODE = 3;
+  const err$1 = (strm, errorCode) => {
+    strm.msg = messages[errorCode];
+    return errorCode;
+  };
+  const rank$2 = (f) => {
+    return f * 2 - (f > 4 ? 9 : 0);
+  };
+  const zero = (buf) => {
+    let len = buf.length;
+    while (--len >= 0) {
+      buf[len] = 0;
+    }
+  };
+  const slide_hash = (s) => {
+    let n, m;
+    let p;
+    let wsize = s.w_size;
+    n = s.hash_size;
+    p = n;
+    do {
+      m = s.head[--p];
+      s.head[p] = m >= wsize ? m - wsize : 0;
+    } while (--n);
+    n = wsize;
+    p = n;
+    do {
+      m = s.prev[--p];
+      s.prev[p] = m >= wsize ? m - wsize : 0;
+    } while (--n);
+  };
+  let HASH_ZLIB = (s, prev, data) => (prev << s.hash_shift ^ data) & s.hash_mask;
+  let HASH = HASH_ZLIB;
+  const flush_pending = (strm) => {
+    const s = strm.state;
+    let len = s.pending;
+    if (len > strm.avail_out) {
+      len = strm.avail_out;
+    }
+    if (len === 0) {
+      return;
+    }
+    strm.output.set(s.pending_buf.subarray(s.pending_out, s.pending_out + len), strm.next_out);
+    strm.next_out += len;
+    s.pending_out += len;
+    strm.total_out += len;
+    strm.avail_out -= len;
+    s.pending -= len;
+    if (s.pending === 0) {
+      s.pending_out = 0;
+    }
+  };
+  const flush_block_only = (s, last) => {
+    _tr_flush_block(s, s.block_start >= 0 ? s.block_start : -1, s.strstart - s.block_start, last);
+    s.block_start = s.strstart;
+    flush_pending(s.strm);
+  };
+  const put_byte = (s, b) => {
+    s.pending_buf[s.pending++] = b;
+  };
+  const putShortMSB = (s, b) => {
+    s.pending_buf[s.pending++] = b >>> 8 & 255;
+    s.pending_buf[s.pending++] = b & 255;
+  };
+  const read_buf = (strm, buf, start, size) => {
+    let len = strm.avail_in;
+    if (len > size) {
+      len = size;
+    }
+    if (len === 0) {
+      return 0;
+    }
+    strm.avail_in -= len;
+    buf.set(strm.input.subarray(strm.next_in, strm.next_in + len), start);
+    if (strm.state.wrap === 1) {
+      strm.adler = adler32_1(strm.adler, buf, len, start);
+    } else if (strm.state.wrap === 2) {
+      strm.adler = crc32_1(strm.adler, buf, len, start);
+    }
+    strm.next_in += len;
+    strm.total_in += len;
+    return len;
+  };
+  const longest_match = (s, cur_match) => {
+    let chain_length = s.max_chain_length;
+    let scan = s.strstart;
+    let match;
+    let len;
+    let best_len = s.prev_length;
+    let nice_match = s.nice_match;
+    const limit = s.strstart > s.w_size - MIN_LOOKAHEAD ? s.strstart - (s.w_size - MIN_LOOKAHEAD) : 0;
+    const _win = s.window;
+    const wmask = s.w_mask;
+    const prev = s.prev;
+    const strend = s.strstart + MAX_MATCH;
+    let scan_end1 = _win[scan + best_len - 1];
+    let scan_end = _win[scan + best_len];
+    if (s.prev_length >= s.good_match) {
+      chain_length >>= 2;
+    }
+    if (nice_match > s.lookahead) {
+      nice_match = s.lookahead;
+    }
+    do {
+      match = cur_match;
+      if (_win[match + best_len] !== scan_end || _win[match + best_len - 1] !== scan_end1 || _win[match] !== _win[scan] || _win[++match] !== _win[scan + 1]) {
+        continue;
+      }
+      scan += 2;
+      match++;
+      do {
+      } while (_win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && scan < strend);
+      len = MAX_MATCH - (strend - scan);
+      scan = strend - MAX_MATCH;
+      if (len > best_len) {
+        s.match_start = cur_match;
+        best_len = len;
+        if (len >= nice_match) {
+          break;
+        }
+        scan_end1 = _win[scan + best_len - 1];
+        scan_end = _win[scan + best_len];
+      }
+    } while ((cur_match = prev[cur_match & wmask]) > limit && --chain_length !== 0);
+    if (best_len <= s.lookahead) {
+      return best_len;
+    }
+    return s.lookahead;
+  };
+  const fill_window = (s) => {
+    const _w_size = s.w_size;
+    let n, more, str;
+    do {
+      more = s.window_size - s.lookahead - s.strstart;
+      if (s.strstart >= _w_size + (_w_size - MIN_LOOKAHEAD)) {
+        s.window.set(s.window.subarray(_w_size, _w_size + _w_size - more), 0);
+        s.match_start -= _w_size;
+        s.strstart -= _w_size;
+        s.block_start -= _w_size;
+        if (s.insert > s.strstart) {
+          s.insert = s.strstart;
+        }
+        slide_hash(s);
+        more += _w_size;
+      }
+      if (s.strm.avail_in === 0) {
+        break;
+      }
+      n = read_buf(s.strm, s.window, s.strstart + s.lookahead, more);
+      s.lookahead += n;
+      if (s.lookahead + s.insert >= MIN_MATCH) {
+        str = s.strstart - s.insert;
+        s.ins_h = s.window[str];
+        s.ins_h = HASH(s, s.ins_h, s.window[str + 1]);
+        while (s.insert) {
+          s.ins_h = HASH(s, s.ins_h, s.window[str + MIN_MATCH - 1]);
+          s.prev[str & s.w_mask] = s.head[s.ins_h];
+          s.head[s.ins_h] = str;
+          str++;
+          s.insert--;
+          if (s.lookahead + s.insert < MIN_MATCH) {
+            break;
+          }
+        }
+      }
+    } while (s.lookahead < MIN_LOOKAHEAD && s.strm.avail_in !== 0);
+  };
+  const deflate_stored = (s, flush) => {
+    let min_block = s.pending_buf_size - 5 > s.w_size ? s.w_size : s.pending_buf_size - 5;
+    let len, left, have, last = 0;
+    let used = s.strm.avail_in;
+    do {
+      len = 65535;
+      have = s.bi_valid + 42 >> 3;
+      if (s.strm.avail_out < have) {
+        break;
+      }
+      have = s.strm.avail_out - have;
+      left = s.strstart - s.block_start;
+      if (len > left + s.strm.avail_in) {
+        len = left + s.strm.avail_in;
+      }
+      if (len > have) {
+        len = have;
+      }
+      if (len < min_block && (len === 0 && flush !== Z_FINISH$3 || flush === Z_NO_FLUSH$2 || len !== left + s.strm.avail_in)) {
+        break;
+      }
+      last = flush === Z_FINISH$3 && len === left + s.strm.avail_in ? 1 : 0;
+      _tr_stored_block(s, 0, 0, last);
+      s.pending_buf[s.pending - 4] = len;
+      s.pending_buf[s.pending - 3] = len >> 8;
+      s.pending_buf[s.pending - 2] = ~len;
+      s.pending_buf[s.pending - 1] = ~len >> 8;
+      flush_pending(s.strm);
+      if (left) {
+        if (left > len) {
+          left = len;
+        }
+        s.strm.output.set(s.window.subarray(s.block_start, s.block_start + left), s.strm.next_out);
+        s.strm.next_out += left;
+        s.strm.avail_out -= left;
+        s.strm.total_out += left;
+        s.block_start += left;
+        len -= left;
+      }
+      if (len) {
+        read_buf(s.strm, s.strm.output, s.strm.next_out, len);
+        s.strm.next_out += len;
+        s.strm.avail_out -= len;
+        s.strm.total_out += len;
+      }
+    } while (last === 0);
+    used -= s.strm.avail_in;
+    if (used) {
+      if (used >= s.w_size) {
+        s.matches = 2;
+        s.window.set(s.strm.input.subarray(s.strm.next_in - s.w_size, s.strm.next_in), 0);
+        s.strstart = s.w_size;
+        s.insert = s.strstart;
+      } else {
+        if (s.window_size - s.strstart <= used) {
+          s.strstart -= s.w_size;
+          s.window.set(s.window.subarray(s.w_size, s.w_size + s.strstart), 0);
+          if (s.matches < 2) {
+            s.matches++;
+          }
+          if (s.insert > s.strstart) {
+            s.insert = s.strstart;
+          }
+        }
+        s.window.set(s.strm.input.subarray(s.strm.next_in - used, s.strm.next_in), s.strstart);
+        s.strstart += used;
+        s.insert += used > s.w_size - s.insert ? s.w_size - s.insert : used;
+      }
+      s.block_start = s.strstart;
+    }
+    if (s.high_water < s.strstart) {
+      s.high_water = s.strstart;
+    }
+    if (last) {
+      return BS_FINISH_DONE;
+    }
+    if (flush !== Z_NO_FLUSH$2 && flush !== Z_FINISH$3 && s.strm.avail_in === 0 && s.strstart === s.block_start) {
+      return BS_BLOCK_DONE;
+    }
+    have = s.window_size - s.strstart;
+    if (s.strm.avail_in > have && s.block_start >= s.w_size) {
+      s.block_start -= s.w_size;
+      s.strstart -= s.w_size;
+      s.window.set(s.window.subarray(s.w_size, s.w_size + s.strstart), 0);
+      if (s.matches < 2) {
+        s.matches++;
+      }
+      have += s.w_size;
+      if (s.insert > s.strstart) {
+        s.insert = s.strstart;
+      }
+    }
+    if (have > s.strm.avail_in) {
+      have = s.strm.avail_in;
+    }
+    if (have) {
+      read_buf(s.strm, s.window, s.strstart, have);
+      s.strstart += have;
+      s.insert += have > s.w_size - s.insert ? s.w_size - s.insert : have;
+    }
+    if (s.high_water < s.strstart) {
+      s.high_water = s.strstart;
+    }
+    have = s.bi_valid + 42 >> 3;
+    have = s.pending_buf_size - have > 65535 ? 65535 : s.pending_buf_size - have;
+    min_block = have > s.w_size ? s.w_size : have;
+    left = s.strstart - s.block_start;
+    if (left >= min_block || (left || flush === Z_FINISH$3) && flush !== Z_NO_FLUSH$2 && s.strm.avail_in === 0 && left <= have) {
+      len = left > have ? have : left;
+      last = flush === Z_FINISH$3 && s.strm.avail_in === 0 && len === left ? 1 : 0;
+      _tr_stored_block(s, s.block_start, len, last);
+      s.block_start += len;
+      flush_pending(s.strm);
+    }
+    return last ? BS_FINISH_STARTED : BS_NEED_MORE;
+  };
+  const deflate_fast = (s, flush) => {
+    let hash_head;
+    let bflush;
+    for (; ; ) {
+      if (s.lookahead < MIN_LOOKAHEAD) {
+        fill_window(s);
+        if (s.lookahead < MIN_LOOKAHEAD && flush === Z_NO_FLUSH$2) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      hash_head = 0;
+      if (s.lookahead >= MIN_MATCH) {
+        s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+        hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+        s.head[s.ins_h] = s.strstart;
+      }
+      if (hash_head !== 0 && s.strstart - hash_head <= s.w_size - MIN_LOOKAHEAD) {
+        s.match_length = longest_match(s, hash_head);
+      }
+      if (s.match_length >= MIN_MATCH) {
+        bflush = _tr_tally(s, s.strstart - s.match_start, s.match_length - MIN_MATCH);
+        s.lookahead -= s.match_length;
+        if (s.match_length <= s.max_lazy_match && s.lookahead >= MIN_MATCH) {
+          s.match_length--;
+          do {
+            s.strstart++;
+            s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+            hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = s.strstart;
+          } while (--s.match_length !== 0);
+          s.strstart++;
+        } else {
+          s.strstart += s.match_length;
+          s.match_length = 0;
+          s.ins_h = s.window[s.strstart];
+          s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + 1]);
+        }
+      } else {
+        bflush = _tr_tally(s, 0, s.window[s.strstart]);
+        s.lookahead--;
+        s.strstart++;
+      }
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = s.strstart < MIN_MATCH - 1 ? s.strstart : MIN_MATCH - 1;
+    if (flush === Z_FINISH$3) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.sym_next) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  };
+  const deflate_slow = (s, flush) => {
+    let hash_head;
+    let bflush;
+    let max_insert;
+    for (; ; ) {
+      if (s.lookahead < MIN_LOOKAHEAD) {
+        fill_window(s);
+        if (s.lookahead < MIN_LOOKAHEAD && flush === Z_NO_FLUSH$2) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      hash_head = 0;
+      if (s.lookahead >= MIN_MATCH) {
+        s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+        hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+        s.head[s.ins_h] = s.strstart;
+      }
+      s.prev_length = s.match_length;
+      s.prev_match = s.match_start;
+      s.match_length = MIN_MATCH - 1;
+      if (hash_head !== 0 && s.prev_length < s.max_lazy_match && s.strstart - hash_head <= s.w_size - MIN_LOOKAHEAD) {
+        s.match_length = longest_match(s, hash_head);
+        if (s.match_length <= 5 && (s.strategy === Z_FILTERED || s.match_length === MIN_MATCH && s.strstart - s.match_start > 4096)) {
+          s.match_length = MIN_MATCH - 1;
+        }
+      }
+      if (s.prev_length >= MIN_MATCH && s.match_length <= s.prev_length) {
+        max_insert = s.strstart + s.lookahead - MIN_MATCH;
+        bflush = _tr_tally(s, s.strstart - 1 - s.prev_match, s.prev_length - MIN_MATCH);
+        s.lookahead -= s.prev_length - 1;
+        s.prev_length -= 2;
+        do {
+          if (++s.strstart <= max_insert) {
+            s.ins_h = HASH(s, s.ins_h, s.window[s.strstart + MIN_MATCH - 1]);
+            hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = s.strstart;
+          }
+        } while (--s.prev_length !== 0);
+        s.match_available = 0;
+        s.match_length = MIN_MATCH - 1;
+        s.strstart++;
+        if (bflush) {
+          flush_block_only(s, false);
+          if (s.strm.avail_out === 0) {
+            return BS_NEED_MORE;
+          }
+        }
+      } else if (s.match_available) {
+        bflush = _tr_tally(s, 0, s.window[s.strstart - 1]);
+        if (bflush) {
+          flush_block_only(s, false);
+        }
+        s.strstart++;
+        s.lookahead--;
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      } else {
+        s.match_available = 1;
+        s.strstart++;
+        s.lookahead--;
+      }
+    }
+    if (s.match_available) {
+      bflush = _tr_tally(s, 0, s.window[s.strstart - 1]);
+      s.match_available = 0;
+    }
+    s.insert = s.strstart < MIN_MATCH - 1 ? s.strstart : MIN_MATCH - 1;
+    if (flush === Z_FINISH$3) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.sym_next) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  };
+  const deflate_rle = (s, flush) => {
+    let bflush;
+    let prev;
+    let scan, strend;
+    const _win = s.window;
+    for (; ; ) {
+      if (s.lookahead <= MAX_MATCH) {
+        fill_window(s);
+        if (s.lookahead <= MAX_MATCH && flush === Z_NO_FLUSH$2) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      s.match_length = 0;
+      if (s.lookahead >= MIN_MATCH && s.strstart > 0) {
+        scan = s.strstart - 1;
+        prev = _win[scan];
+        if (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan]) {
+          strend = s.strstart + MAX_MATCH;
+          do {
+          } while (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && scan < strend);
+          s.match_length = MAX_MATCH - (strend - scan);
+          if (s.match_length > s.lookahead) {
+            s.match_length = s.lookahead;
+          }
+        }
+      }
+      if (s.match_length >= MIN_MATCH) {
+        bflush = _tr_tally(s, 1, s.match_length - MIN_MATCH);
+        s.lookahead -= s.match_length;
+        s.strstart += s.match_length;
+        s.match_length = 0;
+      } else {
+        bflush = _tr_tally(s, 0, s.window[s.strstart]);
+        s.lookahead--;
+        s.strstart++;
+      }
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = 0;
+    if (flush === Z_FINISH$3) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.sym_next) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  };
+  const deflate_huff = (s, flush) => {
+    let bflush;
+    for (; ; ) {
+      if (s.lookahead === 0) {
+        fill_window(s);
+        if (s.lookahead === 0) {
+          if (flush === Z_NO_FLUSH$2) {
+            return BS_NEED_MORE;
+          }
+          break;
+        }
+      }
+      s.match_length = 0;
+      bflush = _tr_tally(s, 0, s.window[s.strstart]);
+      s.lookahead--;
+      s.strstart++;
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = 0;
+    if (flush === Z_FINISH$3) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.sym_next) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  };
+  function Config(good_length, max_lazy, nice_length, max_chain, func) {
+    this.good_length = good_length;
+    this.max_lazy = max_lazy;
+    this.nice_length = nice_length;
+    this.max_chain = max_chain;
+    this.func = func;
+  }
+  const configuration_table = [
+    /*      good lazy nice chain */
+    new Config(0, 0, 0, 0, deflate_stored),
+    /* 0 store only */
+    new Config(4, 4, 8, 4, deflate_fast),
+    /* 1 max speed, no lazy matches */
+    new Config(4, 5, 16, 8, deflate_fast),
+    /* 2 */
+    new Config(4, 6, 32, 32, deflate_fast),
+    /* 3 */
+    new Config(4, 4, 16, 16, deflate_slow),
+    /* 4 lazy matches */
+    new Config(8, 16, 32, 32, deflate_slow),
+    /* 5 */
+    new Config(8, 16, 128, 128, deflate_slow),
+    /* 6 */
+    new Config(8, 32, 128, 256, deflate_slow),
+    /* 7 */
+    new Config(32, 128, 258, 1024, deflate_slow),
+    /* 8 */
+    new Config(32, 258, 258, 4096, deflate_slow)
+    /* 9 max compression */
+  ];
+  const lm_init = (s) => {
+    s.window_size = 2 * s.w_size;
+    zero(s.head);
+    s.max_lazy_match = configuration_table[s.level].max_lazy;
+    s.good_match = configuration_table[s.level].good_length;
+    s.nice_match = configuration_table[s.level].nice_length;
+    s.max_chain_length = configuration_table[s.level].max_chain;
+    s.strstart = 0;
+    s.block_start = 0;
+    s.lookahead = 0;
+    s.insert = 0;
+    s.match_length = s.prev_length = MIN_MATCH - 1;
+    s.match_available = 0;
+    s.ins_h = 0;
+  };
+  function DeflateState() {
+    this.strm = null;
+    this.status = 0;
+    this.pending_buf = null;
+    this.pending_buf_size = 0;
+    this.pending_out = 0;
+    this.pending = 0;
+    this.wrap = 0;
+    this.gzhead = null;
+    this.gzindex = 0;
+    this.method = Z_DEFLATED$2;
+    this.last_flush = -1;
+    this.w_size = 0;
+    this.w_bits = 0;
+    this.w_mask = 0;
+    this.window = null;
+    this.window_size = 0;
+    this.prev = null;
+    this.head = null;
+    this.ins_h = 0;
+    this.hash_size = 0;
+    this.hash_bits = 0;
+    this.hash_mask = 0;
+    this.hash_shift = 0;
+    this.block_start = 0;
+    this.match_length = 0;
+    this.prev_match = 0;
+    this.match_available = 0;
+    this.strstart = 0;
+    this.match_start = 0;
+    this.lookahead = 0;
+    this.prev_length = 0;
+    this.max_chain_length = 0;
+    this.max_lazy_match = 0;
+    this.level = 0;
+    this.strategy = 0;
+    this.good_match = 0;
+    this.nice_match = 0;
+    this.dyn_ltree = new Uint16Array(HEAP_SIZE * 2);
+    this.dyn_dtree = new Uint16Array((2 * D_CODES + 1) * 2);
+    this.bl_tree = new Uint16Array((2 * BL_CODES + 1) * 2);
+    zero(this.dyn_ltree);
+    zero(this.dyn_dtree);
+    zero(this.bl_tree);
+    this.l_desc = null;
+    this.d_desc = null;
+    this.bl_desc = null;
+    this.bl_count = new Uint16Array(MAX_BITS + 1);
+    this.heap = new Uint16Array(2 * L_CODES + 1);
+    zero(this.heap);
+    this.heap_len = 0;
+    this.heap_max = 0;
+    this.depth = new Uint16Array(2 * L_CODES + 1);
+    zero(this.depth);
+    this.sym_buf = 0;
+    this.lit_bufsize = 0;
+    this.sym_next = 0;
+    this.sym_end = 0;
+    this.opt_len = 0;
+    this.static_len = 0;
+    this.matches = 0;
+    this.insert = 0;
+    this.bi_buf = 0;
+    this.bi_valid = 0;
+  }
+  const deflateStateCheck = (strm) => {
+    if (!strm) {
+      return 1;
+    }
+    const s = strm.state;
+    if (!s || s.strm !== strm || s.status !== INIT_STATE && //#ifdef GZIP
+    s.status !== GZIP_STATE && //#endif
+    s.status !== EXTRA_STATE && s.status !== NAME_STATE && s.status !== COMMENT_STATE && s.status !== HCRC_STATE && s.status !== BUSY_STATE && s.status !== FINISH_STATE) {
+      return 1;
+    }
+    return 0;
+  };
+  const deflateResetKeep = (strm) => {
+    if (deflateStateCheck(strm)) {
+      return err$1(strm, Z_STREAM_ERROR$2);
+    }
+    strm.total_in = strm.total_out = 0;
+    strm.data_type = Z_UNKNOWN;
+    const s = strm.state;
+    s.pending = 0;
+    s.pending_out = 0;
+    if (s.wrap < 0) {
+      s.wrap = -s.wrap;
+    }
+    s.status = //#ifdef GZIP
+    s.wrap === 2 ? GZIP_STATE : (
+      //#endif
+      s.wrap ? INIT_STATE : BUSY_STATE
+    );
+    strm.adler = s.wrap === 2 ? 0 : 1;
+    s.last_flush = -2;
+    _tr_init(s);
+    return Z_OK$3;
+  };
+  const deflateReset = (strm) => {
+    const ret = deflateResetKeep(strm);
+    if (ret === Z_OK$3) {
+      lm_init(strm.state);
+    }
+    return ret;
+  };
+  const deflateSetHeader = (strm, head) => {
+    if (deflateStateCheck(strm) || strm.state.wrap !== 2) {
+      return Z_STREAM_ERROR$2;
+    }
+    strm.state.gzhead = head;
+    return Z_OK$3;
+  };
+  const deflateInit2 = (strm, level, method, windowBits, memLevel, strategy) => {
+    if (!strm) {
+      return Z_STREAM_ERROR$2;
+    }
+    let wrap = 1;
+    if (level === Z_DEFAULT_COMPRESSION$1) {
+      level = 6;
+    }
+    if (windowBits < 0) {
+      wrap = 0;
+      windowBits = -windowBits;
+    } else if (windowBits > 15) {
+      wrap = 2;
+      windowBits -= 16;
+    }
+    if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method !== Z_DEFLATED$2 || windowBits < 8 || windowBits > 15 || level < 0 || level > 9 || strategy < 0 || strategy > Z_FIXED || windowBits === 8 && wrap !== 1) {
+      return err$1(strm, Z_STREAM_ERROR$2);
+    }
+    if (windowBits === 8) {
+      windowBits = 9;
+    }
+    const s = new DeflateState();
+    strm.state = s;
+    s.strm = strm;
+    s.status = INIT_STATE;
+    s.wrap = wrap;
+    s.gzhead = null;
+    s.w_bits = windowBits;
+    s.w_size = 1 << s.w_bits;
+    s.w_mask = s.w_size - 1;
+    s.hash_bits = memLevel + 7;
+    s.hash_size = 1 << s.hash_bits;
+    s.hash_mask = s.hash_size - 1;
+    s.hash_shift = ~~((s.hash_bits + MIN_MATCH - 1) / MIN_MATCH);
+    s.window = new Uint8Array(s.w_size * 2);
+    s.head = new Uint16Array(s.hash_size);
+    s.prev = new Uint16Array(s.w_size);
+    s.lit_bufsize = 1 << memLevel + 6;
+    s.pending_buf_size = s.lit_bufsize * 4;
+    s.pending_buf = new Uint8Array(s.pending_buf_size);
+    s.sym_buf = s.lit_bufsize;
+    s.sym_end = (s.lit_bufsize - 1) * 3;
+    s.level = level;
+    s.strategy = strategy;
+    s.method = method;
+    return deflateReset(strm);
+  };
+  const deflateInit = (strm, level) => {
+    return deflateInit2(strm, level, Z_DEFLATED$2, MAX_WBITS$1, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY$1);
+  };
+  const deflate$2 = (strm, flush) => {
+    if (deflateStateCheck(strm) || flush > Z_BLOCK$1 || flush < 0) {
+      return strm ? err$1(strm, Z_STREAM_ERROR$2) : Z_STREAM_ERROR$2;
+    }
+    const s = strm.state;
+    if (!strm.output || strm.avail_in !== 0 && !strm.input || s.status === FINISH_STATE && flush !== Z_FINISH$3) {
+      return err$1(strm, strm.avail_out === 0 ? Z_BUF_ERROR$1 : Z_STREAM_ERROR$2);
+    }
+    const old_flush = s.last_flush;
+    s.last_flush = flush;
+    if (s.pending !== 0) {
+      flush_pending(strm);
+      if (strm.avail_out === 0) {
+        s.last_flush = -1;
+        return Z_OK$3;
+      }
+    } else if (strm.avail_in === 0 && rank$2(flush) <= rank$2(old_flush) && flush !== Z_FINISH$3) {
+      return err$1(strm, Z_BUF_ERROR$1);
+    }
+    if (s.status === FINISH_STATE && strm.avail_in !== 0) {
+      return err$1(strm, Z_BUF_ERROR$1);
+    }
+    if (s.status === INIT_STATE && s.wrap === 0) {
+      s.status = BUSY_STATE;
+    }
+    if (s.status === INIT_STATE) {
+      let header = Z_DEFLATED$2 + (s.w_bits - 8 << 4) << 8;
+      let level_flags = -1;
+      if (s.strategy >= Z_HUFFMAN_ONLY || s.level < 2) {
+        level_flags = 0;
+      } else if (s.level < 6) {
+        level_flags = 1;
+      } else if (s.level === 6) {
+        level_flags = 2;
+      } else {
+        level_flags = 3;
+      }
+      header |= level_flags << 6;
+      if (s.strstart !== 0) {
+        header |= PRESET_DICT;
+      }
+      header += 31 - header % 31;
+      putShortMSB(s, header);
+      if (s.strstart !== 0) {
+        putShortMSB(s, strm.adler >>> 16);
+        putShortMSB(s, strm.adler & 65535);
+      }
+      strm.adler = 1;
+      s.status = BUSY_STATE;
+      flush_pending(strm);
+      if (s.pending !== 0) {
+        s.last_flush = -1;
+        return Z_OK$3;
+      }
+    }
+    if (s.status === GZIP_STATE) {
+      strm.adler = 0;
+      put_byte(s, 31);
+      put_byte(s, 139);
+      put_byte(s, 8);
+      if (!s.gzhead) {
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, s.level === 9 ? 2 : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2 ? 4 : 0);
+        put_byte(s, OS_CODE);
+        s.status = BUSY_STATE;
+        flush_pending(strm);
+        if (s.pending !== 0) {
+          s.last_flush = -1;
+          return Z_OK$3;
+        }
+      } else {
+        put_byte(
+          s,
+          (s.gzhead.text ? 1 : 0) + (s.gzhead.hcrc ? 2 : 0) + (!s.gzhead.extra ? 0 : 4) + (!s.gzhead.name ? 0 : 8) + (!s.gzhead.comment ? 0 : 16)
+        );
+        put_byte(s, s.gzhead.time & 255);
+        put_byte(s, s.gzhead.time >> 8 & 255);
+        put_byte(s, s.gzhead.time >> 16 & 255);
+        put_byte(s, s.gzhead.time >> 24 & 255);
+        put_byte(s, s.level === 9 ? 2 : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2 ? 4 : 0);
+        put_byte(s, s.gzhead.os & 255);
+        if (s.gzhead.extra && s.gzhead.extra.length) {
+          put_byte(s, s.gzhead.extra.length & 255);
+          put_byte(s, s.gzhead.extra.length >> 8 & 255);
+        }
+        if (s.gzhead.hcrc) {
+          strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending, 0);
+        }
+        s.gzindex = 0;
+        s.status = EXTRA_STATE;
+      }
+    }
+    if (s.status === EXTRA_STATE) {
+      if (s.gzhead.extra) {
+        let beg = s.pending;
+        let left = (s.gzhead.extra.length & 65535) - s.gzindex;
+        while (s.pending + left > s.pending_buf_size) {
+          let copy = s.pending_buf_size - s.pending;
+          s.pending_buf.set(s.gzhead.extra.subarray(s.gzindex, s.gzindex + copy), s.pending);
+          s.pending = s.pending_buf_size;
+          if (s.gzhead.hcrc && s.pending > beg) {
+            strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+          }
+          s.gzindex += copy;
+          flush_pending(strm);
+          if (s.pending !== 0) {
+            s.last_flush = -1;
+            return Z_OK$3;
+          }
+          beg = 0;
+          left -= copy;
+        }
+        let gzhead_extra = new Uint8Array(s.gzhead.extra);
+        s.pending_buf.set(gzhead_extra.subarray(s.gzindex, s.gzindex + left), s.pending);
+        s.pending += left;
+        if (s.gzhead.hcrc && s.pending > beg) {
+          strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+        }
+        s.gzindex = 0;
+      }
+      s.status = NAME_STATE;
+    }
+    if (s.status === NAME_STATE) {
+      if (s.gzhead.name) {
+        let beg = s.pending;
+        let val;
+        do {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            flush_pending(strm);
+            if (s.pending !== 0) {
+              s.last_flush = -1;
+              return Z_OK$3;
+            }
+            beg = 0;
+          }
+          if (s.gzindex < s.gzhead.name.length) {
+            val = s.gzhead.name.charCodeAt(s.gzindex++) & 255;
+          } else {
+            val = 0;
+          }
+          put_byte(s, val);
+        } while (val !== 0);
+        if (s.gzhead.hcrc && s.pending > beg) {
+          strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+        }
+        s.gzindex = 0;
+      }
+      s.status = COMMENT_STATE;
+    }
+    if (s.status === COMMENT_STATE) {
+      if (s.gzhead.comment) {
+        let beg = s.pending;
+        let val;
+        do {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            flush_pending(strm);
+            if (s.pending !== 0) {
+              s.last_flush = -1;
+              return Z_OK$3;
+            }
+            beg = 0;
+          }
+          if (s.gzindex < s.gzhead.comment.length) {
+            val = s.gzhead.comment.charCodeAt(s.gzindex++) & 255;
+          } else {
+            val = 0;
+          }
+          put_byte(s, val);
+        } while (val !== 0);
+        if (s.gzhead.hcrc && s.pending > beg) {
+          strm.adler = crc32_1(strm.adler, s.pending_buf, s.pending - beg, beg);
+        }
+      }
+      s.status = HCRC_STATE;
+    }
+    if (s.status === HCRC_STATE) {
+      if (s.gzhead.hcrc) {
+        if (s.pending + 2 > s.pending_buf_size) {
+          flush_pending(strm);
+          if (s.pending !== 0) {
+            s.last_flush = -1;
+            return Z_OK$3;
+          }
+        }
+        put_byte(s, strm.adler & 255);
+        put_byte(s, strm.adler >> 8 & 255);
+        strm.adler = 0;
+      }
+      s.status = BUSY_STATE;
+      flush_pending(strm);
+      if (s.pending !== 0) {
+        s.last_flush = -1;
+        return Z_OK$3;
+      }
+    }
+    if (strm.avail_in !== 0 || s.lookahead !== 0 || flush !== Z_NO_FLUSH$2 && s.status !== FINISH_STATE) {
+      let bstate = s.level === 0 ? deflate_stored(s, flush) : s.strategy === Z_HUFFMAN_ONLY ? deflate_huff(s, flush) : s.strategy === Z_RLE ? deflate_rle(s, flush) : configuration_table[s.level].func(s, flush);
+      if (bstate === BS_FINISH_STARTED || bstate === BS_FINISH_DONE) {
+        s.status = FINISH_STATE;
+      }
+      if (bstate === BS_NEED_MORE || bstate === BS_FINISH_STARTED) {
+        if (strm.avail_out === 0) {
+          s.last_flush = -1;
+        }
+        return Z_OK$3;
+      }
+      if (bstate === BS_BLOCK_DONE) {
+        if (flush === Z_PARTIAL_FLUSH) {
+          _tr_align(s);
+        } else if (flush !== Z_BLOCK$1) {
+          _tr_stored_block(s, 0, 0, false);
+          if (flush === Z_FULL_FLUSH$1) {
+            zero(s.head);
+            if (s.lookahead === 0) {
+              s.strstart = 0;
+              s.block_start = 0;
+              s.insert = 0;
+            }
+          }
+        }
+        flush_pending(strm);
+        if (strm.avail_out === 0) {
+          s.last_flush = -1;
+          return Z_OK$3;
+        }
+      }
+    }
+    if (flush !== Z_FINISH$3) {
+      return Z_OK$3;
+    }
+    if (s.wrap <= 0) {
+      return Z_STREAM_END$3;
+    }
+    if (s.wrap === 2) {
+      put_byte(s, strm.adler & 255);
+      put_byte(s, strm.adler >> 8 & 255);
+      put_byte(s, strm.adler >> 16 & 255);
+      put_byte(s, strm.adler >> 24 & 255);
+      put_byte(s, strm.total_in & 255);
+      put_byte(s, strm.total_in >> 8 & 255);
+      put_byte(s, strm.total_in >> 16 & 255);
+      put_byte(s, strm.total_in >> 24 & 255);
+    } else {
+      putShortMSB(s, strm.adler >>> 16);
+      putShortMSB(s, strm.adler & 65535);
+    }
+    flush_pending(strm);
+    if (s.wrap > 0) {
+      s.wrap = -s.wrap;
+    }
+    return s.pending !== 0 ? Z_OK$3 : Z_STREAM_END$3;
+  };
+  const deflateEnd = (strm) => {
+    if (deflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$2;
+    }
+    const status = strm.state.status;
+    strm.state = null;
+    return status === BUSY_STATE ? err$1(strm, Z_DATA_ERROR$2) : Z_OK$3;
+  };
+  const deflateSetDictionary = (strm, dictionary) => {
+    let dictLength = dictionary.length;
+    if (deflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$2;
+    }
+    const s = strm.state;
+    const wrap = s.wrap;
+    if (wrap === 2 || wrap === 1 && s.status !== INIT_STATE || s.lookahead) {
+      return Z_STREAM_ERROR$2;
+    }
+    if (wrap === 1) {
+      strm.adler = adler32_1(strm.adler, dictionary, dictLength, 0);
+    }
+    s.wrap = 0;
+    if (dictLength >= s.w_size) {
+      if (wrap === 0) {
+        zero(s.head);
+        s.strstart = 0;
+        s.block_start = 0;
+        s.insert = 0;
+      }
+      let tmpDict = new Uint8Array(s.w_size);
+      tmpDict.set(dictionary.subarray(dictLength - s.w_size, dictLength), 0);
+      dictionary = tmpDict;
+      dictLength = s.w_size;
+    }
+    const avail = strm.avail_in;
+    const next2 = strm.next_in;
+    const input = strm.input;
+    strm.avail_in = dictLength;
+    strm.next_in = 0;
+    strm.input = dictionary;
+    fill_window(s);
+    while (s.lookahead >= MIN_MATCH) {
+      let str = s.strstart;
+      let n = s.lookahead - (MIN_MATCH - 1);
+      do {
+        s.ins_h = HASH(s, s.ins_h, s.window[str + MIN_MATCH - 1]);
+        s.prev[str & s.w_mask] = s.head[s.ins_h];
+        s.head[s.ins_h] = str;
+        str++;
+      } while (--n);
+      s.strstart = str;
+      s.lookahead = MIN_MATCH - 1;
+      fill_window(s);
+    }
+    s.strstart += s.lookahead;
+    s.block_start = s.strstart;
+    s.insert = s.lookahead;
+    s.lookahead = 0;
+    s.match_length = s.prev_length = MIN_MATCH - 1;
+    s.match_available = 0;
+    strm.next_in = next2;
+    strm.input = input;
+    strm.avail_in = avail;
+    s.wrap = wrap;
+    return Z_OK$3;
+  };
+  var deflateInit_1 = deflateInit;
+  var deflateInit2_1 = deflateInit2;
+  var deflateReset_1 = deflateReset;
+  var deflateResetKeep_1 = deflateResetKeep;
+  var deflateSetHeader_1 = deflateSetHeader;
+  var deflate_2$1 = deflate$2;
+  var deflateEnd_1 = deflateEnd;
+  var deflateSetDictionary_1 = deflateSetDictionary;
+  var deflateInfo = "pako deflate (from Nodeca project)";
+  var deflate_1$2 = {
+    deflateInit: deflateInit_1,
+    deflateInit2: deflateInit2_1,
+    deflateReset: deflateReset_1,
+    deflateResetKeep: deflateResetKeep_1,
+    deflateSetHeader: deflateSetHeader_1,
+    deflate: deflate_2$1,
+    deflateEnd: deflateEnd_1,
+    deflateSetDictionary: deflateSetDictionary_1,
+    deflateInfo
+  };
+  const _has = (obj, key) => {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+  };
+  var assign = function(obj) {
+    const sources = Array.prototype.slice.call(arguments, 1);
+    while (sources.length) {
+      const source = sources.shift();
+      if (!source) {
+        continue;
+      }
+      if (typeof source !== "object") {
+        throw new TypeError(source + "must be non-object");
+      }
+      for (const p in source) {
+        if (_has(source, p)) {
+          obj[p] = source[p];
+        }
+      }
+    }
+    return obj;
+  };
+  var flattenChunks = (chunks) => {
+    let len = 0;
+    for (let i = 0, l = chunks.length; i < l; i++) {
+      len += chunks[i].length;
+    }
+    const result = new Uint8Array(len);
+    for (let i = 0, pos = 0, l = chunks.length; i < l; i++) {
+      let chunk = chunks[i];
+      result.set(chunk, pos);
+      pos += chunk.length;
+    }
+    return result;
+  };
+  var common = {
+    assign,
+    flattenChunks
+  };
+  let STR_APPLY_UIA_OK = true;
+  try {
+    String.fromCharCode.apply(null, new Uint8Array(1));
+  } catch (__) {
+    STR_APPLY_UIA_OK = false;
+  }
+  const _utf8len = new Uint8Array(256);
+  for (let q = 0; q < 256; q++) {
+    _utf8len[q] = q >= 252 ? 6 : q >= 248 ? 5 : q >= 240 ? 4 : q >= 224 ? 3 : q >= 192 ? 2 : 1;
+  }
+  _utf8len[254] = _utf8len[254] = 1;
+  var string2buf = (str) => {
+    if (typeof TextEncoder === "function" && TextEncoder.prototype.encode) {
+      return new TextEncoder().encode(str);
+    }
+    let buf, c, c2, m_pos, i, str_len = str.length, buf_len = 0;
+    for (m_pos = 0; m_pos < str_len; m_pos++) {
+      c = str.charCodeAt(m_pos);
+      if ((c & 64512) === 55296 && m_pos + 1 < str_len) {
+        c2 = str.charCodeAt(m_pos + 1);
+        if ((c2 & 64512) === 56320) {
+          c = 65536 + (c - 55296 << 10) + (c2 - 56320);
+          m_pos++;
+        }
+      }
+      buf_len += c < 128 ? 1 : c < 2048 ? 2 : c < 65536 ? 3 : 4;
+    }
+    buf = new Uint8Array(buf_len);
+    for (i = 0, m_pos = 0; i < buf_len; m_pos++) {
+      c = str.charCodeAt(m_pos);
+      if ((c & 64512) === 55296 && m_pos + 1 < str_len) {
+        c2 = str.charCodeAt(m_pos + 1);
+        if ((c2 & 64512) === 56320) {
+          c = 65536 + (c - 55296 << 10) + (c2 - 56320);
+          m_pos++;
+        }
+      }
+      if (c < 128) {
+        buf[i++] = c;
+      } else if (c < 2048) {
+        buf[i++] = 192 | c >>> 6;
+        buf[i++] = 128 | c & 63;
+      } else if (c < 65536) {
+        buf[i++] = 224 | c >>> 12;
+        buf[i++] = 128 | c >>> 6 & 63;
+        buf[i++] = 128 | c & 63;
+      } else {
+        buf[i++] = 240 | c >>> 18;
+        buf[i++] = 128 | c >>> 12 & 63;
+        buf[i++] = 128 | c >>> 6 & 63;
+        buf[i++] = 128 | c & 63;
+      }
+    }
+    return buf;
+  };
+  const buf2binstring = (buf, len) => {
+    if (len < 65534) {
+      if (buf.subarray && STR_APPLY_UIA_OK) {
+        return String.fromCharCode.apply(null, buf.length === len ? buf : buf.subarray(0, len));
+      }
+    }
+    let result = "";
+    for (let i = 0; i < len; i++) {
+      result += String.fromCharCode(buf[i]);
+    }
+    return result;
+  };
+  var buf2string = (buf, max) => {
+    const len = max || buf.length;
+    if (typeof TextDecoder === "function" && TextDecoder.prototype.decode) {
+      return new TextDecoder().decode(buf.subarray(0, max));
+    }
+    let i, out;
+    const utf16buf = new Array(len * 2);
+    for (out = 0, i = 0; i < len; ) {
+      let c = buf[i++];
+      if (c < 128) {
+        utf16buf[out++] = c;
+        continue;
+      }
+      let c_len = _utf8len[c];
+      if (c_len > 4) {
+        utf16buf[out++] = 65533;
+        i += c_len - 1;
+        continue;
+      }
+      c &= c_len === 2 ? 31 : c_len === 3 ? 15 : 7;
+      while (c_len > 1 && i < len) {
+        c = c << 6 | buf[i++] & 63;
+        c_len--;
+      }
+      if (c_len > 1) {
+        utf16buf[out++] = 65533;
+        continue;
+      }
+      if (c < 65536) {
+        utf16buf[out++] = c;
+      } else {
+        c -= 65536;
+        utf16buf[out++] = 55296 | c >> 10 & 1023;
+        utf16buf[out++] = 56320 | c & 1023;
+      }
+    }
+    return buf2binstring(utf16buf, out);
+  };
+  var utf8border = (buf, max) => {
+    max = max || buf.length;
+    if (max > buf.length) {
+      max = buf.length;
+    }
+    let pos = max - 1;
+    while (pos >= 0 && (buf[pos] & 192) === 128) {
+      pos--;
+    }
+    if (pos < 0) {
+      return max;
+    }
+    if (pos === 0) {
+      return max;
+    }
+    return pos + _utf8len[buf[pos]] > max ? pos : max;
+  };
+  var strings = {
+    string2buf,
+    buf2string,
+    utf8border
+  };
+  function ZStream() {
+    this.input = null;
+    this.next_in = 0;
+    this.avail_in = 0;
+    this.total_in = 0;
+    this.output = null;
+    this.next_out = 0;
+    this.avail_out = 0;
+    this.total_out = 0;
+    this.msg = "";
+    this.state = null;
+    this.data_type = 2;
+    this.adler = 0;
+  }
+  var zstream = ZStream;
+  const toString$1 = Object.prototype.toString;
+  const {
+    Z_NO_FLUSH: Z_NO_FLUSH$1,
+    Z_SYNC_FLUSH,
+    Z_FULL_FLUSH,
+    Z_FINISH: Z_FINISH$2,
+    Z_OK: Z_OK$2,
+    Z_STREAM_END: Z_STREAM_END$2,
+    Z_DEFAULT_COMPRESSION,
+    Z_DEFAULT_STRATEGY,
+    Z_DEFLATED: Z_DEFLATED$1
+  } = constants$2;
+  function Deflate$1(options) {
+    this.options = common.assign({
+      level: Z_DEFAULT_COMPRESSION,
+      method: Z_DEFLATED$1,
+      chunkSize: 16384,
+      windowBits: 15,
+      memLevel: 8,
+      strategy: Z_DEFAULT_STRATEGY
+    }, options || {});
+    let opt = this.options;
+    if (opt.raw && opt.windowBits > 0) {
+      opt.windowBits = -opt.windowBits;
+    } else if (opt.gzip && opt.windowBits > 0 && opt.windowBits < 16) {
+      opt.windowBits += 16;
+    }
+    this.err = 0;
+    this.msg = "";
+    this.ended = false;
+    this.chunks = [];
+    this.strm = new zstream();
+    this.strm.avail_out = 0;
+    let status = deflate_1$2.deflateInit2(
+      this.strm,
+      opt.level,
+      opt.method,
+      opt.windowBits,
+      opt.memLevel,
+      opt.strategy
+    );
+    if (status !== Z_OK$2) {
+      throw new Error(messages[status]);
+    }
+    if (opt.header) {
+      deflate_1$2.deflateSetHeader(this.strm, opt.header);
+    }
+    if (opt.dictionary) {
+      let dict;
+      if (typeof opt.dictionary === "string") {
+        dict = strings.string2buf(opt.dictionary);
+      } else if (toString$1.call(opt.dictionary) === "[object ArrayBuffer]") {
+        dict = new Uint8Array(opt.dictionary);
+      } else {
+        dict = opt.dictionary;
+      }
+      status = deflate_1$2.deflateSetDictionary(this.strm, dict);
+      if (status !== Z_OK$2) {
+        throw new Error(messages[status]);
+      }
+      this._dict_set = true;
+    }
+  }
+  Deflate$1.prototype.push = function(data, flush_mode) {
+    const strm = this.strm;
+    const chunkSize = this.options.chunkSize;
+    let status, _flush_mode;
+    if (this.ended) {
+      return false;
+    }
+    if (flush_mode === ~~flush_mode) _flush_mode = flush_mode;
+    else _flush_mode = flush_mode === true ? Z_FINISH$2 : Z_NO_FLUSH$1;
+    if (typeof data === "string") {
+      strm.input = strings.string2buf(data);
+    } else if (toString$1.call(data) === "[object ArrayBuffer]") {
+      strm.input = new Uint8Array(data);
+    } else {
+      strm.input = data;
+    }
+    strm.next_in = 0;
+    strm.avail_in = strm.input.length;
+    for (; ; ) {
+      if (strm.avail_out === 0) {
+        strm.output = new Uint8Array(chunkSize);
+        strm.next_out = 0;
+        strm.avail_out = chunkSize;
+      }
+      if ((_flush_mode === Z_SYNC_FLUSH || _flush_mode === Z_FULL_FLUSH) && strm.avail_out <= 6) {
+        this.onData(strm.output.subarray(0, strm.next_out));
+        strm.avail_out = 0;
+        continue;
+      }
+      status = deflate_1$2.deflate(strm, _flush_mode);
+      if (status === Z_STREAM_END$2) {
+        if (strm.next_out > 0) {
+          this.onData(strm.output.subarray(0, strm.next_out));
+        }
+        status = deflate_1$2.deflateEnd(this.strm);
+        this.onEnd(status);
+        this.ended = true;
+        return status === Z_OK$2;
+      }
+      if (strm.avail_out === 0) {
+        this.onData(strm.output);
+        continue;
+      }
+      if (_flush_mode > 0 && strm.next_out > 0) {
+        this.onData(strm.output.subarray(0, strm.next_out));
+        strm.avail_out = 0;
+        continue;
+      }
+      if (strm.avail_in === 0) break;
+    }
+    return true;
+  };
+  Deflate$1.prototype.onData = function(chunk) {
+    this.chunks.push(chunk);
+  };
+  Deflate$1.prototype.onEnd = function(status) {
+    if (status === Z_OK$2) {
+      this.result = common.flattenChunks(this.chunks);
+    }
+    this.chunks = [];
+    this.err = status;
+    this.msg = this.strm.msg;
+  };
+  function deflate$1(input, options) {
+    const deflator = new Deflate$1(options);
+    deflator.push(input, true);
+    if (deflator.err) {
+      throw deflator.msg || messages[deflator.err];
+    }
+    return deflator.result;
+  }
+  function deflateRaw$1(input, options) {
+    options = options || {};
+    options.raw = true;
+    return deflate$1(input, options);
+  }
+  function gzip$1(input, options) {
+    options = options || {};
+    options.gzip = true;
+    return deflate$1(input, options);
+  }
+  var Deflate_1$1 = Deflate$1;
+  var deflate_2 = deflate$1;
+  var deflateRaw_1$1 = deflateRaw$1;
+  var gzip_1$1 = gzip$1;
+  var deflate_1$1 = {
+    Deflate: Deflate_1$1,
+    deflate: deflate_2,
+    deflateRaw: deflateRaw_1$1,
+    gzip: gzip_1$1
+  };
+  const BAD$1 = 16209;
+  const TYPE$1 = 16191;
+  var inffast = function inflate_fast(strm, start) {
+    let _in;
+    let last;
+    let _out;
+    let beg;
+    let end;
+    let dmax;
+    let wsize;
+    let whave;
+    let wnext;
+    let s_window;
+    let hold;
+    let bits;
+    let lcode;
+    let dcode;
+    let lmask;
+    let dmask;
+    let here;
+    let op;
+    let len;
+    let dist;
+    let from;
+    let from_source;
+    let input, output;
+    const state = strm.state;
+    _in = strm.next_in;
+    input = strm.input;
+    last = _in + (strm.avail_in - 5);
+    _out = strm.next_out;
+    output = strm.output;
+    beg = _out - (start - strm.avail_out);
+    end = _out + (strm.avail_out - 257);
+    dmax = state.dmax;
+    wsize = state.wsize;
+    whave = state.whave;
+    wnext = state.wnext;
+    s_window = state.window;
+    hold = state.hold;
+    bits = state.bits;
+    lcode = state.lencode;
+    dcode = state.distcode;
+    lmask = (1 << state.lenbits) - 1;
+    dmask = (1 << state.distbits) - 1;
+    top:
+      do {
+        if (bits < 15) {
+          hold += input[_in++] << bits;
+          bits += 8;
+          hold += input[_in++] << bits;
+          bits += 8;
+        }
+        here = lcode[hold & lmask];
+        dolen:
+          for (; ; ) {
+            op = here >>> 24;
+            hold >>>= op;
+            bits -= op;
+            op = here >>> 16 & 255;
+            if (op === 0) {
+              output[_out++] = here & 65535;
+            } else if (op & 16) {
+              len = here & 65535;
+              op &= 15;
+              if (op) {
+                if (bits < op) {
+                  hold += input[_in++] << bits;
+                  bits += 8;
+                }
+                len += hold & (1 << op) - 1;
+                hold >>>= op;
+                bits -= op;
+              }
+              if (bits < 15) {
+                hold += input[_in++] << bits;
+                bits += 8;
+                hold += input[_in++] << bits;
+                bits += 8;
+              }
+              here = dcode[hold & dmask];
+              dodist:
+                for (; ; ) {
+                  op = here >>> 24;
+                  hold >>>= op;
+                  bits -= op;
+                  op = here >>> 16 & 255;
+                  if (op & 16) {
+                    dist = here & 65535;
+                    op &= 15;
+                    if (bits < op) {
+                      hold += input[_in++] << bits;
+                      bits += 8;
+                      if (bits < op) {
+                        hold += input[_in++] << bits;
+                        bits += 8;
+                      }
+                    }
+                    dist += hold & (1 << op) - 1;
+                    if (dist > dmax) {
+                      strm.msg = "invalid distance too far back";
+                      state.mode = BAD$1;
+                      break top;
+                    }
+                    hold >>>= op;
+                    bits -= op;
+                    op = _out - beg;
+                    if (dist > op) {
+                      op = dist - op;
+                      if (op > whave) {
+                        if (state.sane) {
+                          strm.msg = "invalid distance too far back";
+                          state.mode = BAD$1;
+                          break top;
+                        }
+                      }
+                      from = 0;
+                      from_source = s_window;
+                      if (wnext === 0) {
+                        from += wsize - op;
+                        if (op < len) {
+                          len -= op;
+                          do {
+                            output[_out++] = s_window[from++];
+                          } while (--op);
+                          from = _out - dist;
+                          from_source = output;
+                        }
+                      } else if (wnext < op) {
+                        from += wsize + wnext - op;
+                        op -= wnext;
+                        if (op < len) {
+                          len -= op;
+                          do {
+                            output[_out++] = s_window[from++];
+                          } while (--op);
+                          from = 0;
+                          if (wnext < len) {
+                            op = wnext;
+                            len -= op;
+                            do {
+                              output[_out++] = s_window[from++];
+                            } while (--op);
+                            from = _out - dist;
+                            from_source = output;
+                          }
+                        }
+                      } else {
+                        from += wnext - op;
+                        if (op < len) {
+                          len -= op;
+                          do {
+                            output[_out++] = s_window[from++];
+                          } while (--op);
+                          from = _out - dist;
+                          from_source = output;
+                        }
+                      }
+                      while (len > 2) {
+                        output[_out++] = from_source[from++];
+                        output[_out++] = from_source[from++];
+                        output[_out++] = from_source[from++];
+                        len -= 3;
+                      }
+                      if (len) {
+                        output[_out++] = from_source[from++];
+                        if (len > 1) {
+                          output[_out++] = from_source[from++];
+                        }
+                      }
+                    } else {
+                      from = _out - dist;
+                      do {
+                        output[_out++] = output[from++];
+                        output[_out++] = output[from++];
+                        output[_out++] = output[from++];
+                        len -= 3;
+                      } while (len > 2);
+                      if (len) {
+                        output[_out++] = output[from++];
+                        if (len > 1) {
+                          output[_out++] = output[from++];
+                        }
+                      }
+                    }
+                  } else if ((op & 64) === 0) {
+                    here = dcode[(here & 65535) + (hold & (1 << op) - 1)];
+                    continue dodist;
+                  } else {
+                    strm.msg = "invalid distance code";
+                    state.mode = BAD$1;
+                    break top;
+                  }
+                  break;
+                }
+            } else if ((op & 64) === 0) {
+              here = lcode[(here & 65535) + (hold & (1 << op) - 1)];
+              continue dolen;
+            } else if (op & 32) {
+              state.mode = TYPE$1;
+              break top;
+            } else {
+              strm.msg = "invalid literal/length code";
+              state.mode = BAD$1;
+              break top;
+            }
+            break;
+          }
+      } while (_in < last && _out < end);
+    len = bits >> 3;
+    _in -= len;
+    bits -= len << 3;
+    hold &= (1 << bits) - 1;
+    strm.next_in = _in;
+    strm.next_out = _out;
+    strm.avail_in = _in < last ? 5 + (last - _in) : 5 - (_in - last);
+    strm.avail_out = _out < end ? 257 + (end - _out) : 257 - (_out - end);
+    state.hold = hold;
+    state.bits = bits;
+    return;
+  };
+  const MAXBITS = 15;
+  const ENOUGH_LENS$1 = 852;
+  const ENOUGH_DISTS$1 = 592;
+  const CODES$1 = 0;
+  const LENS$1 = 1;
+  const DISTS$1 = 2;
+  const lbase = new Uint16Array([
+    /* Length codes 257..285 base */
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    13,
+    15,
+    17,
+    19,
+    23,
+    27,
+    31,
+    35,
+    43,
+    51,
+    59,
+    67,
+    83,
+    99,
+    115,
+    131,
+    163,
+    195,
+    227,
+    258,
+    0,
+    0
+  ]);
+  const lext = new Uint8Array([
+    /* Length codes 257..285 extra */
+    16,
+    16,
+    16,
+    16,
+    16,
+    16,
+    16,
+    16,
+    17,
+    17,
+    17,
+    17,
+    18,
+    18,
+    18,
+    18,
+    19,
+    19,
+    19,
+    19,
+    20,
+    20,
+    20,
+    20,
+    21,
+    21,
+    21,
+    21,
+    16,
+    72,
+    78
+  ]);
+  const dbase = new Uint16Array([
+    /* Distance codes 0..29 base */
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    9,
+    13,
+    17,
+    25,
+    33,
+    49,
+    65,
+    97,
+    129,
+    193,
+    257,
+    385,
+    513,
+    769,
+    1025,
+    1537,
+    2049,
+    3073,
+    4097,
+    6145,
+    8193,
+    12289,
+    16385,
+    24577,
+    0,
+    0
+  ]);
+  const dext = new Uint8Array([
+    /* Distance codes 0..29 extra */
+    16,
+    16,
+    16,
+    16,
+    17,
+    17,
+    18,
+    18,
+    19,
+    19,
+    20,
+    20,
+    21,
+    21,
+    22,
+    22,
+    23,
+    23,
+    24,
+    24,
+    25,
+    25,
+    26,
+    26,
+    27,
+    27,
+    28,
+    28,
+    29,
+    29,
+    64,
+    64
+  ]);
+  const inflate_table = (type, lens, lens_index, codes, table, table_index, work, opts) => {
+    const bits = opts.bits;
+    let len = 0;
+    let sym = 0;
+    let min = 0, max = 0;
+    let root2 = 0;
+    let curr = 0;
+    let drop = 0;
+    let left = 0;
+    let used = 0;
+    let huff = 0;
+    let incr;
+    let fill;
+    let low;
+    let mask;
+    let next2;
+    let base = null;
+    let match;
+    const count = new Uint16Array(MAXBITS + 1);
+    const offs = new Uint16Array(MAXBITS + 1);
+    let extra = null;
+    let here_bits, here_op, here_val;
+    for (len = 0; len <= MAXBITS; len++) {
+      count[len] = 0;
+    }
+    for (sym = 0; sym < codes; sym++) {
+      count[lens[lens_index + sym]]++;
+    }
+    root2 = bits;
+    for (max = MAXBITS; max >= 1; max--) {
+      if (count[max] !== 0) {
+        break;
+      }
+    }
+    if (root2 > max) {
+      root2 = max;
+    }
+    if (max === 0) {
+      table[table_index++] = 1 << 24 | 64 << 16 | 0;
+      table[table_index++] = 1 << 24 | 64 << 16 | 0;
+      opts.bits = 1;
+      return 0;
+    }
+    for (min = 1; min < max; min++) {
+      if (count[min] !== 0) {
+        break;
+      }
+    }
+    if (root2 < min) {
+      root2 = min;
+    }
+    left = 1;
+    for (len = 1; len <= MAXBITS; len++) {
+      left <<= 1;
+      left -= count[len];
+      if (left < 0) {
+        return -1;
+      }
+    }
+    if (left > 0 && (type === CODES$1 || max !== 1)) {
+      return -1;
+    }
+    offs[1] = 0;
+    for (len = 1; len < MAXBITS; len++) {
+      offs[len + 1] = offs[len] + count[len];
+    }
+    for (sym = 0; sym < codes; sym++) {
+      if (lens[lens_index + sym] !== 0) {
+        work[offs[lens[lens_index + sym]]++] = sym;
+      }
+    }
+    if (type === CODES$1) {
+      base = extra = work;
+      match = 20;
+    } else if (type === LENS$1) {
+      base = lbase;
+      extra = lext;
+      match = 257;
+    } else {
+      base = dbase;
+      extra = dext;
+      match = 0;
+    }
+    huff = 0;
+    sym = 0;
+    len = min;
+    next2 = table_index;
+    curr = root2;
+    drop = 0;
+    low = -1;
+    used = 1 << root2;
+    mask = used - 1;
+    if (type === LENS$1 && used > ENOUGH_LENS$1 || type === DISTS$1 && used > ENOUGH_DISTS$1) {
+      return 1;
+    }
+    for (; ; ) {
+      here_bits = len - drop;
+      if (work[sym] + 1 < match) {
+        here_op = 0;
+        here_val = work[sym];
+      } else if (work[sym] >= match) {
+        here_op = extra[work[sym] - match];
+        here_val = base[work[sym] - match];
+      } else {
+        here_op = 32 + 64;
+        here_val = 0;
+      }
+      incr = 1 << len - drop;
+      fill = 1 << curr;
+      min = fill;
+      do {
+        fill -= incr;
+        table[next2 + (huff >> drop) + fill] = here_bits << 24 | here_op << 16 | here_val | 0;
+      } while (fill !== 0);
+      incr = 1 << len - 1;
+      while (huff & incr) {
+        incr >>= 1;
+      }
+      if (incr !== 0) {
+        huff &= incr - 1;
+        huff += incr;
+      } else {
+        huff = 0;
+      }
+      sym++;
+      if (--count[len] === 0) {
+        if (len === max) {
+          break;
+        }
+        len = lens[lens_index + work[sym]];
+      }
+      if (len > root2 && (huff & mask) !== low) {
+        if (drop === 0) {
+          drop = root2;
+        }
+        next2 += min;
+        curr = len - drop;
+        left = 1 << curr;
+        while (curr + drop < max) {
+          left -= count[curr + drop];
+          if (left <= 0) {
+            break;
+          }
+          curr++;
+          left <<= 1;
+        }
+        used += 1 << curr;
+        if (type === LENS$1 && used > ENOUGH_LENS$1 || type === DISTS$1 && used > ENOUGH_DISTS$1) {
+          return 1;
+        }
+        low = huff & mask;
+        table[low] = root2 << 24 | curr << 16 | next2 - table_index | 0;
+      }
+    }
+    if (huff !== 0) {
+      table[next2 + huff] = len - drop << 24 | 64 << 16 | 0;
+    }
+    opts.bits = root2;
+    return 0;
+  };
+  var inftrees = inflate_table;
+  const CODES = 0;
+  const LENS = 1;
+  const DISTS = 2;
+  const {
+    Z_FINISH: Z_FINISH$1,
+    Z_BLOCK,
+    Z_TREES,
+    Z_OK: Z_OK$1,
+    Z_STREAM_END: Z_STREAM_END$1,
+    Z_NEED_DICT: Z_NEED_DICT$1,
+    Z_STREAM_ERROR: Z_STREAM_ERROR$1,
+    Z_DATA_ERROR: Z_DATA_ERROR$1,
+    Z_MEM_ERROR: Z_MEM_ERROR$1,
+    Z_BUF_ERROR,
+    Z_DEFLATED
+  } = constants$2;
+  const HEAD = 16180;
+  const FLAGS = 16181;
+  const TIME = 16182;
+  const OS = 16183;
+  const EXLEN = 16184;
+  const EXTRA = 16185;
+  const NAME = 16186;
+  const COMMENT = 16187;
+  const HCRC = 16188;
+  const DICTID = 16189;
+  const DICT = 16190;
+  const TYPE = 16191;
+  const TYPEDO = 16192;
+  const STORED = 16193;
+  const COPY_ = 16194;
+  const COPY = 16195;
+  const TABLE = 16196;
+  const LENLENS = 16197;
+  const CODELENS = 16198;
+  const LEN_ = 16199;
+  const LEN = 16200;
+  const LENEXT = 16201;
+  const DIST = 16202;
+  const DISTEXT = 16203;
+  const MATCH = 16204;
+  const LIT = 16205;
+  const CHECK = 16206;
+  const LENGTH = 16207;
+  const DONE = 16208;
+  const BAD = 16209;
+  const MEM = 16210;
+  const SYNC = 16211;
+  const ENOUGH_LENS = 852;
+  const ENOUGH_DISTS = 592;
+  const MAX_WBITS = 15;
+  const DEF_WBITS = MAX_WBITS;
+  const zswap32 = (q) => {
+    return (q >>> 24 & 255) + (q >>> 8 & 65280) + ((q & 65280) << 8) + ((q & 255) << 24);
+  };
+  function InflateState() {
+    this.strm = null;
+    this.mode = 0;
+    this.last = false;
+    this.wrap = 0;
+    this.havedict = false;
+    this.flags = 0;
+    this.dmax = 0;
+    this.check = 0;
+    this.total = 0;
+    this.head = null;
+    this.wbits = 0;
+    this.wsize = 0;
+    this.whave = 0;
+    this.wnext = 0;
+    this.window = null;
+    this.hold = 0;
+    this.bits = 0;
+    this.length = 0;
+    this.offset = 0;
+    this.extra = 0;
+    this.lencode = null;
+    this.distcode = null;
+    this.lenbits = 0;
+    this.distbits = 0;
+    this.ncode = 0;
+    this.nlen = 0;
+    this.ndist = 0;
+    this.have = 0;
+    this.next = null;
+    this.lens = new Uint16Array(320);
+    this.work = new Uint16Array(288);
+    this.lendyn = null;
+    this.distdyn = null;
+    this.sane = 0;
+    this.back = 0;
+    this.was = 0;
+  }
+  const inflateStateCheck = (strm) => {
+    if (!strm) {
+      return 1;
+    }
+    const state = strm.state;
+    if (!state || state.strm !== strm || state.mode < HEAD || state.mode > SYNC) {
+      return 1;
+    }
+    return 0;
+  };
+  const inflateResetKeep = (strm) => {
+    if (inflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$1;
+    }
+    const state = strm.state;
+    strm.total_in = strm.total_out = state.total = 0;
+    strm.msg = "";
+    if (state.wrap) {
+      strm.adler = state.wrap & 1;
+    }
+    state.mode = HEAD;
+    state.last = 0;
+    state.havedict = 0;
+    state.flags = -1;
+    state.dmax = 32768;
+    state.head = null;
+    state.hold = 0;
+    state.bits = 0;
+    state.lencode = state.lendyn = new Int32Array(ENOUGH_LENS);
+    state.distcode = state.distdyn = new Int32Array(ENOUGH_DISTS);
+    state.sane = 1;
+    state.back = -1;
+    return Z_OK$1;
+  };
+  const inflateReset = (strm) => {
+    if (inflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$1;
+    }
+    const state = strm.state;
+    state.wsize = 0;
+    state.whave = 0;
+    state.wnext = 0;
+    return inflateResetKeep(strm);
+  };
+  const inflateReset2 = (strm, windowBits) => {
+    let wrap;
+    if (inflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$1;
+    }
+    const state = strm.state;
+    if (windowBits < 0) {
+      wrap = 0;
+      windowBits = -windowBits;
+    } else {
+      wrap = (windowBits >> 4) + 5;
+      if (windowBits < 48) {
+        windowBits &= 15;
+      }
+    }
+    if (windowBits && (windowBits < 8 || windowBits > 15)) {
+      return Z_STREAM_ERROR$1;
+    }
+    if (state.window !== null && state.wbits !== windowBits) {
+      state.window = null;
+    }
+    state.wrap = wrap;
+    state.wbits = windowBits;
+    return inflateReset(strm);
+  };
+  const inflateInit2 = (strm, windowBits) => {
+    if (!strm) {
+      return Z_STREAM_ERROR$1;
+    }
+    const state = new InflateState();
+    strm.state = state;
+    state.strm = strm;
+    state.window = null;
+    state.mode = HEAD;
+    const ret = inflateReset2(strm, windowBits);
+    if (ret !== Z_OK$1) {
+      strm.state = null;
+    }
+    return ret;
+  };
+  const inflateInit = (strm) => {
+    return inflateInit2(strm, DEF_WBITS);
+  };
+  let virgin = true;
+  let lenfix, distfix;
+  const fixedtables = (state) => {
+    if (virgin) {
+      lenfix = new Int32Array(512);
+      distfix = new Int32Array(32);
+      let sym = 0;
+      while (sym < 144) {
+        state.lens[sym++] = 8;
+      }
+      while (sym < 256) {
+        state.lens[sym++] = 9;
+      }
+      while (sym < 280) {
+        state.lens[sym++] = 7;
+      }
+      while (sym < 288) {
+        state.lens[sym++] = 8;
+      }
+      inftrees(LENS, state.lens, 0, 288, lenfix, 0, state.work, { bits: 9 });
+      sym = 0;
+      while (sym < 32) {
+        state.lens[sym++] = 5;
+      }
+      inftrees(DISTS, state.lens, 0, 32, distfix, 0, state.work, { bits: 5 });
+      virgin = false;
+    }
+    state.lencode = lenfix;
+    state.lenbits = 9;
+    state.distcode = distfix;
+    state.distbits = 5;
+  };
+  const updatewindow = (strm, src, end, copy) => {
+    let dist;
+    const state = strm.state;
+    if (state.window === null) {
+      state.wsize = 1 << state.wbits;
+      state.wnext = 0;
+      state.whave = 0;
+      state.window = new Uint8Array(state.wsize);
+    }
+    if (copy >= state.wsize) {
+      state.window.set(src.subarray(end - state.wsize, end), 0);
+      state.wnext = 0;
+      state.whave = state.wsize;
+    } else {
+      dist = state.wsize - state.wnext;
+      if (dist > copy) {
+        dist = copy;
+      }
+      state.window.set(src.subarray(end - copy, end - copy + dist), state.wnext);
+      copy -= dist;
+      if (copy) {
+        state.window.set(src.subarray(end - copy, end), 0);
+        state.wnext = copy;
+        state.whave = state.wsize;
+      } else {
+        state.wnext += dist;
+        if (state.wnext === state.wsize) {
+          state.wnext = 0;
+        }
+        if (state.whave < state.wsize) {
+          state.whave += dist;
+        }
+      }
+    }
+    return 0;
+  };
+  const inflate$2 = (strm, flush) => {
+    let state;
+    let input, output;
+    let next2;
+    let put;
+    let have, left;
+    let hold;
+    let bits;
+    let _in, _out;
+    let copy;
+    let from;
+    let from_source;
+    let here = 0;
+    let here_bits, here_op, here_val;
+    let last_bits, last_op, last_val;
+    let len;
+    let ret;
+    const hbuf = new Uint8Array(4);
+    let opts;
+    let n;
+    const order2 = (
+      /* permutation of code lengths */
+      new Uint8Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15])
+    );
+    if (inflateStateCheck(strm) || !strm.output || !strm.input && strm.avail_in !== 0) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    if (state.mode === TYPE) {
+      state.mode = TYPEDO;
+    }
+    put = strm.next_out;
+    output = strm.output;
+    left = strm.avail_out;
+    next2 = strm.next_in;
+    input = strm.input;
+    have = strm.avail_in;
+    hold = state.hold;
+    bits = state.bits;
+    _in = have;
+    _out = left;
+    ret = Z_OK$1;
+    inf_leave:
+      for (; ; ) {
+        switch (state.mode) {
+          case HEAD:
+            if (state.wrap === 0) {
+              state.mode = TYPEDO;
+              break;
+            }
+            while (bits < 16) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            if (state.wrap & 2 && hold === 35615) {
+              if (state.wbits === 0) {
+                state.wbits = 15;
+              }
+              state.check = 0;
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              state.check = crc32_1(state.check, hbuf, 2, 0);
+              hold = 0;
+              bits = 0;
+              state.mode = FLAGS;
+              break;
+            }
+            if (state.head) {
+              state.head.done = false;
+            }
+            if (!(state.wrap & 1) || /* check if zlib header allowed */
+            (((hold & 255) << 8) + (hold >> 8)) % 31) {
+              strm.msg = "incorrect header check";
+              state.mode = BAD;
+              break;
+            }
+            if ((hold & 15) !== Z_DEFLATED) {
+              strm.msg = "unknown compression method";
+              state.mode = BAD;
+              break;
+            }
+            hold >>>= 4;
+            bits -= 4;
+            len = (hold & 15) + 8;
+            if (state.wbits === 0) {
+              state.wbits = len;
+            }
+            if (len > 15 || len > state.wbits) {
+              strm.msg = "invalid window size";
+              state.mode = BAD;
+              break;
+            }
+            state.dmax = 1 << state.wbits;
+            state.flags = 0;
+            strm.adler = state.check = 1;
+            state.mode = hold & 512 ? DICTID : TYPE;
+            hold = 0;
+            bits = 0;
+            break;
+          case FLAGS:
+            while (bits < 16) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            state.flags = hold;
+            if ((state.flags & 255) !== Z_DEFLATED) {
+              strm.msg = "unknown compression method";
+              state.mode = BAD;
+              break;
+            }
+            if (state.flags & 57344) {
+              strm.msg = "unknown header flags set";
+              state.mode = BAD;
+              break;
+            }
+            if (state.head) {
+              state.head.text = hold >> 8 & 1;
+            }
+            if (state.flags & 512 && state.wrap & 4) {
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              state.check = crc32_1(state.check, hbuf, 2, 0);
+            }
+            hold = 0;
+            bits = 0;
+            state.mode = TIME;
+          case TIME:
+            while (bits < 32) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            if (state.head) {
+              state.head.time = hold;
+            }
+            if (state.flags & 512 && state.wrap & 4) {
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              hbuf[2] = hold >>> 16 & 255;
+              hbuf[3] = hold >>> 24 & 255;
+              state.check = crc32_1(state.check, hbuf, 4, 0);
+            }
+            hold = 0;
+            bits = 0;
+            state.mode = OS;
+          case OS:
+            while (bits < 16) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            if (state.head) {
+              state.head.xflags = hold & 255;
+              state.head.os = hold >> 8;
+            }
+            if (state.flags & 512 && state.wrap & 4) {
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              state.check = crc32_1(state.check, hbuf, 2, 0);
+            }
+            hold = 0;
+            bits = 0;
+            state.mode = EXLEN;
+          case EXLEN:
+            if (state.flags & 1024) {
+              while (bits < 16) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              state.length = hold;
+              if (state.head) {
+                state.head.extra_len = hold;
+              }
+              if (state.flags & 512 && state.wrap & 4) {
+                hbuf[0] = hold & 255;
+                hbuf[1] = hold >>> 8 & 255;
+                state.check = crc32_1(state.check, hbuf, 2, 0);
+              }
+              hold = 0;
+              bits = 0;
+            } else if (state.head) {
+              state.head.extra = null;
+            }
+            state.mode = EXTRA;
+          case EXTRA:
+            if (state.flags & 1024) {
+              copy = state.length;
+              if (copy > have) {
+                copy = have;
+              }
+              if (copy) {
+                if (state.head) {
+                  len = state.head.extra_len - state.length;
+                  if (!state.head.extra) {
+                    state.head.extra = new Uint8Array(state.head.extra_len);
+                  }
+                  state.head.extra.set(
+                    input.subarray(
+                      next2,
+                      // extra field is limited to 65536 bytes
+                      // - no need for additional size check
+                      next2 + copy
+                    ),
+                    /*len + copy > state.head.extra_max - len ? state.head.extra_max : copy,*/
+                    len
+                  );
+                }
+                if (state.flags & 512 && state.wrap & 4) {
+                  state.check = crc32_1(state.check, input, copy, next2);
+                }
+                have -= copy;
+                next2 += copy;
+                state.length -= copy;
+              }
+              if (state.length) {
+                break inf_leave;
+              }
+            }
+            state.length = 0;
+            state.mode = NAME;
+          case NAME:
+            if (state.flags & 2048) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              copy = 0;
+              do {
+                len = input[next2 + copy++];
+                if (state.head && len && state.length < 65536) {
+                  state.head.name += String.fromCharCode(len);
+                }
+              } while (len && copy < have);
+              if (state.flags & 512 && state.wrap & 4) {
+                state.check = crc32_1(state.check, input, copy, next2);
+              }
+              have -= copy;
+              next2 += copy;
+              if (len) {
+                break inf_leave;
+              }
+            } else if (state.head) {
+              state.head.name = null;
+            }
+            state.length = 0;
+            state.mode = COMMENT;
+          case COMMENT:
+            if (state.flags & 4096) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              copy = 0;
+              do {
+                len = input[next2 + copy++];
+                if (state.head && len && state.length < 65536) {
+                  state.head.comment += String.fromCharCode(len);
+                }
+              } while (len && copy < have);
+              if (state.flags & 512 && state.wrap & 4) {
+                state.check = crc32_1(state.check, input, copy, next2);
+              }
+              have -= copy;
+              next2 += copy;
+              if (len) {
+                break inf_leave;
+              }
+            } else if (state.head) {
+              state.head.comment = null;
+            }
+            state.mode = HCRC;
+          case HCRC:
+            if (state.flags & 512) {
+              while (bits < 16) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              if (state.wrap & 4 && hold !== (state.check & 65535)) {
+                strm.msg = "header crc mismatch";
+                state.mode = BAD;
+                break;
+              }
+              hold = 0;
+              bits = 0;
+            }
+            if (state.head) {
+              state.head.hcrc = state.flags >> 9 & 1;
+              state.head.done = true;
+            }
+            strm.adler = state.check = 0;
+            state.mode = TYPE;
+            break;
+          case DICTID:
+            while (bits < 32) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            strm.adler = state.check = zswap32(hold);
+            hold = 0;
+            bits = 0;
+            state.mode = DICT;
+          case DICT:
+            if (state.havedict === 0) {
+              strm.next_out = put;
+              strm.avail_out = left;
+              strm.next_in = next2;
+              strm.avail_in = have;
+              state.hold = hold;
+              state.bits = bits;
+              return Z_NEED_DICT$1;
+            }
+            strm.adler = state.check = 1;
+            state.mode = TYPE;
+          case TYPE:
+            if (flush === Z_BLOCK || flush === Z_TREES) {
+              break inf_leave;
+            }
+          case TYPEDO:
+            if (state.last) {
+              hold >>>= bits & 7;
+              bits -= bits & 7;
+              state.mode = CHECK;
+              break;
+            }
+            while (bits < 3) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            state.last = hold & 1;
+            hold >>>= 1;
+            bits -= 1;
+            switch (hold & 3) {
+              case 0:
+                state.mode = STORED;
+                break;
+              case 1:
+                fixedtables(state);
+                state.mode = LEN_;
+                if (flush === Z_TREES) {
+                  hold >>>= 2;
+                  bits -= 2;
+                  break inf_leave;
+                }
+                break;
+              case 2:
+                state.mode = TABLE;
+                break;
+              case 3:
+                strm.msg = "invalid block type";
+                state.mode = BAD;
+            }
+            hold >>>= 2;
+            bits -= 2;
+            break;
+          case STORED:
+            hold >>>= bits & 7;
+            bits -= bits & 7;
+            while (bits < 32) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            if ((hold & 65535) !== (hold >>> 16 ^ 65535)) {
+              strm.msg = "invalid stored block lengths";
+              state.mode = BAD;
+              break;
+            }
+            state.length = hold & 65535;
+            hold = 0;
+            bits = 0;
+            state.mode = COPY_;
+            if (flush === Z_TREES) {
+              break inf_leave;
+            }
+          case COPY_:
+            state.mode = COPY;
+          case COPY:
+            copy = state.length;
+            if (copy) {
+              if (copy > have) {
+                copy = have;
+              }
+              if (copy > left) {
+                copy = left;
+              }
+              if (copy === 0) {
+                break inf_leave;
+              }
+              output.set(input.subarray(next2, next2 + copy), put);
+              have -= copy;
+              next2 += copy;
+              left -= copy;
+              put += copy;
+              state.length -= copy;
+              break;
+            }
+            state.mode = TYPE;
+            break;
+          case TABLE:
+            while (bits < 14) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            state.nlen = (hold & 31) + 257;
+            hold >>>= 5;
+            bits -= 5;
+            state.ndist = (hold & 31) + 1;
+            hold >>>= 5;
+            bits -= 5;
+            state.ncode = (hold & 15) + 4;
+            hold >>>= 4;
+            bits -= 4;
+            if (state.nlen > 286 || state.ndist > 30) {
+              strm.msg = "too many length or distance symbols";
+              state.mode = BAD;
+              break;
+            }
+            state.have = 0;
+            state.mode = LENLENS;
+          case LENLENS:
+            while (state.have < state.ncode) {
+              while (bits < 3) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              state.lens[order2[state.have++]] = hold & 7;
+              hold >>>= 3;
+              bits -= 3;
+            }
+            while (state.have < 19) {
+              state.lens[order2[state.have++]] = 0;
+            }
+            state.lencode = state.lendyn;
+            state.lenbits = 7;
+            opts = { bits: state.lenbits };
+            ret = inftrees(CODES, state.lens, 0, 19, state.lencode, 0, state.work, opts);
+            state.lenbits = opts.bits;
+            if (ret) {
+              strm.msg = "invalid code lengths set";
+              state.mode = BAD;
+              break;
+            }
+            state.have = 0;
+            state.mode = CODELENS;
+          case CODELENS:
+            while (state.have < state.nlen + state.ndist) {
+              for (; ; ) {
+                here = state.lencode[hold & (1 << state.lenbits) - 1];
+                here_bits = here >>> 24;
+                here_op = here >>> 16 & 255;
+                here_val = here & 65535;
+                if (here_bits <= bits) {
+                  break;
+                }
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              if (here_val < 16) {
+                hold >>>= here_bits;
+                bits -= here_bits;
+                state.lens[state.have++] = here_val;
+              } else {
+                if (here_val === 16) {
+                  n = here_bits + 2;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next2++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= here_bits;
+                  bits -= here_bits;
+                  if (state.have === 0) {
+                    strm.msg = "invalid bit length repeat";
+                    state.mode = BAD;
+                    break;
+                  }
+                  len = state.lens[state.have - 1];
+                  copy = 3 + (hold & 3);
+                  hold >>>= 2;
+                  bits -= 2;
+                } else if (here_val === 17) {
+                  n = here_bits + 3;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next2++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= here_bits;
+                  bits -= here_bits;
+                  len = 0;
+                  copy = 3 + (hold & 7);
+                  hold >>>= 3;
+                  bits -= 3;
+                } else {
+                  n = here_bits + 7;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next2++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= here_bits;
+                  bits -= here_bits;
+                  len = 0;
+                  copy = 11 + (hold & 127);
+                  hold >>>= 7;
+                  bits -= 7;
+                }
+                if (state.have + copy > state.nlen + state.ndist) {
+                  strm.msg = "invalid bit length repeat";
+                  state.mode = BAD;
+                  break;
+                }
+                while (copy--) {
+                  state.lens[state.have++] = len;
+                }
+              }
+            }
+            if (state.mode === BAD) {
+              break;
+            }
+            if (state.lens[256] === 0) {
+              strm.msg = "invalid code -- missing end-of-block";
+              state.mode = BAD;
+              break;
+            }
+            state.lenbits = 9;
+            opts = { bits: state.lenbits };
+            ret = inftrees(LENS, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
+            state.lenbits = opts.bits;
+            if (ret) {
+              strm.msg = "invalid literal/lengths set";
+              state.mode = BAD;
+              break;
+            }
+            state.distbits = 6;
+            state.distcode = state.distdyn;
+            opts = { bits: state.distbits };
+            ret = inftrees(DISTS, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
+            state.distbits = opts.bits;
+            if (ret) {
+              strm.msg = "invalid distances set";
+              state.mode = BAD;
+              break;
+            }
+            state.mode = LEN_;
+            if (flush === Z_TREES) {
+              break inf_leave;
+            }
+          case LEN_:
+            state.mode = LEN;
+          case LEN:
+            if (have >= 6 && left >= 258) {
+              strm.next_out = put;
+              strm.avail_out = left;
+              strm.next_in = next2;
+              strm.avail_in = have;
+              state.hold = hold;
+              state.bits = bits;
+              inffast(strm, _out);
+              put = strm.next_out;
+              output = strm.output;
+              left = strm.avail_out;
+              next2 = strm.next_in;
+              input = strm.input;
+              have = strm.avail_in;
+              hold = state.hold;
+              bits = state.bits;
+              if (state.mode === TYPE) {
+                state.back = -1;
+              }
+              break;
+            }
+            state.back = 0;
+            for (; ; ) {
+              here = state.lencode[hold & (1 << state.lenbits) - 1];
+              here_bits = here >>> 24;
+              here_op = here >>> 16 & 255;
+              here_val = here & 65535;
+              if (here_bits <= bits) {
+                break;
+              }
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            if (here_op && (here_op & 240) === 0) {
+              last_bits = here_bits;
+              last_op = here_op;
+              last_val = here_val;
+              for (; ; ) {
+                here = state.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                here_bits = here >>> 24;
+                here_op = here >>> 16 & 255;
+                here_val = here & 65535;
+                if (last_bits + here_bits <= bits) {
+                  break;
+                }
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              hold >>>= last_bits;
+              bits -= last_bits;
+              state.back += last_bits;
+            }
+            hold >>>= here_bits;
+            bits -= here_bits;
+            state.back += here_bits;
+            state.length = here_val;
+            if (here_op === 0) {
+              state.mode = LIT;
+              break;
+            }
+            if (here_op & 32) {
+              state.back = -1;
+              state.mode = TYPE;
+              break;
+            }
+            if (here_op & 64) {
+              strm.msg = "invalid literal/length code";
+              state.mode = BAD;
+              break;
+            }
+            state.extra = here_op & 15;
+            state.mode = LENEXT;
+          case LENEXT:
+            if (state.extra) {
+              n = state.extra;
+              while (bits < n) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              state.length += hold & (1 << state.extra) - 1;
+              hold >>>= state.extra;
+              bits -= state.extra;
+              state.back += state.extra;
+            }
+            state.was = state.length;
+            state.mode = DIST;
+          case DIST:
+            for (; ; ) {
+              here = state.distcode[hold & (1 << state.distbits) - 1];
+              here_bits = here >>> 24;
+              here_op = here >>> 16 & 255;
+              here_val = here & 65535;
+              if (here_bits <= bits) {
+                break;
+              }
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next2++] << bits;
+              bits += 8;
+            }
+            if ((here_op & 240) === 0) {
+              last_bits = here_bits;
+              last_op = here_op;
+              last_val = here_val;
+              for (; ; ) {
+                here = state.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                here_bits = here >>> 24;
+                here_op = here >>> 16 & 255;
+                here_val = here & 65535;
+                if (last_bits + here_bits <= bits) {
+                  break;
+                }
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              hold >>>= last_bits;
+              bits -= last_bits;
+              state.back += last_bits;
+            }
+            hold >>>= here_bits;
+            bits -= here_bits;
+            state.back += here_bits;
+            if (here_op & 64) {
+              strm.msg = "invalid distance code";
+              state.mode = BAD;
+              break;
+            }
+            state.offset = here_val;
+            state.extra = here_op & 15;
+            state.mode = DISTEXT;
+          case DISTEXT:
+            if (state.extra) {
+              n = state.extra;
+              while (bits < n) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              state.offset += hold & (1 << state.extra) - 1;
+              hold >>>= state.extra;
+              bits -= state.extra;
+              state.back += state.extra;
+            }
+            if (state.offset > state.dmax) {
+              strm.msg = "invalid distance too far back";
+              state.mode = BAD;
+              break;
+            }
+            state.mode = MATCH;
+          case MATCH:
+            if (left === 0) {
+              break inf_leave;
+            }
+            copy = _out - left;
+            if (state.offset > copy) {
+              copy = state.offset - copy;
+              if (copy > state.whave) {
+                if (state.sane) {
+                  strm.msg = "invalid distance too far back";
+                  state.mode = BAD;
+                  break;
+                }
+              }
+              if (copy > state.wnext) {
+                copy -= state.wnext;
+                from = state.wsize - copy;
+              } else {
+                from = state.wnext - copy;
+              }
+              if (copy > state.length) {
+                copy = state.length;
+              }
+              from_source = state.window;
+            } else {
+              from_source = output;
+              from = put - state.offset;
+              copy = state.length;
+            }
+            if (copy > left) {
+              copy = left;
+            }
+            left -= copy;
+            state.length -= copy;
+            do {
+              output[put++] = from_source[from++];
+            } while (--copy);
+            if (state.length === 0) {
+              state.mode = LEN;
+            }
+            break;
+          case LIT:
+            if (left === 0) {
+              break inf_leave;
+            }
+            output[put++] = state.length;
+            left--;
+            state.mode = LEN;
+            break;
+          case CHECK:
+            if (state.wrap) {
+              while (bits < 32) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold |= input[next2++] << bits;
+                bits += 8;
+              }
+              _out -= left;
+              strm.total_out += _out;
+              state.total += _out;
+              if (state.wrap & 4 && _out) {
+                strm.adler = state.check = /*UPDATE_CHECK(state.check, put - _out, _out);*/
+                state.flags ? crc32_1(state.check, output, _out, put - _out) : adler32_1(state.check, output, _out, put - _out);
+              }
+              _out = left;
+              if (state.wrap & 4 && (state.flags ? hold : zswap32(hold)) !== state.check) {
+                strm.msg = "incorrect data check";
+                state.mode = BAD;
+                break;
+              }
+              hold = 0;
+              bits = 0;
+            }
+            state.mode = LENGTH;
+          case LENGTH:
+            if (state.wrap && state.flags) {
+              while (bits < 32) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next2++] << bits;
+                bits += 8;
+              }
+              if (state.wrap & 4 && hold !== (state.total & 4294967295)) {
+                strm.msg = "incorrect length check";
+                state.mode = BAD;
+                break;
+              }
+              hold = 0;
+              bits = 0;
+            }
+            state.mode = DONE;
+          case DONE:
+            ret = Z_STREAM_END$1;
+            break inf_leave;
+          case BAD:
+            ret = Z_DATA_ERROR$1;
+            break inf_leave;
+          case MEM:
+            return Z_MEM_ERROR$1;
+          case SYNC:
+          default:
+            return Z_STREAM_ERROR$1;
+        }
+      }
+    strm.next_out = put;
+    strm.avail_out = left;
+    strm.next_in = next2;
+    strm.avail_in = have;
+    state.hold = hold;
+    state.bits = bits;
+    if (state.wsize || _out !== strm.avail_out && state.mode < BAD && (state.mode < CHECK || flush !== Z_FINISH$1)) {
+      if (updatewindow(strm, strm.output, strm.next_out, _out - strm.avail_out)) ;
+    }
+    _in -= strm.avail_in;
+    _out -= strm.avail_out;
+    strm.total_in += _in;
+    strm.total_out += _out;
+    state.total += _out;
+    if (state.wrap & 4 && _out) {
+      strm.adler = state.check = /*UPDATE_CHECK(state.check, strm.next_out - _out, _out);*/
+      state.flags ? crc32_1(state.check, output, _out, strm.next_out - _out) : adler32_1(state.check, output, _out, strm.next_out - _out);
+    }
+    strm.data_type = state.bits + (state.last ? 64 : 0) + (state.mode === TYPE ? 128 : 0) + (state.mode === LEN_ || state.mode === COPY_ ? 256 : 0);
+    if ((_in === 0 && _out === 0 || flush === Z_FINISH$1) && ret === Z_OK$1) {
+      ret = Z_BUF_ERROR;
+    }
+    return ret;
+  };
+  const inflateEnd = (strm) => {
+    if (inflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$1;
+    }
+    let state = strm.state;
+    if (state.window) {
+      state.window = null;
+    }
+    strm.state = null;
+    return Z_OK$1;
+  };
+  const inflateGetHeader = (strm, head) => {
+    if (inflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$1;
+    }
+    const state = strm.state;
+    if ((state.wrap & 2) === 0) {
+      return Z_STREAM_ERROR$1;
+    }
+    state.head = head;
+    head.done = false;
+    return Z_OK$1;
+  };
+  const inflateSetDictionary = (strm, dictionary) => {
+    const dictLength = dictionary.length;
+    let state;
+    let dictid;
+    let ret;
+    if (inflateStateCheck(strm)) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    if (state.wrap !== 0 && state.mode !== DICT) {
+      return Z_STREAM_ERROR$1;
+    }
+    if (state.mode === DICT) {
+      dictid = 1;
+      dictid = adler32_1(dictid, dictionary, dictLength, 0);
+      if (dictid !== state.check) {
+        return Z_DATA_ERROR$1;
+      }
+    }
+    ret = updatewindow(strm, dictionary, dictLength, dictLength);
+    if (ret) {
+      state.mode = MEM;
+      return Z_MEM_ERROR$1;
+    }
+    state.havedict = 1;
+    return Z_OK$1;
+  };
+  var inflateReset_1 = inflateReset;
+  var inflateReset2_1 = inflateReset2;
+  var inflateResetKeep_1 = inflateResetKeep;
+  var inflateInit_1 = inflateInit;
+  var inflateInit2_1 = inflateInit2;
+  var inflate_2$1 = inflate$2;
+  var inflateEnd_1 = inflateEnd;
+  var inflateGetHeader_1 = inflateGetHeader;
+  var inflateSetDictionary_1 = inflateSetDictionary;
+  var inflateInfo = "pako inflate (from Nodeca project)";
+  var inflate_1$2 = {
+    inflateReset: inflateReset_1,
+    inflateReset2: inflateReset2_1,
+    inflateResetKeep: inflateResetKeep_1,
+    inflateInit: inflateInit_1,
+    inflateInit2: inflateInit2_1,
+    inflate: inflate_2$1,
+    inflateEnd: inflateEnd_1,
+    inflateGetHeader: inflateGetHeader_1,
+    inflateSetDictionary: inflateSetDictionary_1,
+    inflateInfo
+  };
+  function GZheader() {
+    this.text = 0;
+    this.time = 0;
+    this.xflags = 0;
+    this.os = 0;
+    this.extra = null;
+    this.extra_len = 0;
+    this.name = "";
+    this.comment = "";
+    this.hcrc = 0;
+    this.done = false;
+  }
+  var gzheader = GZheader;
+  const toString = Object.prototype.toString;
+  const {
+    Z_NO_FLUSH,
+    Z_FINISH,
+    Z_OK,
+    Z_STREAM_END,
+    Z_NEED_DICT,
+    Z_STREAM_ERROR,
+    Z_DATA_ERROR,
+    Z_MEM_ERROR
+  } = constants$2;
+  function Inflate$1(options) {
+    this.options = common.assign({
+      chunkSize: 1024 * 64,
+      windowBits: 15,
+      to: ""
+    }, options || {});
+    const opt = this.options;
+    if (opt.raw && opt.windowBits >= 0 && opt.windowBits < 16) {
+      opt.windowBits = -opt.windowBits;
+      if (opt.windowBits === 0) {
+        opt.windowBits = -15;
+      }
+    }
+    if (opt.windowBits >= 0 && opt.windowBits < 16 && !(options && options.windowBits)) {
+      opt.windowBits += 32;
+    }
+    if (opt.windowBits > 15 && opt.windowBits < 48) {
+      if ((opt.windowBits & 15) === 0) {
+        opt.windowBits |= 15;
+      }
+    }
+    this.err = 0;
+    this.msg = "";
+    this.ended = false;
+    this.chunks = [];
+    this.strm = new zstream();
+    this.strm.avail_out = 0;
+    let status = inflate_1$2.inflateInit2(
+      this.strm,
+      opt.windowBits
+    );
+    if (status !== Z_OK) {
+      throw new Error(messages[status]);
+    }
+    this.header = new gzheader();
+    inflate_1$2.inflateGetHeader(this.strm, this.header);
+    if (opt.dictionary) {
+      if (typeof opt.dictionary === "string") {
+        opt.dictionary = strings.string2buf(opt.dictionary);
+      } else if (toString.call(opt.dictionary) === "[object ArrayBuffer]") {
+        opt.dictionary = new Uint8Array(opt.dictionary);
+      }
+      if (opt.raw) {
+        status = inflate_1$2.inflateSetDictionary(this.strm, opt.dictionary);
+        if (status !== Z_OK) {
+          throw new Error(messages[status]);
+        }
+      }
+    }
+  }
+  Inflate$1.prototype.push = function(data, flush_mode) {
+    const strm = this.strm;
+    const chunkSize = this.options.chunkSize;
+    const dictionary = this.options.dictionary;
+    let status, _flush_mode, last_avail_out;
+    if (this.ended) return false;
+    if (flush_mode === ~~flush_mode) _flush_mode = flush_mode;
+    else _flush_mode = flush_mode === true ? Z_FINISH : Z_NO_FLUSH;
+    if (toString.call(data) === "[object ArrayBuffer]") {
+      strm.input = new Uint8Array(data);
+    } else {
+      strm.input = data;
+    }
+    strm.next_in = 0;
+    strm.avail_in = strm.input.length;
+    for (; ; ) {
+      if (strm.avail_out === 0) {
+        strm.output = new Uint8Array(chunkSize);
+        strm.next_out = 0;
+        strm.avail_out = chunkSize;
+      }
+      status = inflate_1$2.inflate(strm, _flush_mode);
+      if (status === Z_NEED_DICT && dictionary) {
+        status = inflate_1$2.inflateSetDictionary(strm, dictionary);
+        if (status === Z_OK) {
+          status = inflate_1$2.inflate(strm, _flush_mode);
+        } else if (status === Z_DATA_ERROR) {
+          status = Z_NEED_DICT;
+        }
+      }
+      while (strm.avail_in > 0 && status === Z_STREAM_END && strm.state.wrap > 0 && data[strm.next_in] !== 0) {
+        inflate_1$2.inflateReset(strm);
+        status = inflate_1$2.inflate(strm, _flush_mode);
+      }
+      switch (status) {
+        case Z_STREAM_ERROR:
+        case Z_DATA_ERROR:
+        case Z_NEED_DICT:
+        case Z_MEM_ERROR:
+          this.onEnd(status);
+          this.ended = true;
+          return false;
+      }
+      last_avail_out = strm.avail_out;
+      if (strm.next_out) {
+        if (strm.avail_out === 0 || status === Z_STREAM_END) {
+          if (this.options.to === "string") {
+            let next_out_utf8 = strings.utf8border(strm.output, strm.next_out);
+            let tail = strm.next_out - next_out_utf8;
+            let utf8str = strings.buf2string(strm.output, next_out_utf8);
+            strm.next_out = tail;
+            strm.avail_out = chunkSize - tail;
+            if (tail) strm.output.set(strm.output.subarray(next_out_utf8, next_out_utf8 + tail), 0);
+            this.onData(utf8str);
+          } else {
+            this.onData(strm.output.length === strm.next_out ? strm.output : strm.output.subarray(0, strm.next_out));
+          }
+        }
+      }
+      if (status === Z_OK && last_avail_out === 0) continue;
+      if (status === Z_STREAM_END) {
+        status = inflate_1$2.inflateEnd(this.strm);
+        this.onEnd(status);
+        this.ended = true;
+        return true;
+      }
+      if (strm.avail_in === 0) break;
+    }
+    return true;
+  };
+  Inflate$1.prototype.onData = function(chunk) {
+    this.chunks.push(chunk);
+  };
+  Inflate$1.prototype.onEnd = function(status) {
+    if (status === Z_OK) {
+      if (this.options.to === "string") {
+        this.result = this.chunks.join("");
+      } else {
+        this.result = common.flattenChunks(this.chunks);
+      }
+    }
+    this.chunks = [];
+    this.err = status;
+    this.msg = this.strm.msg;
+  };
+  function inflate$1(input, options) {
+    const inflator = new Inflate$1(options);
+    inflator.push(input);
+    if (inflator.err) throw inflator.msg || messages[inflator.err];
+    return inflator.result;
+  }
+  function inflateRaw$1(input, options) {
+    options = options || {};
+    options.raw = true;
+    return inflate$1(input, options);
+  }
+  var Inflate_1$1 = Inflate$1;
+  var inflate_2 = inflate$1;
+  var inflateRaw_1$1 = inflateRaw$1;
+  var ungzip$1 = inflate$1;
+  var inflate_1$1 = {
+    Inflate: Inflate_1$1,
+    inflate: inflate_2,
+    inflateRaw: inflateRaw_1$1,
+    ungzip: ungzip$1
+  };
+  const { Deflate, deflate, deflateRaw, gzip } = deflate_1$1;
+  const { Inflate, inflate, inflateRaw, ungzip } = inflate_1$1;
+  var Deflate_1 = Deflate;
+  var deflate_1 = deflate;
+  var deflateRaw_1 = deflateRaw;
+  var gzip_1 = gzip;
+  var Inflate_1 = Inflate;
+  var inflate_1 = inflate;
+  var inflateRaw_1 = inflateRaw;
+  var ungzip_1 = ungzip;
+  var constants_1 = constants$2;
+  var pako = {
+    Deflate: Deflate_1,
+    deflate: deflate_1,
+    deflateRaw: deflateRaw_1,
+    gzip: gzip_1,
+    Inflate: Inflate_1,
+    inflate: inflate_1,
+    inflateRaw: inflateRaw_1,
+    ungzip: ungzip_1,
+    constants: constants_1
+  };
   var DiagramError = class extends Error {
     constructor(message, code, context) {
       super(message);
@@ -1936,8 +6113,9 @@
     validateInput(source, "drawio");
     validatePattern(source, /<mxfile|<mxGraphModel/i, "drawio", "Invalid Draw.io XML format");
     const diagram = createEmptyDiagram("flowchart", "drawio");
+    const decompressedSource = decompressDrawioXml(source);
     const parser = new DOMParser();
-    const doc = parser.parseFromString(source, "text/xml");
+    const doc = parser.parseFromString(decompressedSource, "text/xml");
     const parseError = doc.querySelector("parsererror");
     if (parseError) {
       throw new Error(`Invalid Draw.io XML: ${parseError.textContent}`);
@@ -2238,6 +6416,72 @@
     textarea.innerHTML = text;
     return textarea.value;
   }
+  function decompressDrawioXml(source) {
+    if (!source.includes("<mxfile")) {
+      return source;
+    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(source, "text/xml");
+    const parseError = doc.querySelector("parsererror");
+    if (parseError) {
+      return source;
+    }
+    const diagrams = doc.querySelectorAll("diagram");
+    if (diagrams.length === 0) {
+      return source;
+    }
+    let modified = false;
+    diagrams.forEach((diagram) => {
+      var _a2;
+      if (diagram.querySelector("mxGraphModel")) {
+        return;
+      }
+      const content = ((_a2 = diagram.textContent) == null ? void 0 : _a2.trim()) || "";
+      if (!content || content.length < 20) {
+        return;
+      }
+      if (content.includes("<") || content.includes(">")) {
+        return;
+      }
+      try {
+        const decompressed = decompressBase64Content(content);
+        if (decompressed && decompressed.includes("<mxGraphModel")) {
+          const decompressedDoc = parser.parseFromString(decompressed, "text/xml");
+          const graphModel = decompressedDoc.querySelector("mxGraphModel");
+          if (graphModel && !decompressedDoc.querySelector("parsererror")) {
+            diagram.textContent = "";
+            diagram.appendChild(doc.importNode(graphModel, true));
+            modified = true;
+          }
+        }
+      } catch (error) {
+        console.warn("[DrawioParser] Decompression failed:", error);
+      }
+    });
+    if (modified) {
+      const serializer = new XMLSerializer();
+      return serializer.serializeToString(doc);
+    }
+    return source;
+  }
+  function decompressBase64Content(encoded) {
+    try {
+      const decoded = atob(encoded);
+      const bytes = new Uint8Array(decoded.length);
+      for (let i = 0; i < decoded.length; i++) {
+        bytes[i] = decoded.charCodeAt(i);
+      }
+      const inflated = pako.inflateRaw(bytes, { to: "string" });
+      try {
+        return decodeURIComponent(inflated);
+      } catch {
+        return inflated;
+      }
+    } catch (error) {
+      console.warn("[DrawioParser] Base64 decompression failed:", error);
+      return null;
+    }
+  }
   function parseExcalidraw(source) {
     validateInput(source, "excalidraw");
     const data = parseJson(source);
@@ -2352,9 +6596,9 @@
     });
   }
   function parseArrowElement(element, nodeIdMap, textByContainer) {
-    var _a, _b;
-    const sourceExcalidrawId = (_a = element.startBinding) == null ? void 0 : _a.elementId;
-    const targetExcalidrawId = (_b = element.endBinding) == null ? void 0 : _b.elementId;
+    var _a2, _b2;
+    const sourceExcalidrawId = (_a2 = element.startBinding) == null ? void 0 : _a2.elementId;
+    const targetExcalidrawId = (_b2 = element.endBinding) == null ? void 0 : _b2.elementId;
     if (!sourceExcalidrawId || !targetExcalidrawId) {
       return null;
     }
@@ -2940,14 +7184,14 @@
     return str.replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
   }
   function parseDot(source) {
-    var _a;
+    var _a2;
     validateInput(source, "dot");
     const diagram = createEmptyDiagram("flowchart", "dot");
     const nodeMap = /* @__PURE__ */ new Map();
     const graphAttrs2 = parseGraphAttributes(source);
     diagram.metadata = {
       source: "dot",
-      direction: ((_a = graphAttrs2.rankdir) == null ? void 0 : _a.toUpperCase()) || "TB",
+      direction: ((_a2 = graphAttrs2.rankdir) == null ? void 0 : _a2.toUpperCase()) || "TB",
       ...graphAttrs2
     };
     if (graphAttrs2.bgcolor) {
@@ -3044,7 +7288,7 @@
     }
   }
   function parseNodeLine2(line, currentGroup) {
-    var _a;
+    var _a2;
     const match = line.match(/^(\w+)\s*\[([^\]]+)\]/);
     if (!match) {
       const simpleMatch = line.match(/^(\w+)\s*$/);
@@ -3058,7 +7302,7 @@
     const node = createNode(id, attrs.label || id, {
       shape: mapDotShape(attrs.shape),
       style: {
-        fill: attrs.fillcolor || (((_a = attrs.style) == null ? void 0 : _a.includes("filled")) ? attrs.color : void 0),
+        fill: attrs.fillcolor || (((_a2 = attrs.style) == null ? void 0 : _a2.includes("filled")) ? attrs.color : void 0),
         stroke: attrs.color,
         fontColor: attrs.fontcolor,
         fontSize: attrs.fontsize ? parseInt(attrs.fontsize) : void 0
@@ -3184,6 +7428,487 @@
       "Mrecord": "rounded-rectangle"
     };
     return shapeMap[shape.toLowerCase()] || "rectangle";
+  }
+  function parseD2(code) {
+    const lines = code.split("\n");
+    const nodes = /* @__PURE__ */ new Map();
+    const edges = [];
+    const groups = [];
+    let edgeId = 0;
+    const groupStack = [];
+    const nodeToGroup = /* @__PURE__ */ new Map();
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("#")) continue;
+      const groupMatch = line.match(/^(\w+)\s*:\s*\{?\s*$/) || line.match(/^(\w+)\s*\{\s*$/);
+      if (groupMatch && line.includes("{")) {
+        const groupId = groupMatch[1];
+        groups.push({
+          id: groupId,
+          type: "group",
+          label: groupId,
+          children: [],
+          style: {}
+        });
+        groupStack.push(groupId);
+        continue;
+      }
+      if (line === "}") {
+        groupStack.pop();
+        continue;
+      }
+      const edgeMatch = line.match(/^(\w+)\s*(->|<->|--|<-)\s*(\w+)(?:\s*:\s*(.+))?$/);
+      if (edgeMatch) {
+        const [, sourceId, arrow, targetId, label] = edgeMatch;
+        ensureNode3(nodes, sourceId, groupStack, nodeToGroup);
+        ensureNode3(nodes, targetId, groupStack, nodeToGroup);
+        edges.push({
+          id: `edge-${edgeId++}`,
+          type: "edge",
+          source: sourceId,
+          target: targetId,
+          label: label == null ? void 0 : label.trim(),
+          arrow: {
+            sourceType: arrow === "<->" || arrow === "<-" ? "arrow" : "none",
+            targetType: arrow === "->" || arrow === "<->" ? "arrow" : "none",
+            lineType: arrow === "--" ? "dashed" : "solid"
+          },
+          style: {}
+        });
+        continue;
+      }
+      const nodeMatch = line.match(/^(\w+)\s*:\s*(.+)$/);
+      if (nodeMatch) {
+        const [, id, value] = nodeMatch;
+        const shape = detectD2Shape(value);
+        const label = value.replace(/\{.*\}/, "").trim();
+        const node = ensureNode3(nodes, id, groupStack, nodeToGroup);
+        node.label = label || id;
+        node.shape = shape;
+        continue;
+      }
+      const simpleNode = line.match(/^(\w+)$/);
+      if (simpleNode) {
+        ensureNode3(nodes, simpleNode[1], groupStack, nodeToGroup);
+      }
+    }
+    for (const [nodeId, groupId] of nodeToGroup) {
+      const group = groups.find((g) => g.id === groupId);
+      if (group) {
+        group.children.push(nodeId);
+      }
+    }
+    return {
+      id: "d2-diagram",
+      type: "flowchart",
+      nodes: Array.from(nodes.values()),
+      edges,
+      groups,
+      metadata: { source: "d2" }
+    };
+  }
+  function ensureNode3(nodes, id, groupStack, nodeToGroup) {
+    if (!nodes.has(id)) {
+      const node = {
+        id,
+        type: "node",
+        label: id,
+        shape: "rectangle",
+        style: {}
+      };
+      nodes.set(id, node);
+      if (groupStack.length > 0) {
+        nodeToGroup.set(id, groupStack[groupStack.length - 1]);
+      }
+    }
+    return nodes.get(id);
+  }
+  function detectD2Shape(value) {
+    const lower = value.toLowerCase();
+    if (lower.includes("circle") || lower.includes("oval")) return "circle";
+    if (lower.includes("diamond")) return "diamond";
+    if (lower.includes("cylinder") || lower.includes("database")) return "cylinder";
+    if (lower.includes("hexagon")) return "hexagon";
+    if (lower.includes("cloud")) return "cloud";
+    if (lower.includes("person") || lower.includes("actor")) return "actor";
+    return "rectangle";
+  }
+  function parseStructurizr(code) {
+    const lines = code.split("\n");
+    const nodes = /* @__PURE__ */ new Map();
+    const edges = [];
+    const groups = [];
+    let edgeId = 0;
+    const containerStack = [];
+    const nodeToContainer = /* @__PURE__ */ new Map();
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("//") || line.startsWith("#")) continue;
+      const personMatch = line.match(/^person\s+(\w+)\s+"([^"]+)"(?:\s+"([^"]+)")?/i);
+      if (personMatch) {
+        const [, id, name] = personMatch;
+        nodes.set(id, createNode3(id, name, "actor"));
+        addToContainer(id, containerStack, nodeToContainer);
+        continue;
+      }
+      const systemMatch = line.match(/^softwareSystem\s+(\w+)\s+"([^"]+)"(?:\s+"([^"]+)")?/i);
+      if (systemMatch) {
+        const [, id, name] = systemMatch;
+        nodes.set(id, createNode3(id, name, "rectangle"));
+        addToContainer(id, containerStack, nodeToContainer);
+        continue;
+      }
+      const containerMatch = line.match(/^container\s+(\w+)\s+"([^"]+)"(?:\s+"([^"]+)")?/i);
+      if (containerMatch) {
+        const [, id, name, tech] = containerMatch;
+        const node = createNode3(id, tech ? `${name}
+[${tech}]` : name, "rectangle");
+        nodes.set(id, node);
+        addToContainer(id, containerStack, nodeToContainer);
+        continue;
+      }
+      const componentMatch = line.match(/^component\s+(\w+)\s+"([^"]+)"(?:\s+"([^"]+)")?/i);
+      if (componentMatch) {
+        const [, id, name, tech] = componentMatch;
+        const node = createNode3(id, tech ? `${name}
+[${tech}]` : name, "rectangle");
+        nodes.set(id, node);
+        addToContainer(id, containerStack, nodeToContainer);
+        continue;
+      }
+      const relMatch = line.match(/^(\w+)\s*->\s*(\w+)(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/);
+      if (relMatch) {
+        const [, sourceId, targetId, desc, tech] = relMatch;
+        const label = tech ? `${desc || ""} [${tech}]`.trim() : desc;
+        edges.push({
+          id: `edge-${edgeId++}`,
+          type: "edge",
+          source: sourceId,
+          target: targetId,
+          label,
+          arrow: { sourceType: "none", targetType: "arrow", lineType: "solid" },
+          style: {}
+        });
+        continue;
+      }
+      const groupMatch = line.match(/^(enterprise|group|softwareSystemBoundary|containerBoundary)\s+(\w+)(?:\s+"([^"]+)")?\s*\{/i);
+      if (groupMatch) {
+        const [, type, id, name] = groupMatch;
+        groups.push({
+          id,
+          type: "group",
+          label: name || id,
+          children: [],
+          style: {},
+          metadata: { structurizrType: type }
+        });
+        containerStack.push(id);
+        continue;
+      }
+      if (line === "}") {
+        containerStack.pop();
+      }
+    }
+    for (const [nodeId, groupId] of nodeToContainer) {
+      const group = groups.find((g) => g.id === groupId);
+      if (group) group.children.push(nodeId);
+    }
+    return {
+      id: "structurizr-diagram",
+      type: "flowchart",
+      nodes: Array.from(nodes.values()),
+      edges,
+      groups,
+      metadata: { source: "structurizr" }
+    };
+  }
+  function createNode3(id, label, shape) {
+    return { id, type: "node", label, shape, style: {} };
+  }
+  function addToContainer(nodeId, stack, map) {
+    if (stack.length > 0) {
+      map.set(nodeId, stack[stack.length - 1]);
+    }
+  }
+  function parseBpmn(xml) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const nodes = [];
+    const edges = [];
+    const groups = [];
+    const processes = doc.querySelectorAll("process, bpmn\\:process");
+    processes.forEach((process2) => {
+      process2.getAttribute("id") || "process";
+      const tasks = process2.querySelectorAll("task, userTask, serviceTask, scriptTask, manualTask, businessRuleTask, sendTask, receiveTask, bpmn\\:task, bpmn\\:userTask, bpmn\\:serviceTask");
+      tasks.forEach((task) => {
+        nodes.push(createBpmnNode(task, "rectangle"));
+      });
+      const startEvents = process2.querySelectorAll("startEvent, bpmn\\:startEvent");
+      startEvents.forEach((event) => {
+        nodes.push(createBpmnNode(event, "circle", "start"));
+      });
+      const endEvents = process2.querySelectorAll("endEvent, bpmn\\:endEvent");
+      endEvents.forEach((event) => {
+        nodes.push(createBpmnNode(event, "circle", "end"));
+      });
+      const intermediateEvents = process2.querySelectorAll("intermediateCatchEvent, intermediateThrowEvent, bpmn\\:intermediateCatchEvent, bpmn\\:intermediateThrowEvent");
+      intermediateEvents.forEach((event) => {
+        nodes.push(createBpmnNode(event, "circle", "intermediate"));
+      });
+      const exclusiveGateways = process2.querySelectorAll("exclusiveGateway, bpmn\\:exclusiveGateway");
+      exclusiveGateways.forEach((gw) => {
+        nodes.push(createBpmnNode(gw, "diamond", "exclusive"));
+      });
+      const parallelGateways = process2.querySelectorAll("parallelGateway, bpmn\\:parallelGateway");
+      parallelGateways.forEach((gw) => {
+        nodes.push(createBpmnNode(gw, "diamond", "parallel"));
+      });
+      const inclusiveGateways = process2.querySelectorAll("inclusiveGateway, bpmn\\:inclusiveGateway");
+      inclusiveGateways.forEach((gw) => {
+        nodes.push(createBpmnNode(gw, "diamond", "inclusive"));
+      });
+      const flows = process2.querySelectorAll("sequenceFlow, bpmn\\:sequenceFlow");
+      flows.forEach((flow) => {
+        const id = flow.getAttribute("id") || `flow-${edges.length}`;
+        const sourceRef = flow.getAttribute("sourceRef") || "";
+        const targetRef = flow.getAttribute("targetRef") || "";
+        const name = flow.getAttribute("name") || "";
+        if (sourceRef && targetRef) {
+          edges.push({
+            id,
+            type: "edge",
+            source: sourceRef,
+            target: targetRef,
+            label: name,
+            arrow: { sourceType: "none", targetType: "arrow", lineType: "solid" },
+            style: {}
+          });
+        }
+      });
+      const lanes = process2.querySelectorAll("lane, bpmn\\:lane");
+      lanes.forEach((lane) => {
+        const id = lane.getAttribute("id") || `lane-${groups.length}`;
+        const name = lane.getAttribute("name") || id;
+        const flowNodeRefs = lane.querySelectorAll("flowNodeRef, bpmn\\:flowNodeRef");
+        const children = Array.from(flowNodeRefs).map((ref) => ref.textContent || "").filter(Boolean);
+        groups.push({
+          id,
+          type: "group",
+          label: name,
+          children,
+          style: {},
+          metadata: { bpmnType: "lane" }
+        });
+      });
+      const subprocesses = process2.querySelectorAll("subProcess, bpmn\\:subProcess");
+      subprocesses.forEach((sp) => {
+        const id = sp.getAttribute("id") || `subprocess-${groups.length}`;
+        const name = sp.getAttribute("name") || id;
+        groups.push({
+          id,
+          type: "group",
+          label: name,
+          children: [],
+          style: {},
+          metadata: { bpmnType: "subprocess" }
+        });
+      });
+    });
+    return {
+      id: "bpmn-diagram",
+      type: "flowchart",
+      nodes,
+      edges,
+      groups,
+      metadata: { source: "bpmn" }
+    };
+  }
+  function createBpmnNode(element, shape, subtype) {
+    const id = element.getAttribute("id") || `node-${Date.now()}`;
+    const name = element.getAttribute("name") || id;
+    return {
+      id,
+      type: "node",
+      label: name,
+      shape,
+      style: {},
+      metadata: { bpmnType: element.tagName, bpmnSubtype: subtype }
+    };
+  }
+  function parseGraphml(xml) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const nodes = [];
+    const edges = [];
+    const groups = [];
+    const keys = /* @__PURE__ */ new Map();
+    doc.querySelectorAll("key").forEach((key) => {
+      const id = key.getAttribute("id") || "";
+      const forAttr = key.getAttribute("for") || "all";
+      const name = key.getAttribute("attr.name") || id;
+      keys.set(id, { for: forAttr, name });
+    });
+    const nodeElements = doc.querySelectorAll("graph > node");
+    nodeElements.forEach((nodeEl) => {
+      const id = nodeEl.getAttribute("id") || `node-${nodes.length}`;
+      const nestedGraph = nodeEl.querySelector("graph");
+      if (nestedGraph) {
+        const label = getDataValue(nodeEl, "label", keys) || id;
+        groups.push({
+          id,
+          type: "group",
+          label,
+          children: [],
+          style: {}
+        });
+        nestedGraph.querySelectorAll(":scope > node").forEach((nested) => {
+          const nestedId = nested.getAttribute("id") || "";
+          const nestedLabel = getDataValue(nested, "label", keys) || nestedId;
+          const shape = detectGraphmlShape(nested, keys);
+          nodes.push({ id: nestedId, type: "node", label: nestedLabel, shape, style: {} });
+          const group = groups.find((g) => g.id === id);
+          if (group) group.children.push(nestedId);
+        });
+      } else {
+        const label = getDataValue(nodeEl, "label", keys) || id;
+        const shape = detectGraphmlShape(nodeEl, keys);
+        nodes.push({ id, type: "node", label, shape, style: {} });
+      }
+    });
+    const edgeElements = doc.querySelectorAll("graph > edge");
+    edgeElements.forEach((edgeEl) => {
+      var _a2;
+      const id = edgeEl.getAttribute("id") || `edge-${edges.length}`;
+      const source = edgeEl.getAttribute("source") || "";
+      const target = edgeEl.getAttribute("target") || "";
+      const label = getDataValue(edgeEl, "label", keys) || "";
+      const directed = ((_a2 = edgeEl.closest("graph")) == null ? void 0 : _a2.getAttribute("edgedefault")) !== "undirected";
+      if (source && target) {
+        edges.push({
+          id,
+          type: "edge",
+          source,
+          target,
+          label: label || void 0,
+          arrow: {
+            sourceType: "none",
+            targetType: directed ? "arrow" : "none",
+            lineType: "solid"
+          },
+          style: {}
+        });
+      }
+    });
+    return {
+      id: "graphml-diagram",
+      type: "flowchart",
+      nodes,
+      edges,
+      groups,
+      metadata: { source: "graphml" }
+    };
+  }
+  function getDataValue(element, attrName, keys) {
+    for (const [keyId, keyInfo] of keys) {
+      if (keyInfo.name === attrName || keyId === attrName) {
+        const dataEl = element.querySelector(`data[key="${keyId}"]`);
+        if (dataEl) return dataEl.textContent;
+      }
+    }
+    const directData = element.querySelector(`data[key="${attrName}"]`);
+    return (directData == null ? void 0 : directData.textContent) || null;
+  }
+  function detectGraphmlShape(element, keys) {
+    const shapeData = getDataValue(element, "shape", keys) || getDataValue(element, "type", keys) || "";
+    const lower = shapeData.toLowerCase();
+    if (lower.includes("ellipse") || lower.includes("circle")) return "ellipse";
+    if (lower.includes("diamond")) return "diamond";
+    if (lower.includes("hexagon")) return "hexagon";
+    if (lower.includes("cylinder") || lower.includes("database")) return "cylinder";
+    if (lower.includes("rounded")) return "rounded-rectangle";
+    return "rectangle";
+  }
+  function parseLucidchart(json2) {
+    var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j;
+    const data = JSON.parse(json2);
+    const nodes = [];
+    const edges = [];
+    const groups = [];
+    const shapes = data.shapes || ((_b2 = (_a2 = data.pages) == null ? void 0 : _a2[0]) == null ? void 0 : _b2.shapes) || [];
+    const lines = data.lines || ((_d = (_c = data.pages) == null ? void 0 : _c[0]) == null ? void 0 : _d.lines) || [];
+    const lucidGroups = data.groups || ((_f = (_e = data.pages) == null ? void 0 : _e[0]) == null ? void 0 : _f.groups) || [];
+    for (const shape of shapes) {
+      const nodeShape = detectLucidShape(shape);
+      const position2 = shape.boundingBox ? { x: shape.boundingBox.x, y: shape.boundingBox.y } : void 0;
+      const size = shape.boundingBox ? { width: shape.boundingBox.w, height: shape.boundingBox.h } : void 0;
+      nodes.push({
+        id: shape.id,
+        type: "node",
+        label: shape.text || shape.id,
+        shape: nodeShape,
+        position: position2,
+        size,
+        style: {},
+        metadata: { lucidClass: shape.class, lucidType: shape.type }
+      });
+    }
+    for (const line of lines) {
+      const sourceId = (_g = line.endpoint1) == null ? void 0 : _g.shapeId;
+      const targetId = (_h = line.endpoint2) == null ? void 0 : _h.shapeId;
+      if (sourceId && targetId) {
+        edges.push({
+          id: line.id,
+          type: "edge",
+          source: sourceId,
+          target: targetId,
+          label: line.text,
+          arrow: {
+            sourceType: detectArrowHead((_i = line.endpoint1) == null ? void 0 : _i.style),
+            targetType: detectArrowHead((_j = line.endpoint2) == null ? void 0 : _j.style),
+            lineType: "solid"
+          },
+          style: {}
+        });
+      }
+    }
+    for (const group of lucidGroups) {
+      groups.push({
+        id: group.id,
+        type: "group",
+        label: group.text || group.id,
+        children: group.members || [],
+        style: {}
+      });
+    }
+    return {
+      id: "lucidchart-diagram",
+      type: "flowchart",
+      nodes,
+      edges,
+      groups,
+      metadata: { source: "lucidchart" }
+    };
+  }
+  function detectLucidShape(shape) {
+    const type = (shape.type || shape.class || "").toLowerCase();
+    if (type.includes("diamond") || type.includes("decision")) return "diamond";
+    if (type.includes("ellipse") || type.includes("oval") || type.includes("circle")) return "ellipse";
+    if (type.includes("cylinder") || type.includes("database") || type.includes("data")) return "cylinder";
+    if (type.includes("hexagon")) return "hexagon";
+    if (type.includes("parallelogram")) return "parallelogram";
+    if (type.includes("cloud")) return "cloud";
+    if (type.includes("actor") || type.includes("person") || type.includes("user")) return "actor";
+    if (type.includes("document")) return "document";
+    if (type.includes("rounded")) return "rounded-rectangle";
+    return "rectangle";
+  }
+  function detectArrowHead(style) {
+    if (!style) return "none";
+    const lower = style.toLowerCase();
+    if (lower.includes("arrow") || lower.includes("filled")) return "arrow";
+    if (lower.includes("diamond")) return "diamond";
+    if (lower.includes("circle") || lower.includes("dot")) return "circle";
+    return "none";
   }
   var SHAPE_COLORS = {
     "rectangle": { fill: "#dae8fc", stroke: "#6c8ebf", fontColor: "#1a1a1a" },
@@ -3314,7 +8039,7 @@
     return parts.join(";") + ";";
   }
   function buildEdgeStyle(edge) {
-    var _a;
+    var _a2;
     const parts = [];
     parts.push("edgeStyle=orthogonalEdgeStyle");
     parts.push("rounded=1");
@@ -3323,7 +8048,7 @@
     parts.push("html=1");
     const arrowStyle = generateDrawioArrowStyle(edge.arrow);
     parts.push(arrowStyle);
-    const lineType = ((_a = edge.arrow) == null ? void 0 : _a.lineType) || "solid";
+    const lineType = ((_a2 = edge.arrow) == null ? void 0 : _a2.lineType) || "solid";
     const edgeColor = lineType === "dashed" ? EDGE_COLORS.dashed : lineType === "dotted" ? EDGE_COLORS.dotted : EDGE_COLORS.default;
     const strokeColor = edge.style.stroke && edge.style.stroke !== "#000000" ? edge.style.stroke : edgeColor.stroke;
     parts.push(`strokeColor=${strokeColor}`);
@@ -3588,9 +8313,9 @@
     }
   }
   function generateMermaid(diagram) {
-    var _a;
+    var _a2;
     const lines = [];
-    const direction = ((_a = diagram.metadata) == null ? void 0 : _a.direction) || "TB";
+    const direction = ((_a2 = diagram.metadata) == null ? void 0 : _a2.direction) || "TB";
     lines.push(`flowchart ${direction}`);
     const nodesInGroups = /* @__PURE__ */ new Set();
     for (const group of diagram.groups) {
@@ -3618,11 +8343,13 @@
     return lines.join("\n");
   }
   function generateGroup(group, nodes, parentDirection) {
-    var _a;
+    var _a2;
     const lines = [];
-    const label = group.label || group.id;
-    const groupDirection = ((_a = group.metadata) == null ? void 0 : _a.direction) || "";
-    lines.push(`    subgraph ${group.id}[${label}]`);
+    const rawLabel = group.label || group.id;
+    const label = rawLabel.replace(/<[^>]*>/g, "").trim() || "Group";
+    const safeGroupId = sanitizeMermaidId(group.id);
+    const groupDirection = ((_a2 = group.metadata) == null ? void 0 : _a2.direction) || "";
+    lines.push(`    subgraph ${safeGroupId}[${label}]`);
     if (groupDirection && groupDirection !== parentDirection) {
       lines.push(`        direction ${groupDirection}`);
     }
@@ -3636,14 +8363,28 @@
     return lines;
   }
   function generateNodeDefinition(node) {
-    return `${node.id}${generateMermaidShape(node.shape, node.label)}`;
+    const safeId = sanitizeMermaidId(node.id);
+    return `${safeId}${generateMermaidShape(node.shape, node.label)}`;
+  }
+  function sanitizeMermaidId(id) {
+    let safe = id.replace(/[^a-zA-Z0-9_]/g, "_");
+    if (!/^[a-zA-Z]/.test(safe)) {
+      safe = "n_" + safe;
+    }
+    if (safe.length > 30) {
+      safe = safe.substring(0, 30);
+    }
+    return safe;
   }
   function generateEdge(edge) {
     const arrow = generateMermaidArrow(edge.arrow);
+    const sourceId = sanitizeMermaidId(edge.source);
+    const targetId = sanitizeMermaidId(edge.target);
     if (edge.label) {
-      return `${edge.source} ${arrow}|${edge.label}| ${edge.target}`;
+      const cleanLabel = edge.label.replace(/<[^>]*>/g, "").replace(/\|/g, "/").replace(/\n/g, " ").trim();
+      return `${sourceId} ${arrow}|${cleanLabel}| ${targetId}`;
     }
-    return `${edge.source} ${arrow} ${edge.target}`;
+    return `${sourceId} ${arrow} ${targetId}`;
   }
   function generateMermaidArrow(arrow) {
     let result = "";
@@ -3679,7 +8420,7 @@
       if (!styleGroups.has(signature)) {
         styleGroups.set(signature, { style: node.style, nodeIds: [] });
       }
-      styleGroups.get(signature).nodeIds.push(node.id);
+      styleGroups.get(signature).nodeIds.push(sanitizeMermaidId(node.id));
     }
     let classIndex = 0;
     for (const [, { style, nodeIds }] of styleGroups) {
@@ -3715,9 +8456,9 @@
     return parts.join(",");
   }
   function generatePlantUML(diagram) {
-    var _a;
+    var _a2;
     const lines = [];
-    const direction = ((_a = diagram.metadata) == null ? void 0 : _a.direction) || "TB";
+    const direction = ((_a2 = diagram.metadata) == null ? void 0 : _a2.direction) || "TB";
     lines.push("@startuml");
     lines.push("");
     if (direction === "LR" || direction === "RL") {
@@ -3834,9 +8575,9 @@
     return str.replace(/[^a-zA-Z0-9_]/g, "_");
   }
   function generateDot(diagram) {
-    var _a;
+    var _a2;
     const lines = [];
-    const direction = ((_a = diagram.metadata) == null ? void 0 : _a.direction) || "TB";
+    const direction = ((_a2 = diagram.metadata) == null ? void 0 : _a2.direction) || "TB";
     lines.push("digraph G {");
     lines.push(`    rankdir=${direction};`);
     lines.push('    node [fontname="Arial", fontsize=12];');
@@ -4016,11 +8757,11 @@
   </defs>`;
   }
   function calculateBounds(diagram, opts) {
-    var _a, _b, _c, _d;
+    var _a2, _b2, _c, _d;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const node of diagram.nodes) {
-      const x = ((_a = node.position) == null ? void 0 : _a.x) ?? 0;
-      const y = ((_b = node.position) == null ? void 0 : _b.y) ?? 0;
+      const x = ((_a2 = node.position) == null ? void 0 : _a2.x) ?? 0;
+      const y = ((_b2 = node.position) == null ? void 0 : _b2.y) ?? 0;
       const w = ((_c = node.size) == null ? void 0 : _c.width) ?? opts.nodeWidth;
       const h = ((_d = node.size) == null ? void 0 : _d.height) ?? opts.nodeHeight;
       minX = Math.min(minX, x);
@@ -4034,9 +8775,9 @@
     return { minX, minY, maxX, maxY };
   }
   function renderNode(node, opts) {
-    var _a, _b, _c, _d;
-    const x = ((_a = node.position) == null ? void 0 : _a.x) ?? 0;
-    const y = ((_b = node.position) == null ? void 0 : _b.y) ?? 0;
+    var _a2, _b2, _c, _d;
+    const x = ((_a2 = node.position) == null ? void 0 : _a2.x) ?? 0;
+    const y = ((_b2 = node.position) == null ? void 0 : _b2.y) ?? 0;
     const w = ((_c = node.size) == null ? void 0 : _c.width) ?? opts.nodeWidth;
     const h = ((_d = node.size) == null ? void 0 : _d.height) ?? opts.nodeHeight;
     const fill = node.style.fill || "#ffffff";
@@ -4113,9 +8854,9 @@ ${text}
     </g>`;
   }
   function renderGroup(group, _nodes, opts) {
-    var _a, _b, _c, _d;
-    const x = ((_a = group.position) == null ? void 0 : _a.x) ?? 0;
-    const y = ((_b = group.position) == null ? void 0 : _b.y) ?? 0;
+    var _a2, _b2, _c, _d;
+    const x = ((_a2 = group.position) == null ? void 0 : _a2.x) ?? 0;
+    const y = ((_b2 = group.position) == null ? void 0 : _b2.y) ?? 0;
     const w = ((_c = group.size) == null ? void 0 : _c.width) ?? 200;
     const h = ((_d = group.size) == null ? void 0 : _d.height) ?? 150;
     const fill = group.style.fill || "#f5f5f5";
@@ -4199,11 +8940,11 @@ ${text}
     return canvas;
   }
   function calculateBounds2(diagram, opts) {
-    var _a, _b, _c, _d;
+    var _a2, _b2, _c, _d;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const node of diagram.nodes) {
-      const x = ((_a = node.position) == null ? void 0 : _a.x) ?? 0;
-      const y = ((_b = node.position) == null ? void 0 : _b.y) ?? 0;
+      const x = ((_a2 = node.position) == null ? void 0 : _a2.x) ?? 0;
+      const y = ((_b2 = node.position) == null ? void 0 : _b2.y) ?? 0;
       const w = ((_c = node.size) == null ? void 0 : _c.width) ?? opts.nodeWidth;
       const h = ((_d = node.size) == null ? void 0 : _d.height) ?? opts.nodeHeight;
       minX = Math.min(minX, x);
@@ -4217,9 +8958,9 @@ ${text}
     return { minX, minY, maxX, maxY };
   }
   function renderNode2(ctx, node, opts) {
-    var _a, _b, _c, _d;
-    const x = ((_a = node.position) == null ? void 0 : _a.x) ?? 0;
-    const y = ((_b = node.position) == null ? void 0 : _b.y) ?? 0;
+    var _a2, _b2, _c, _d;
+    const x = ((_a2 = node.position) == null ? void 0 : _a2.x) ?? 0;
+    const y = ((_b2 = node.position) == null ? void 0 : _b2.y) ?? 0;
     const w = ((_c = node.size) == null ? void 0 : _c.width) ?? opts.nodeWidth;
     const h = ((_d = node.size) == null ? void 0 : _d.height) ?? opts.nodeHeight;
     const fill = node.style.fill || "#ffffff";
@@ -4325,9 +9066,9 @@ ${text}
     ctx.fill();
   }
   function renderGroup2(ctx, group, opts) {
-    var _a, _b, _c, _d;
-    const x = ((_a = group.position) == null ? void 0 : _a.x) ?? 0;
-    const y = ((_b = group.position) == null ? void 0 : _b.y) ?? 0;
+    var _a2, _b2, _c, _d;
+    const x = ((_a2 = group.position) == null ? void 0 : _a2.x) ?? 0;
+    const y = ((_b2 = group.position) == null ? void 0 : _b2.y) ?? 0;
     const w = ((_c = group.size) == null ? void 0 : _c.width) ?? 200;
     const h = ((_d = group.size) == null ? void 0 : _d.height) ?? 150;
     ctx.fillStyle = group.style.fill || "#f5f5f5";
@@ -4348,6 +9089,340 @@ ${text}
       ctx.textBaseline = "top";
       ctx.fillText(group.label, x + 10, y + 10);
     }
+  }
+  function generateD2(diagram) {
+    var _a2;
+    const lines = [];
+    const direction = ((_a2 = diagram.metadata) == null ? void 0 : _a2.direction) || "right";
+    if (direction === "TB" || direction === "down") {
+      lines.push("direction: down");
+    } else if (direction === "BT" || direction === "up") {
+      lines.push("direction: up");
+    } else if (direction === "RL" || direction === "left") {
+      lines.push("direction: left");
+    }
+    if (lines.length > 0) lines.push("");
+    const nodesInGroups = /* @__PURE__ */ new Set();
+    for (const group of diagram.groups) {
+      for (const childId of group.children) {
+        nodesInGroups.add(childId);
+      }
+    }
+    for (const group of diagram.groups) {
+      lines.push(`${group.id}: ${group.label || group.id} {`);
+      for (const childId of group.children) {
+        const node = diagram.nodes.find((n) => n.id === childId);
+        if (node) {
+          const shape = mapShapeToD2(node.shape);
+          if (shape) {
+            lines.push(`  ${node.id}: ${node.label} { shape: ${shape} }`);
+          } else {
+            lines.push(`  ${node.id}: ${node.label}`);
+          }
+        }
+      }
+      lines.push("}");
+      lines.push("");
+    }
+    for (const node of diagram.nodes) {
+      if (nodesInGroups.has(node.id)) continue;
+      const shape = mapShapeToD2(node.shape);
+      if (shape) {
+        lines.push(`${node.id}: ${node.label} { shape: ${shape} }`);
+      } else {
+        lines.push(`${node.id}: ${node.label}`);
+      }
+    }
+    if (diagram.nodes.length > 0) lines.push("");
+    for (const edge of diagram.edges) {
+      const arrow = generateD2Arrow(edge.arrow);
+      if (edge.label) {
+        lines.push(`${edge.source} ${arrow} ${edge.target}: ${edge.label}`);
+      } else {
+        lines.push(`${edge.source} ${arrow} ${edge.target}`);
+      }
+    }
+    return lines.join("\n");
+  }
+  function mapShapeToD2(shape) {
+    const shapeMap = {
+      "rectangle": "rectangle",
+      "rounded-rectangle": "rectangle",
+      "circle": "circle",
+      "ellipse": "oval",
+      "diamond": "diamond",
+      "hexagon": "hexagon",
+      "cylinder": "cylinder",
+      "cloud": "cloud",
+      "parallelogram": "parallelogram",
+      "document": "document",
+      "actor": "person"
+    };
+    return shapeMap[shape] || null;
+  }
+  function generateD2Arrow(arrow) {
+    const hasSource = arrow.sourceType !== "none";
+    const hasTarget = arrow.targetType !== "none";
+    if (arrow.lineType === "dashed") {
+      if (hasSource && hasTarget) return "<-->";
+      if (hasSource) return "<--";
+      return "-->";
+    }
+    if (hasSource && hasTarget) return "<->";
+    if (hasSource) return "<-";
+    if (!hasTarget) return "--";
+    return "->";
+  }
+  function generateStructurizr(diagram) {
+    const lines = [];
+    lines.push("workspace {");
+    lines.push("    model {");
+    const nodesInGroups = /* @__PURE__ */ new Set();
+    for (const group of diagram.groups) {
+      for (const childId of group.children) {
+        nodesInGroups.add(childId);
+      }
+    }
+    for (const node of diagram.nodes) {
+      if (nodesInGroups.has(node.id)) continue;
+      const type = detectStructurizrType(node.shape, node.metadata);
+      const indent = "        ";
+      if (type === "person") {
+        lines.push(`${indent}${node.id} = person "${node.label}"`);
+      } else {
+        lines.push(`${indent}${node.id} = softwareSystem "${node.label}"`);
+      }
+    }
+    for (const group of diagram.groups) {
+      lines.push(`        ${group.id} = softwareSystem "${group.label || group.id}" {`);
+      for (const childId of group.children) {
+        const node = diagram.nodes.find((n) => n.id === childId);
+        if (node) {
+          lines.push(`            ${node.id} = container "${node.label}"`);
+        }
+      }
+      lines.push("        }");
+    }
+    lines.push("");
+    for (const edge of diagram.edges) {
+      const label = edge.label ? ` "${edge.label}"` : "";
+      lines.push(`        ${edge.source} -> ${edge.target}${label}`);
+    }
+    lines.push("    }");
+    lines.push("");
+    lines.push("    views {");
+    lines.push("        systemContext * {");
+    lines.push("            include *");
+    lines.push("            autoLayout");
+    lines.push("        }");
+    lines.push("    }");
+    lines.push("}");
+    return lines.join("\n");
+  }
+  function detectStructurizrType(shape, metadata) {
+    if (metadata == null ? void 0 : metadata.structurizrType) return metadata.structurizrType;
+    if (shape === "actor") return "person";
+    if (shape === "cylinder") return "container";
+    return "softwareSystem";
+  }
+  function generateBpmn(diagram) {
+    var _a2, _b2, _c, _d;
+    const lines = [];
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+    lines.push('<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"');
+    lines.push('             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"');
+    lines.push('             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"');
+    lines.push('             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"');
+    lines.push(`             id="definitions-${diagram.id}">`);
+    lines.push("");
+    lines.push(`  <process id="process-${diagram.id}" isExecutable="false">`);
+    for (const node of diagram.nodes) {
+      const element = generateBpmnElement(node);
+      lines.push(`    ${element}`);
+    }
+    lines.push("");
+    for (const edge of diagram.edges) {
+      const name = edge.label ? ` name="${escapeXml3(edge.label)}"` : "";
+      lines.push(`    <sequenceFlow id="${edge.id}" sourceRef="${edge.source}" targetRef="${edge.target}"${name}/>`);
+    }
+    lines.push("  </process>");
+    lines.push("");
+    lines.push(`  <bpmndi:BPMNDiagram id="diagram-${diagram.id}">`);
+    lines.push(`    <bpmndi:BPMNPlane id="plane-${diagram.id}" bpmnElement="process-${diagram.id}">`);
+    for (const node of diagram.nodes) {
+      const x = ((_a2 = node.position) == null ? void 0 : _a2.x) ?? 0;
+      const y = ((_b2 = node.position) == null ? void 0 : _b2.y) ?? 0;
+      const w = ((_c = node.size) == null ? void 0 : _c.width) ?? 100;
+      const h = ((_d = node.size) == null ? void 0 : _d.height) ?? 80;
+      lines.push(`      <bpmndi:BPMNShape id="shape-${node.id}" bpmnElement="${node.id}">`);
+      lines.push(`        <dc:Bounds x="${x}" y="${y}" width="${w}" height="${h}"/>`);
+      lines.push("      </bpmndi:BPMNShape>");
+    }
+    for (const edge of diagram.edges) {
+      lines.push(`      <bpmndi:BPMNEdge id="edge-${edge.id}" bpmnElement="${edge.id}">`);
+      lines.push("      </bpmndi:BPMNEdge>");
+    }
+    lines.push("    </bpmndi:BPMNPlane>");
+    lines.push("  </bpmndi:BPMNDiagram>");
+    lines.push("</definitions>");
+    return lines.join("\n");
+  }
+  function generateBpmnElement(node) {
+    var _a2, _b2;
+    const name = ` name="${escapeXml3(node.label)}"`;
+    const bpmnType = (_a2 = node.metadata) == null ? void 0 : _a2.bpmnType;
+    const bpmnSubtype = (_b2 = node.metadata) == null ? void 0 : _b2.bpmnSubtype;
+    if (bpmnType) {
+      return `<${bpmnType} id="${node.id}"${name}/>`;
+    }
+    if (node.shape === "circle") {
+      if (bpmnSubtype === "end") {
+        return `<endEvent id="${node.id}"${name}/>`;
+      }
+      if (bpmnSubtype === "intermediate") {
+        return `<intermediateCatchEvent id="${node.id}"${name}/>`;
+      }
+      return `<startEvent id="${node.id}"${name}/>`;
+    }
+    if (node.shape === "diamond") {
+      if (bpmnSubtype === "parallel") {
+        return `<parallelGateway id="${node.id}"${name}/>`;
+      }
+      if (bpmnSubtype === "inclusive") {
+        return `<inclusiveGateway id="${node.id}"${name}/>`;
+      }
+      return `<exclusiveGateway id="${node.id}"${name}/>`;
+    }
+    return `<task id="${node.id}"${name}/>`;
+  }
+  function escapeXml3(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  }
+  function generateGraphML(diagram) {
+    const lines = [];
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+    lines.push('<graphml xmlns="http://graphml.graphdrawing.org/xmlns"');
+    lines.push('  xmlns:y="http://www.yworks.com/xml/graphml"');
+    lines.push('  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">');
+    lines.push('  <key id="d0" for="node" yfiles.type="nodegraphics"/>');
+    lines.push('  <key id="d1" for="edge" yfiles.type="edgegraphics"/>');
+    lines.push('  <key id="d2" for="node" attr.name="label" attr.type="string"/>');
+    lines.push('  <key id="d3" for="edge" attr.name="label" attr.type="string"/>');
+    lines.push("");
+    const edgeDefault = "directed";
+    lines.push(`  <graph id="G" edgedefault="${edgeDefault}">`);
+    const nodesInGroups = /* @__PURE__ */ new Set();
+    for (const group of diagram.groups) {
+      for (const childId of group.children) {
+        nodesInGroups.add(childId);
+      }
+    }
+    for (const group of diagram.groups) {
+      lines.push(...generateGroupNode(group, diagram.nodes, "    "));
+    }
+    for (const node of diagram.nodes) {
+      if (nodesInGroups.has(node.id)) continue;
+      lines.push(...generateNode(node, "    "));
+    }
+    for (const edge of diagram.edges) {
+      lines.push(...generateEdge3(edge, "    "));
+    }
+    lines.push("  </graph>");
+    lines.push("</graphml>");
+    return lines.join("\n");
+  }
+  function generateNode(node, indent) {
+    var _a2, _b2, _c, _d, _e, _f, _g;
+    const lines = [];
+    const shape = mapShapeToGraphML(node.shape);
+    const width2 = ((_a2 = node.size) == null ? void 0 : _a2.width) || 120;
+    const height = ((_b2 = node.size) == null ? void 0 : _b2.height) || 60;
+    const x = ((_c = node.position) == null ? void 0 : _c.x) || 0;
+    const y = ((_d = node.position) == null ? void 0 : _d.y) || 0;
+    lines.push(`${indent}<node id="${escapeXml4(node.id)}">`);
+    lines.push(`${indent}  <data key="d2">${escapeXml4(node.label)}</data>`);
+    lines.push(`${indent}  <data key="d0">`);
+    lines.push(`${indent}    <y:ShapeNode>`);
+    lines.push(`${indent}      <y:Geometry height="${height}" width="${width2}" x="${x}" y="${y}"/>`);
+    lines.push(`${indent}      <y:Fill color="${((_e = node.style) == null ? void 0 : _e.fill) || "#FFFFFF"}" transparent="false"/>`);
+    lines.push(`${indent}      <y:BorderStyle color="${((_f = node.style) == null ? void 0 : _f.stroke) || "#000000"}" type="line" width="${((_g = node.style) == null ? void 0 : _g.strokeWidth) || 1}"/>`);
+    lines.push(`${indent}      <y:NodeLabel>${escapeXml4(node.label)}</y:NodeLabel>`);
+    lines.push(`${indent}      <y:Shape type="${shape}"/>`);
+    lines.push(`${indent}    </y:ShapeNode>`);
+    lines.push(`${indent}  </data>`);
+    lines.push(`${indent}</node>`);
+    return lines;
+  }
+  function generateGroupNode(group, nodes, indent) {
+    var _a2, _b2;
+    const lines = [];
+    lines.push(`${indent}<node id="${escapeXml4(group.id)}" yfiles.foldertype="group">`);
+    lines.push(`${indent}  <data key="d2">${escapeXml4(group.label || group.id)}</data>`);
+    lines.push(`${indent}  <data key="d0">`);
+    lines.push(`${indent}    <y:ProxyAutoBoundsNode>`);
+    lines.push(`${indent}      <y:Realizers active="0">`);
+    lines.push(`${indent}        <y:GroupNode>`);
+    lines.push(`${indent}          <y:Fill color="${((_a2 = group.style) == null ? void 0 : _a2.fill) || "#F5F5F5"}" transparent="false"/>`);
+    lines.push(`${indent}          <y:BorderStyle color="${((_b2 = group.style) == null ? void 0 : _b2.stroke) || "#CCCCCC"}" type="line" width="1"/>`);
+    lines.push(`${indent}          <y:NodeLabel>${escapeXml4(group.label || group.id)}</y:NodeLabel>`);
+    lines.push(`${indent}          <y:State closed="false"/>`);
+    lines.push(`${indent}        </y:GroupNode>`);
+    lines.push(`${indent}      </y:Realizers>`);
+    lines.push(`${indent}    </y:ProxyAutoBoundsNode>`);
+    lines.push(`${indent}  </data>`);
+    lines.push(`${indent}  <graph id="${escapeXml4(group.id)}:" edgedefault="directed">`);
+    for (const childId of group.children) {
+      const node = nodes.find((n) => n.id === childId);
+      if (node) {
+        lines.push(...generateNode(node, indent + "    "));
+      }
+    }
+    lines.push(`${indent}  </graph>`);
+    lines.push(`${indent}</node>`);
+    return lines;
+  }
+  function generateEdge3(edge, indent) {
+    var _a2, _b2, _c, _d, _e;
+    const lines = [];
+    const hasSourceArrow = ((_a2 = edge.arrow) == null ? void 0 : _a2.sourceType) !== "none";
+    const hasTargetArrow = ((_b2 = edge.arrow) == null ? void 0 : _b2.targetType) !== "none";
+    const lineStyle = ((_c = edge.arrow) == null ? void 0 : _c.lineType) === "dashed" ? "dashed" : "line";
+    lines.push(`${indent}<edge id="${escapeXml4(edge.id)}" source="${escapeXml4(edge.source)}" target="${escapeXml4(edge.target)}">`);
+    if (edge.label) {
+      lines.push(`${indent}  <data key="d3">${escapeXml4(edge.label)}</data>`);
+    }
+    lines.push(`${indent}  <data key="d1">`);
+    lines.push(`${indent}    <y:PolyLineEdge>`);
+    lines.push(`${indent}      <y:LineStyle color="${((_d = edge.style) == null ? void 0 : _d.stroke) || "#000000"}" type="${lineStyle}" width="${((_e = edge.style) == null ? void 0 : _e.strokeWidth) || 1}"/>`);
+    lines.push(`${indent}      <y:Arrows source="${hasSourceArrow ? "standard" : "none"}" target="${hasTargetArrow ? "standard" : "none"}"/>`);
+    if (edge.label) {
+      lines.push(`${indent}      <y:EdgeLabel>${escapeXml4(edge.label)}</y:EdgeLabel>`);
+    }
+    lines.push(`${indent}    </y:PolyLineEdge>`);
+    lines.push(`${indent}  </data>`);
+    lines.push(`${indent}</edge>`);
+    return lines;
+  }
+  function mapShapeToGraphML(shape) {
+    const shapeMap = {
+      "rectangle": "rectangle",
+      "rounded-rectangle": "roundrectangle",
+      "circle": "ellipse",
+      "ellipse": "ellipse",
+      "diamond": "diamond",
+      "hexagon": "hexagon",
+      "parallelogram": "parallelogram",
+      "trapezoid": "trapezoid",
+      "triangle": "triangle",
+      "cylinder": "rectangle",
+      // GraphML doesn't have cylinder
+      "cloud": "rectangle",
+      "actor": "rectangle"
+    };
+    return shapeMap[shape] || "rectangle";
+  }
+  function escapeXml4(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
   }
   var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
   function getDefaultExportFromCjs(x) {
@@ -4562,8 +9637,8 @@ ${text}
     if (hasRequired_Symbol) return _Symbol;
     hasRequired_Symbol = 1;
     var root2 = require_root();
-    var Symbol = root2.Symbol;
-    _Symbol = Symbol;
+    var Symbol2 = root2.Symbol;
+    _Symbol = Symbol2;
     return _Symbol;
   }
   var _getRawTag;
@@ -4571,11 +9646,11 @@ ${text}
   function require_getRawTag() {
     if (hasRequired_getRawTag) return _getRawTag;
     hasRequired_getRawTag = 1;
-    var Symbol = require_Symbol();
+    var Symbol2 = require_Symbol();
     var objectProto = Object.prototype;
     var hasOwnProperty = objectProto.hasOwnProperty;
     var nativeObjectToString = objectProto.toString;
-    var symToStringTag = Symbol ? Symbol.toStringTag : void 0;
+    var symToStringTag = Symbol2 ? Symbol2.toStringTag : void 0;
     function getRawTag(value) {
       var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
       try {
@@ -4614,9 +9689,9 @@ ${text}
   function require_baseGetTag() {
     if (hasRequired_baseGetTag) return _baseGetTag;
     hasRequired_baseGetTag = 1;
-    var Symbol = require_Symbol(), getRawTag = require_getRawTag(), objectToString = require_objectToString();
+    var Symbol2 = require_Symbol(), getRawTag = require_getRawTag(), objectToString = require_objectToString();
     var nullTag = "[object Null]", undefinedTag = "[object Undefined]";
-    var symToStringTag = Symbol ? Symbol.toStringTag : void 0;
+    var symToStringTag = Symbol2 ? Symbol2.toStringTag : void 0;
     function baseGetTag(value) {
       if (value == null) {
         return value === void 0 ? undefinedTag : nullTag;
@@ -5842,8 +10917,8 @@ ${text}
   function require_cloneSymbol() {
     if (hasRequired_cloneSymbol) return _cloneSymbol;
     hasRequired_cloneSymbol = 1;
-    var Symbol = require_Symbol();
-    var symbolProto = Symbol ? Symbol.prototype : void 0, symbolValueOf = symbolProto ? symbolProto.valueOf : void 0;
+    var Symbol2 = require_Symbol();
+    var symbolProto = Symbol2 ? Symbol2.prototype : void 0, symbolValueOf = symbolProto ? symbolProto.valueOf : void 0;
     function cloneSymbol(symbol) {
       return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
     }
@@ -6392,11 +11467,11 @@ ${text}
   function require_equalByTag() {
     if (hasRequired_equalByTag) return _equalByTag;
     hasRequired_equalByTag = 1;
-    var Symbol = require_Symbol(), Uint8Array2 = require_Uint8Array(), eq = requireEq(), equalArrays = require_equalArrays(), mapToArray = require_mapToArray(), setToArray = require_setToArray();
+    var Symbol2 = require_Symbol(), Uint8Array2 = require_Uint8Array(), eq = requireEq(), equalArrays = require_equalArrays(), mapToArray = require_mapToArray(), setToArray = require_setToArray();
     var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
     var boolTag = "[object Boolean]", dateTag = "[object Date]", errorTag = "[object Error]", mapTag = "[object Map]", numberTag = "[object Number]", regexpTag = "[object RegExp]", setTag = "[object Set]", stringTag = "[object String]", symbolTag = "[object Symbol]";
     var arrayBufferTag = "[object ArrayBuffer]", dataViewTag = "[object DataView]";
-    var symbolProto = Symbol ? Symbol.prototype : void 0, symbolValueOf = symbolProto ? symbolProto.valueOf : void 0;
+    var symbolProto = Symbol2 ? Symbol2.prototype : void 0, symbolValueOf = symbolProto ? symbolProto.valueOf : void 0;
     function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
       switch (tag) {
         case dataViewTag:
@@ -6787,8 +11862,8 @@ ${text}
   function require_baseToString() {
     if (hasRequired_baseToString) return _baseToString;
     hasRequired_baseToString = 1;
-    var Symbol = require_Symbol(), arrayMap = require_arrayMap(), isArray = requireIsArray(), isSymbol = requireIsSymbol();
-    var symbolProto = Symbol ? Symbol.prototype : void 0, symbolToString = symbolProto ? symbolProto.toString : void 0;
+    var Symbol2 = require_Symbol(), arrayMap = require_arrayMap(), isArray = requireIsArray(), isSymbol = requireIsSymbol();
+    var symbolProto = Symbol2 ? Symbol2.prototype : void 0, symbolToString = symbolProto ? symbolProto.toString : void 0;
     function baseToString(value) {
       if (typeof value == "string") {
         return value;
@@ -6811,10 +11886,10 @@ ${text}
     if (hasRequiredToString) return toString_1;
     hasRequiredToString = 1;
     var baseToString = require_baseToString();
-    function toString(value) {
+    function toString2(value) {
       return value == null ? "" : baseToString(value);
     }
-    toString_1 = toString;
+    toString_1 = toString2;
     return toString_1;
   }
   var _castPath;
@@ -6822,12 +11897,12 @@ ${text}
   function require_castPath() {
     if (hasRequired_castPath) return _castPath;
     hasRequired_castPath = 1;
-    var isArray = requireIsArray(), isKey = require_isKey(), stringToPath = require_stringToPath(), toString = requireToString();
+    var isArray = requireIsArray(), isKey = require_isKey(), stringToPath = require_stringToPath(), toString2 = requireToString();
     function castPath(value, object) {
       if (isArray(value)) {
         return value;
       }
-      return isKey(value, object) ? [value] : stringToPath(toString(value));
+      return isKey(value, object) ? [value] : stringToPath(toString2(value));
     }
     _castPath = castPath;
     return _castPath;
@@ -7284,8 +12359,8 @@ ${text}
   function require_isFlattenable() {
     if (hasRequired_isFlattenable) return _isFlattenable;
     hasRequired_isFlattenable = 1;
-    var Symbol = require_Symbol(), isArguments = requireIsArguments(), isArray = requireIsArray();
-    var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : void 0;
+    var Symbol2 = require_Symbol(), isArguments = requireIsArguments(), isArray = requireIsArray();
+    var spreadableSymbol = Symbol2 ? Symbol2.isConcatSpreadable : void 0;
     function isFlattenable(value) {
       return isArray(value) || isArguments(value) || !!(spreadableSymbol && value && value[spreadableSymbol]);
     }
@@ -9513,11 +14588,11 @@ ${text}
   function requireUniqueId() {
     if (hasRequiredUniqueId) return uniqueId_1;
     hasRequiredUniqueId = 1;
-    var toString = requireToString();
+    var toString2 = requireToString();
     var idCounter = 0;
     function uniqueId(prefix) {
       var id = ++idCounter;
-      return toString(prefix) + id;
+      return toString2(prefix) + id;
     }
     uniqueId_1 = uniqueId;
     return uniqueId_1;
@@ -10071,41 +15146,41 @@ ${text}
   var slack$1 = util$8.slack;
   var feasibleTree_1 = feasibleTree$2;
   function feasibleTree$2(g) {
-    var t = new Graph$5({ directed: false });
+    var t2 = new Graph$5({ directed: false });
     var start = g.nodes()[0];
     var size = g.nodeCount();
-    t.setNode(start, {});
+    t2.setNode(start, {});
     var edge, delta;
-    while (tightTree(t, g) < size) {
-      edge = findMinSlackEdge(t, g);
-      delta = t.hasNode(edge.v) ? slack$1(g, edge) : -slack$1(g, edge);
-      shiftRanks(t, g, delta);
+    while (tightTree(t2, g) < size) {
+      edge = findMinSlackEdge(t2, g);
+      delta = t2.hasNode(edge.v) ? slack$1(g, edge) : -slack$1(g, edge);
+      shiftRanks(t2, g, delta);
     }
-    return t;
+    return t2;
   }
-  function tightTree(t, g) {
+  function tightTree(t2, g) {
     function dfs2(v) {
       _$i.forEach(g.nodeEdges(v), function(e) {
         var edgeV = e.v, w = v === edgeV ? e.w : edgeV;
-        if (!t.hasNode(w) && !slack$1(g, e)) {
-          t.setNode(w, {});
-          t.setEdge(v, w, {});
+        if (!t2.hasNode(w) && !slack$1(g, e)) {
+          t2.setNode(w, {});
+          t2.setEdge(v, w, {});
           dfs2(w);
         }
       });
     }
-    _$i.forEach(t.nodes(), dfs2);
-    return t.nodeCount();
+    _$i.forEach(t2.nodes(), dfs2);
+    return t2.nodeCount();
   }
-  function findMinSlackEdge(t, g) {
+  function findMinSlackEdge(t2, g) {
     return _$i.minBy(g.edges(), function(e) {
-      if (t.hasNode(e.v) !== t.hasNode(e.w)) {
+      if (t2.hasNode(e.v) !== t2.hasNode(e.w)) {
         return slack$1(g, e);
       }
     });
   }
-  function shiftRanks(t, g, delta) {
-    _$i.forEach(t.nodes(), function(v) {
+  function shiftRanks(t2, g, delta) {
+    _$i.forEach(t2.nodes(), function(v) {
       g.node(v).rank += delta;
     });
   }
@@ -10126,29 +15201,29 @@ ${text}
   function networkSimplex$1(g) {
     g = simplify(g);
     initRank(g);
-    var t = feasibleTree$1(g);
-    initLowLimValues(t);
-    initCutValues(t, g);
+    var t2 = feasibleTree$1(g);
+    initLowLimValues(t2);
+    initCutValues(t2, g);
     var e, f;
-    while (e = leaveEdge(t)) {
-      f = enterEdge(t, g, e);
-      exchangeEdges(t, g, e, f);
+    while (e = leaveEdge(t2)) {
+      f = enterEdge(t2, g, e);
+      exchangeEdges(t2, g, e, f);
     }
   }
-  function initCutValues(t, g) {
-    var vs = postorder$1(t, t.nodes());
+  function initCutValues(t2, g) {
+    var vs = postorder$1(t2, t2.nodes());
     vs = vs.slice(0, vs.length - 1);
     _$h.forEach(vs, function(v) {
-      assignCutValue(t, g, v);
+      assignCutValue(t2, g, v);
     });
   }
-  function assignCutValue(t, g, child) {
-    var childLab = t.node(child);
+  function assignCutValue(t2, g, child) {
+    var childLab = t2.node(child);
     var parent = childLab.parent;
-    t.edge(child, parent).cutvalue = calcCutValue(t, g, child);
+    t2.edge(child, parent).cutvalue = calcCutValue(t2, g, child);
   }
-  function calcCutValue(t, g, child) {
-    var childLab = t.node(child);
+  function calcCutValue(t2, g, child) {
+    var childLab = t2.node(child);
     var parent = childLab.parent;
     var childIsTail = true;
     var graphEdge = g.edge(child, parent);
@@ -10163,8 +15238,8 @@ ${text}
       if (other !== parent) {
         var pointsToHead = isOutEdge === childIsTail, otherWeight = g.edge(e).weight;
         cutValue += pointsToHead ? otherWeight : -otherWeight;
-        if (isTreeEdge(t, child, other)) {
-          var otherCutValue = t.edge(child, other).cutvalue;
+        if (isTreeEdge(t2, child, other)) {
+          var otherCutValue = t2.edge(child, other).cutvalue;
           cutValue += pointsToHead ? -otherCutValue : otherCutValue;
         }
       }
@@ -10200,15 +15275,15 @@ ${text}
       return tree.edge(e).cutvalue < 0;
     });
   }
-  function enterEdge(t, g, edge) {
+  function enterEdge(t2, g, edge) {
     var v = edge.v;
     var w = edge.w;
     if (!g.hasEdge(v, w)) {
       v = edge.w;
       w = edge.v;
     }
-    var vLabel = t.node(v);
-    var wLabel = t.node(w);
+    var vLabel = t2.node(v);
+    var wLabel = t2.node(w);
     var tailLabel = vLabel;
     var flip = false;
     if (vLabel.lim > wLabel.lim) {
@@ -10216,29 +15291,29 @@ ${text}
       flip = true;
     }
     var candidates = _$h.filter(g.edges(), function(edge2) {
-      return flip === isDescendant(t, t.node(edge2.v), tailLabel) && flip !== isDescendant(t, t.node(edge2.w), tailLabel);
+      return flip === isDescendant(t2, t2.node(edge2.v), tailLabel) && flip !== isDescendant(t2, t2.node(edge2.w), tailLabel);
     });
     return _$h.minBy(candidates, function(edge2) {
       return slack(g, edge2);
     });
   }
-  function exchangeEdges(t, g, e, f) {
+  function exchangeEdges(t2, g, e, f) {
     var v = e.v;
     var w = e.w;
-    t.removeEdge(v, w);
-    t.setEdge(f.v, f.w, {});
-    initLowLimValues(t);
-    initCutValues(t, g);
-    updateRanks(t, g);
+    t2.removeEdge(v, w);
+    t2.setEdge(f.v, f.w, {});
+    initLowLimValues(t2);
+    initCutValues(t2, g);
+    updateRanks(t2, g);
   }
-  function updateRanks(t, g) {
-    var root2 = _$h.find(t.nodes(), function(v) {
+  function updateRanks(t2, g) {
+    var root2 = _$h.find(t2.nodes(), function(v) {
       return !g.node(v).parent;
     });
-    var vs = preorder(t, root2);
+    var vs = preorder(t2, root2);
     vs = vs.slice(1);
     _$h.forEach(vs, function(v) {
-      var parent = t.node(v).parent, edge = g.edge(v, parent), flipped = false;
+      var parent = t2.node(v).parent, edge = g.edge(v, parent), flipped = false;
       if (!edge) {
         edge = g.edge(parent, v);
         flipped = true;
@@ -11559,14 +16634,14 @@ ${text}
     _$1.forEach(g.nodes(), function(v) {
       if (g.children(v).length) {
         var node = g.node(v);
-        var t = g.node(node.borderTop);
+        var t2 = g.node(node.borderTop);
         var b = g.node(node.borderBottom);
         var l = g.node(_$1.last(node.borderLeft));
         var r = g.node(_$1.last(node.borderRight));
         node.width = Math.abs(r.x - l.x);
-        node.height = Math.abs(b.y - t.y);
+        node.height = Math.abs(b.y - t2.y);
         node.x = l.x + node.width / 2;
-        node.y = t.y + node.height / 2;
+        node.y = t2.y + node.height / 2;
       }
     });
     _$1.forEach(g.nodes(), function(v) {
@@ -11832,7 +16907,12 @@ ${text}
     drawio: parseDrawio,
     excalidraw: parseExcalidraw,
     plantuml: parsePlantUML,
-    dot: parseDot
+    dot: parseDot,
+    d2: parseD2,
+    structurizr: parseStructurizr,
+    bpmn: parseBpmn,
+    graphml: parseGraphml,
+    lucidchart: parseLucidchart
   };
   var generators = {
     mermaid: generateMermaid,
@@ -11841,7 +16921,11 @@ ${text}
     plantuml: generatePlantUML,
     dot: generateDot,
     svg: generateSvg,
-    png: generatePng
+    png: generatePng,
+    d2: generateD2,
+    structurizr: generateStructurizr,
+    bpmn: generateBpmn,
+    graphml: generateGraphML
   };
   function applyTextOptions(diagram, options) {
     if (!options.text) return diagram;
@@ -11937,20 +17021,23 @@ ${text}
     targetFormat: "mermaid",
     embedAsCodeBlocks: true,
     keepOriginalOnError: true,
-    includePngFallback: true
+    includePngFallback: true,
+    exportMode: "copy-as-is"
   };
   function extractDiagramFromMacro(element) {
-    var _a, _b, _c;
+    var _a2, _b2, _c;
     const macroName = element.getAttribute("data-macro-name") || "";
     const classList = element.classList;
     if (macroName === "drawio" || classList.contains("drawio-macro") || classList.contains("drawio-diagram")) {
-      const name = element.getAttribute("data-diagram-name") || ((_a = element.dataset) == null ? void 0 : _a.diagramName) || "diagram";
-      const content = element.getAttribute("data-diagram-content") || ((_b = element.querySelector("[data-diagram-content]")) == null ? void 0 : _b.getAttribute("data-diagram-content")) || "";
+      const name = element.getAttribute("data-diagram-name") || ((_a2 = element.dataset) == null ? void 0 : _a2.diagramName) || "diagram";
+      const content = element.getAttribute("data-diagram-content") || ((_b2 = element.querySelector("[data-diagram-content]")) == null ? void 0 : _b2.getAttribute("data-diagram-content")) || "";
+      const renderedSvg = extractRenderedSvg(element);
       return {
         format: "drawio",
         name,
         content,
-        sourceElement: element
+        sourceElement: element,
+        renderedSvg
       };
     }
     if (macroName === "gliffy" || classList.contains("gliffy-macro") || classList.contains("gliffy-diagram")) {
@@ -11964,11 +17051,13 @@ ${text}
     }
     if (macroName === "plantuml" || classList.contains("plantuml-macro")) {
       const content = element.textContent || "";
+      const renderedSvg = extractRenderedSvg(element);
       return {
         format: "plantuml",
         name: "plantuml-diagram",
         content,
-        sourceElement: element
+        sourceElement: element,
+        renderedSvg
       };
     }
     if (macroName === "mermaid" || classList.contains("mermaid-macro")) {
@@ -11981,6 +17070,31 @@ ${text}
       };
     }
     return null;
+  }
+  function extractRenderedSvg(element) {
+    const container = element.querySelector(".geDiagramContainer");
+    if (container) {
+      const svg2 = container.querySelector("svg");
+      if (svg2) {
+        return svg2.outerHTML;
+      }
+    }
+    const svg = element.querySelector("svg");
+    if (svg) {
+      return svg.outerHTML;
+    }
+    const img = element.querySelector('img[src^="data:image/svg"]');
+    if (img) {
+      const src = img.getAttribute("src");
+      if (src == null ? void 0 : src.startsWith("data:image/svg+xml")) {
+        try {
+          const base64Data = src.split(",")[1];
+          return atob(base64Data);
+        } catch {
+        }
+      }
+    }
+    return void 0;
   }
   function convertDiagram(content, fromFormat, toFormat) {
     if (fromFormat === "unknown" || fromFormat === "gliffy") {
@@ -12011,32 +17125,50 @@ ${text}
       originalFormat: info.format,
       targetFormat: opts.targetFormat
     };
-    if (opts.targetFormat === "original" || info.format === "unknown") {
+    if (opts.exportMode === "copy-as-is") {
       result.fileContent = info.content;
       result.fileExtension = getFileExtension(info.format);
       return result;
     }
-    if (info.content) {
-      const converted = convertDiagram(info.content, info.format, opts.targetFormat);
-      if (converted) {
-        result.code = converted.output;
-        result.warnings = converted.warnings;
-        if (opts.targetFormat === "mermaid" && opts.embedAsCodeBlocks) {
-          result.code = converted.output;
-        } else {
-          result.fileContent = converted.output;
-          result.fileExtension = getFileExtension(opts.targetFormat);
-        }
-      } else if (opts.keepOriginalOnError) {
+    if (opts.exportMode === "svg-preview") {
+      if (info.renderedSvg) {
+        result.svgPreview = info.renderedSvg;
+      }
+      result.fileContent = info.content;
+      result.fileExtension = getFileExtension(info.format);
+      return result;
+    }
+    if (opts.exportMode === "convert") {
+      if (opts.targetFormat === "original" || info.format === "unknown") {
         result.fileContent = info.content;
         result.fileExtension = getFileExtension(info.format);
-        result.error = "Conversion failed, keeping original format";
-      } else {
-        result.error = "Conversion failed";
+        return result;
       }
-    } else {
-      result.error = "No diagram content available";
+      if (info.content) {
+        const converted = convertDiagram(info.content, info.format, opts.targetFormat);
+        if (converted) {
+          result.code = converted.output;
+          result.warnings = converted.warnings;
+          if (opts.targetFormat === "mermaid" && opts.embedAsCodeBlocks) {
+            result.code = converted.output;
+          } else {
+            result.fileContent = converted.output;
+            result.fileExtension = getFileExtension(opts.targetFormat);
+          }
+        } else if (opts.keepOriginalOnError) {
+          result.fileContent = info.content;
+          result.fileExtension = getFileExtension(info.format);
+          result.error = "Conversion failed, keeping original format";
+        } else {
+          result.error = "Conversion failed";
+        }
+      } else {
+        result.error = "No diagram content available";
+      }
+      return result;
     }
+    result.fileContent = info.content;
+    result.fileExtension = getFileExtension(info.format);
     return result;
   }
   function generateMermaidCodeBlock(code, title) {
@@ -12045,6 +17177,27 @@ ${text}
     return `\`\`\`mermaid
 ${header}${code.trim()}
 \`\`\``;
+  }
+  function generateDiagramWithSvgPreview(diagram, options = {}) {
+    const { inlineSvg = true, includeSourceLink = true } = options;
+    const parts = [];
+    if (diagram.svgPreview) {
+      if (inlineSvg) {
+        parts.push(`<details open>`);
+        parts.push(`<summary>Preview</summary>
+`);
+        parts.push(diagram.svgPreview);
+        parts.push(`</details>
+`);
+      } else {
+        parts.push(`![[${diagram.name}.svg]]`);
+      }
+    }
+    if (includeSourceLink && diagram.fileExtension) {
+      const sourceExt = diagram.fileExtension;
+      parts.push(`%% Editable source: ${diagram.name}.${sourceExt} %%`);
+    }
+    return parts.join("\n");
   }
   function getFileExtension(format) {
     switch (format) {
@@ -12107,7 +17260,54 @@ ${header}${code.trim()}
     if (!html) return "";
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    doc.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
+    const contentSelectors = [
+      ".wiki-content",
+      // Main Confluence content
+      "#main-content",
+      // Alternative selector
+      ".page-content",
+      // Another variant
+      ".confluence-content"
+      // Server/DC format
+    ];
+    let contentElement = null;
+    for (const selector of contentSelectors) {
+      contentElement = doc.querySelector(selector);
+      if (contentElement) {
+        break;
+      }
+    }
+    if (!contentElement) {
+      contentElement = doc.body;
+      const uiSelectors = [
+        "#header",
+        ".aui-header",
+        ".aui-nav",
+        "#navigation",
+        ".ia-fixed-sidebar",
+        ".ia-splitter-left",
+        "#breadcrumbs",
+        ".breadcrumbs",
+        "#sidebar",
+        ".ia-secondary-sidebar",
+        ".space-tools-section",
+        "#footer",
+        ".footer",
+        ".aui-footer",
+        "#action-menu-link",
+        ".page-metadata",
+        ".page-metadata-banner",
+        ".aui-page-panel-nav",
+        ".aui-page-header",
+        ".aui-page-header-inner"
+      ];
+      uiSelectors.forEach((selector) => {
+        contentElement == null ? void 0 : contentElement.querySelectorAll(selector).forEach((el) => el.remove());
+      });
+    }
+    const cleanDoc = parser.parseFromString("<html><body></body></html>", "text/html");
+    cleanDoc.body.innerHTML = contentElement.innerHTML;
+    cleanDoc.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
       el.style.display = "block";
       el.removeAttribute("aria-hidden");
       const expander = el.closest(".aui-expander-container, .expand-container");
@@ -12116,7 +17316,7 @@ ${header}${code.trim()}
         expander.classList.add("expanded");
       }
     });
-    doc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
+    cleanDoc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
       const htmlEl = el;
       let name = htmlEl.dataset.diagramName || htmlEl.getAttribute("data-diagram-name") || htmlEl.getAttribute("data-extracted-diagram-name") || "";
       if (!name) {
@@ -12126,35 +17326,35 @@ ${header}${code.trim()}
         htmlEl.setAttribute("data-extracted-diagram-name", name);
       }
       htmlEl.setAttribute("data-diagram-index", String(index));
-      const marker = doc.createElement("span");
+      const marker = cleanDoc.createElement("span");
       marker.style.display = "none";
       marker.setAttribute("data-diagram-marker", "true");
       marker.textContent = `DIAGRAM:${name || `diagram-${index + 1}`}`;
       htmlEl.appendChild(marker);
     });
     BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
-      doc.querySelectorAll(selector).forEach((el) => el.remove());
+      cleanDoc.querySelectorAll(selector).forEach((el) => el.remove());
     });
     if (!options.includeComments) {
-      doc.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
+      cleanDoc.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
         el.remove();
       });
     }
     if (!options.includeImages) {
-      doc.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
+      cleanDoc.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
         el.remove();
       });
     } else {
-      doc.querySelectorAll("img").forEach((img) => {
-        var _a, _b;
-        if (!((_a = img.alt) == null ? void 0 : _a.trim())) {
+      cleanDoc.querySelectorAll("img").forEach((img) => {
+        var _a2, _b2;
+        if (!((_a2 = img.alt) == null ? void 0 : _a2.trim())) {
           const src = img.src || "";
-          const filename = ((_b = src.split("/").pop()) == null ? void 0 : _b.split("?")[0]) || "image";
+          const filename = ((_b2 = src.split("/").pop()) == null ? void 0 : _b2.split("?")[0]) || "image";
           img.alt = `[Image: ${filename}]`;
         }
       });
     }
-    return doc.body.innerHTML;
+    return cleanDoc.body.innerHTML;
   }
   let turndownInstance = null;
   let obsidianTurndownInstance = null;
@@ -12164,6 +17364,15 @@ ${header}${code.trim()}
     const convertDiagrams = (options == null ? void 0 : options.convertDiagrams) ?? false;
     const diagramTarget = (options == null ? void 0 : options.diagramTargetFormat) ?? "mermaid";
     const embedAsCode = (options == null ? void 0 : options.embedDiagramsAsCode) ?? true;
+    const exportMode = (options == null ? void 0 : options.diagramExportMode) ?? "copy-as-is";
+    console.log("[Converter] getTurndown called with options:", {
+      useObsidian,
+      convertDiagrams,
+      diagramTarget,
+      embedAsCode,
+      exportMode,
+      rawExportMode: options == null ? void 0 : options.diagramExportMode
+    });
     if (useObsidian && !convertDiagrams && obsidianTurndownInstance) return obsidianTurndownInstance;
     if (!useObsidian && !convertDiagrams && turndownInstance) return turndownInstance;
     if (convertDiagrams && diagramConvertInstance) return diagramConvertInstance;
@@ -12181,7 +17390,7 @@ ${header}${code.trim()}
           return node.classList.contains("confluence-information-macro") || node.tagName === "DIV" && node.dataset.macroName === "panel";
         },
         replacement: (_content, node) => {
-          var _a, _b, _c;
+          var _a2, _b2, _c;
           const el = node;
           let type = "info";
           const macroName = el.dataset.macroName || "";
@@ -12193,9 +17402,9 @@ ${header}${code.trim()}
             type = "warning";
           }
           const titleEl = el.querySelector(".confluence-information-macro-title, .panelHeader");
-          const title = ((_a = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a.trim()) || "";
+          const title = ((_a2 = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a2.trim()) || "";
           const bodyEl = el.querySelector(".confluence-information-macro-body, .panelContent");
-          const body = ((_b = bodyEl == null ? void 0 : bodyEl.textContent) == null ? void 0 : _b.trim()) || ((_c = el.textContent) == null ? void 0 : _c.trim()) || "";
+          const body = ((_b2 = bodyEl == null ? void 0 : bodyEl.textContent) == null ? void 0 : _b2.trim()) || ((_c = el.textContent) == null ? void 0 : _c.trim()) || "";
           const header = title ? `> [!${type}] ${title}` : `> [!${type}]`;
           const lines = body.split("\n").map((line) => `> ${line}`).join("\n");
           return `
@@ -12212,7 +17421,7 @@ ${lines}
           return node.classList.contains("confluence-information-macro") || node.tagName === "DIV" && node.dataset.macroName === "panel";
         },
         replacement: (_content, node) => {
-          var _a, _b, _c;
+          var _a2, _b2, _c;
           const el = node;
           let type = "Info";
           const macroName = el.dataset.macroName || "";
@@ -12224,9 +17433,9 @@ ${lines}
             type = "Warning";
           }
           const titleEl = el.querySelector(".confluence-information-macro-title, .panelHeader");
-          const title = ((_a = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a.trim()) || "";
+          const title = ((_a2 = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a2.trim()) || "";
           const bodyEl = el.querySelector(".confluence-information-macro-body, .panelContent");
-          const body = ((_b = bodyEl == null ? void 0 : bodyEl.textContent) == null ? void 0 : _b.trim()) || ((_c = el.textContent) == null ? void 0 : _c.trim()) || "";
+          const body = ((_b2 = bodyEl == null ? void 0 : bodyEl.textContent) == null ? void 0 : _b2.trim()) || ((_c = el.textContent) == null ? void 0 : _c.trim()) || "";
           const header = title ? `**${type}: ${title}**` : `**${type}**`;
           const lines = body.split("\n").map((line) => `> ${line}`).join("\n");
           return `
@@ -12243,12 +17452,12 @@ ${lines}
         return node.classList.contains("expand-container") || node.classList.contains("aui-expander-container");
       },
       replacement: (_content, node) => {
-        var _a, _b;
+        var _a2, _b2;
         const el = node;
         const titleEl = el.querySelector(".expand-control-text, .aui-expander-trigger");
-        const title = ((_a = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a.trim()) || "Details";
+        const title = ((_a2 = titleEl == null ? void 0 : titleEl.textContent) == null ? void 0 : _a2.trim()) || "Details";
         const contentEl = el.querySelector(".expand-content, .aui-expander-content");
-        const content = ((_b = contentEl == null ? void 0 : contentEl.textContent) == null ? void 0 : _b.trim()) || "";
+        const content = ((_b2 = contentEl == null ? void 0 : contentEl.textContent) == null ? void 0 : _b2.trim()) || "";
         return `
 <details>
 <summary>${title}</summary>
@@ -12279,31 +17488,107 @@ ${content}
         return false;
       },
       replacement: (_content, node) => {
+        var _a2, _b2, _c;
         const el = node;
+        console.log("[Draw.io] replacement called with content:", _content);
         let diagramName = el.getAttribute("data-extracted-diagram-name") || el.dataset.diagramName || el.getAttribute("data-diagram-name") || "";
         if (!diagramName) {
           const index = el.getAttribute("data-diagram-index");
           diagramName = index ? `diagram-${parseInt(index) + 1}` : "diagram";
         }
-        if (convertDiagrams) {
+        console.log("[Draw.io] Processing diagram:", {
+          name: diagramName,
+          exportMode,
+          hasElement: !!el,
+          classList: Array.from(el.classList)
+        });
+        if (exportMode === "copy-as-is") {
+          console.log("[Draw.io] Mode: copy-as-is, returning wikilink");
+          const result = `
+![[_attachments/${diagramName}.png]]
+
+%% Editable source: ${diagramName}.drawio %%
+
+`;
+          console.log("[Draw.io] Returning:", result);
+          return result;
+        }
+        if (exportMode === "svg-preview") {
+          console.log("[Draw.io] Mode: svg-preview");
           const diagramInfo = extractDiagramFromMacro(el);
+          console.log("[Draw.io] Extracted info:", {
+            hasInfo: !!diagramInfo,
+            hasSvg: !!(diagramInfo == null ? void 0 : diagramInfo.renderedSvg),
+            svgLength: (_a2 = diagramInfo == null ? void 0 : diagramInfo.renderedSvg) == null ? void 0 : _a2.length
+          });
+          if (diagramInfo) {
+            const processed = processDiagram(diagramInfo, {
+              targetFormat: diagramTarget,
+              embedAsCodeBlocks: embedAsCode,
+              keepOriginalOnError: true,
+              includePngFallback: true,
+              exportMode: "svg-preview"
+            });
+            if (processed.svgPreview) {
+              console.log("[Draw.io] Returning SVG preview");
+              return `
+${generateDiagramWithSvgPreview(processed, {
+              inlineSvg: true,
+              includeSourceLink: true
+            })}
+
+`;
+            }
+          }
+          console.log("[Draw.io] SVG preview failed, returning wikilink");
+          return `
+![[_attachments/${diagramName}.png]]
+
+%% Editable source: ${diagramName}.drawio %%
+
+`;
+        }
+        if (exportMode === "convert") {
+          console.log("[Draw.io] Mode: convert to", diagramTarget);
+          const diagramInfo = extractDiagramFromMacro(el);
+          console.log("[Draw.io] Extracted info:", {
+            hasInfo: !!diagramInfo,
+            hasContent: !!(diagramInfo == null ? void 0 : diagramInfo.content),
+            contentLength: (_b2 = diagramInfo == null ? void 0 : diagramInfo.content) == null ? void 0 : _b2.length
+          });
           if (diagramInfo && diagramInfo.content) {
             const processed = processDiagram(diagramInfo, {
               targetFormat: diagramTarget,
               embedAsCodeBlocks: embedAsCode,
               keepOriginalOnError: true,
-              includePngFallback: true
+              includePngFallback: true,
+              exportMode: "convert"
+            });
+            console.log("[Draw.io] Processed:", {
+              hasCode: !!processed.code,
+              codeLength: (_c = processed.code) == null ? void 0 : _c.length,
+              error: processed.error
             });
             if (processed.code && embedAsCode) {
+              console.log("[Draw.io] Returning mermaid code block");
               return `
 ${generateMermaidCodeBlock(processed.code, diagramName)}
 
 `;
             }
           }
+          console.log("[Draw.io] Convert failed, returning wikilink");
+          return `
+![[_attachments/${diagramName}.png]]
+
+%% Editable source: ${diagramName}.drawio %%
+%% Note: Conversion requires Download (Obsidian vault) mode to fetch diagram source %%
+
+`;
         }
+        console.log("[Draw.io] No mode matched, returning wikilink");
         return `
-![[${diagramName}.png]]
+![[_attachments/${diagramName}.png]]
 
 %% Editable source: ${diagramName}.drawio %%
 
@@ -12319,7 +17604,7 @@ ${generateMermaidCodeBlock(processed.code, diagramName)}
         const el = node;
         const diagramName = el.dataset.diagramName || el.getAttribute("data-diagram-name") || "diagram";
         return `
-![[${diagramName}.png]]
+![[_attachments/${diagramName}.png]]
 
 `;
       }
@@ -12330,16 +17615,56 @@ ${generateMermaidCodeBlock(processed.code, diagramName)}
         return node.classList.contains("plantuml-macro") || node.dataset.macroName === "plantuml";
       },
       replacement: (_content, node) => {
-        var _a;
+        var _a2;
         const el = node;
-        const code = ((_a = el.textContent) == null ? void 0 : _a.trim()) || "";
-        if (convertDiagrams && diagramTarget === "mermaid" && code) {
+        const code = ((_a2 = el.textContent) == null ? void 0 : _a2.trim()) || "";
+        if (exportMode === "copy-as-is") {
+          return `
+\`\`\`plantuml
+${code}
+\`\`\`
+
+`;
+        }
+        if (exportMode === "svg-preview") {
+          const diagramInfo = extractDiagramFromMacro(el);
+          if (diagramInfo && diagramInfo.renderedSvg) {
+            const processed = processDiagram(diagramInfo, {
+              targetFormat: "original",
+              embedAsCodeBlocks: true,
+              keepOriginalOnError: true,
+              includePngFallback: false,
+              exportMode: "svg-preview"
+            });
+            if (processed.svgPreview) {
+              return `
+${generateDiagramWithSvgPreview(processed, {
+              inlineSvg: true,
+              includeSourceLink: false
+            })}
+
+\`\`\`plantuml
+${code}
+\`\`\`
+
+`;
+            }
+          }
+          return `
+\`\`\`plantuml
+${code}
+\`\`\`
+
+`;
+        }
+        if (exportMode === "convert" && diagramTarget === "mermaid" && code) {
           const diagramInfo = { format: "plantuml", name: "plantuml", content: code };
           const processed = processDiagram(diagramInfo, {
             targetFormat: "mermaid",
             embedAsCodeBlocks: true,
             keepOriginalOnError: true,
-            includePngFallback: false
+            includePngFallback: false,
+            exportMode: "convert"
           });
           if (processed.code) {
             return `
@@ -12362,9 +17687,9 @@ ${code}
         return node.classList.contains("mermaid-macro") || node.dataset.macroName === "mermaid";
       },
       replacement: (_content, node) => {
-        var _a;
+        var _a2;
         const el = node;
-        const code = ((_a = el.textContent) == null ? void 0 : _a.trim()) || "";
+        const code = ((_a2 = el.textContent) == null ? void 0 : _a2.trim()) || "";
         return `
 \`\`\`mermaid
 ${code}
@@ -12401,9 +17726,9 @@ ${code}
         return node.tagName === "PRE" || node.classList.contains("code") || node.classList.contains("codeContent");
       },
       replacement: (content, node) => {
-        var _a;
+        var _a2;
         const el = node;
-        const lang = el.dataset.language || ((_a = el.className.match(/language-(\w+)/)) == null ? void 0 : _a[1]) || "";
+        const lang = el.dataset.language || ((_a2 = el.className.match(/language-(\w+)/)) == null ? void 0 : _a2[1]) || "";
         const code = content.trim();
         return `
 \`\`\`${lang}
@@ -12415,12 +17740,45 @@ ${code}
     });
     instance.addRule("emptyLinks", {
       filter: (node) => {
-        var _a;
+        var _a2;
         if (!(node instanceof HTMLElement)) return false;
-        return node.tagName === "A" && !((_a = node.textContent) == null ? void 0 : _a.trim());
+        return node.tagName === "A" && !((_a2 = node.textContent) == null ? void 0 : _a2.trim());
       },
       replacement: () => ""
     });
+    if (useObsidian) {
+      instance.addRule("obsidianImages", {
+        filter: "img",
+        replacement: (_content, node) => {
+          var _a2;
+          const img = node;
+          const src = img.getAttribute("src") || "";
+          const alt = img.getAttribute("alt") || "";
+          let filename = "";
+          try {
+            const url = new URL(src, "https://example.com");
+            const pathParts = url.pathname.split("/");
+            filename = pathParts[pathParts.length - 1];
+            filename = filename.split("?")[0];
+            filename = decodeURIComponent(filename);
+          } catch {
+            filename = ((_a2 = src.split("/").pop()) == null ? void 0 : _a2.split("?")[0]) || "image.png";
+            try {
+              filename = decodeURIComponent(filename);
+            } catch {
+            }
+          }
+          if (alt && alt !== `[Image: ${filename}]`) {
+            return `
+![[_attachments/${filename}|${alt}]]
+`;
+          }
+          return `
+![[_attachments/${filename}]]
+`;
+        }
+      });
+    }
     instance.addRule("confluenceTable", {
       filter: (node) => {
         if (!(node instanceof HTMLElement)) return false;
@@ -12577,55 +17935,22 @@ ${result.join("\n")}
     }
     return response.blob();
   }
-  function extractDiagramReferences(html) {
-    const diagrams = [];
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    const drawioSelectors = [
-      '[data-macro-name="drawio"]',
-      '[data-macro-name="drawio-sketch"]',
-      ".drawio-macro",
-      ".drawio-diagram",
-      '.conf-macro[data-macro-name="drawio"]',
-      '.conf-macro[data-macro-name="drawio-sketch"]'
-    ].join(", ");
-    doc.querySelectorAll(drawioSelectors).forEach((el) => {
-      var _a;
-      let name = el.dataset.diagramName || el.getAttribute("data-diagram-name") || ((_a = el.querySelector("img")) == null ? void 0 : _a.getAttribute("data-diagram-name")) || "";
-      if (!name) {
-        const script = el.querySelector("script");
-        if (script == null ? void 0 : script.textContent) {
-          const nameMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*decodeURIComponent\(['"]([^'"]+)['"]\)/);
-          if (nameMatch) {
-            try {
-              name = decodeURIComponent(nameMatch[1]);
-            } catch {
-              name = nameMatch[1];
-            }
-          }
-          if (!name) {
-            const simpleMatch = script.textContent.match(/readerOpts\.diagramName\s*=\s*['"]([^'"]+)['"]/);
-            if (simpleMatch) name = simpleMatch[1];
-          }
-        }
-      }
-      if (!name) name = "diagram";
-      diagrams.push({ type: "drawio", name });
+  function isEmptyMermaidDiagram(mermaidCode) {
+    const trimmed = mermaidCode.trim();
+    const emptyFlowchartPattern = /^flowchart\s+(TB|BT|LR|RL|TD)\s*$/;
+    if (emptyFlowchartPattern.test(trimmed)) {
+      return true;
+    }
+    const lines = trimmed.split("\n").slice(1);
+    const hasContent = lines.some((line) => {
+      const l = line.trim();
+      if (!l || l.startsWith("%%") || l === "end") return false;
+      return l.length > 0;
     });
-    doc.querySelectorAll('[data-macro-name="gliffy"], .gliffy-macro, .gliffy-diagram').forEach((el) => {
-      let name = el.dataset.diagramName || el.getAttribute("data-diagram-name") || "";
-      if (!name) {
-        const childWithName = el.querySelector("[data-diagram-name]");
-        if (childWithName) {
-          name = childWithName.getAttribute("data-diagram-name") || "";
-        }
-      }
-      if (!name) name = "diagram";
-      diagrams.push({ type: "gliffy", name });
-    });
-    return diagrams;
+    return !hasContent;
   }
   async function convertDrawioToMermaid(pageId, diagramName) {
+    var _a2, _b2, _c, _d, _e, _f, _g;
     try {
       const baseUrl = getBaseUrl();
       const attachments = await fetchPageAttachments(pageId);
@@ -12646,6 +17971,17 @@ ${result.join("\n")}
           return null;
         }
       }
+      console.log(`[DiagramConverter] Downloaded XML for ${diagramName}, length: ${xmlText.length}`);
+      console.log(`[DiagramConverter] XML first 500 chars:`, xmlText.substring(0, 500));
+      console.log(`[DiagramConverter] XML last 200 chars:`, xmlText.substring(xmlText.length - 200));
+      const hasCompressedContent = xmlText.includes("<diagram") && !xmlText.includes("<mxGraphModel");
+      console.log(`[DiagramConverter] Has compressed content: ${hasCompressedContent}`);
+      const diagramMatch = xmlText.match(/<diagram[^>]*>([\s\S]*?)<\/diagram>/);
+      if (diagramMatch) {
+        const diagramContent = diagramMatch[1].trim();
+        console.log(`[DiagramConverter] Diagram element content (first 200):`, diagramContent.substring(0, 200));
+        console.log(`[DiagramConverter] Diagram content length:`, diagramContent.length);
+      }
       const result = convert(xmlText, {
         from: "drawio",
         to: "mermaid",
@@ -12654,6 +17990,18 @@ ${result.join("\n")}
           direction: "TB"
         }
       });
+      console.log(`[DiagramConverter] Conversion result for ${diagramName}:`, {
+        hasOutput: !!result.output,
+        outputLength: (_a2 = result.output) == null ? void 0 : _a2.length,
+        outputPreview: (_b2 = result.output) == null ? void 0 : _b2.substring(0, 100),
+        diagramNodes: (_d = (_c = result.diagram) == null ? void 0 : _c.nodes) == null ? void 0 : _d.length,
+        diagramEdges: (_f = (_e = result.diagram) == null ? void 0 : _e.edges) == null ? void 0 : _f.length
+      });
+      const output = (_g = result.output) == null ? void 0 : _g.trim();
+      if (!output || isEmptyMermaidDiagram(output)) {
+        console.warn(`[DiagramConverter] Empty diagram for ${diagramName}, output: "${output}"`);
+        return null;
+      }
       return result.output;
     } catch (error) {
       return null;
@@ -12665,12 +18013,12 @@ ${result.join("\n")}
     try {
       const response = await fetchJson(url);
       return (response.results || []).map((att) => {
-        var _a, _b, _c, _d;
+        var _a2, _b2, _c, _d;
         return {
           id: att.id,
           title: att.title,
           filename: att.title,
-          mediaType: ((_a = att.extensions) == null ? void 0 : _a.mediaType) || ((_b = att.metadata) == null ? void 0 : _b.mediaType) || "application/octet-stream",
+          mediaType: ((_a2 = att.extensions) == null ? void 0 : _a2.mediaType) || ((_b2 = att.metadata) == null ? void 0 : _b2.mediaType) || "application/octet-stream",
           fileSize: ((_c = att.extensions) == null ? void 0 : _c.fileSize) || 0,
           downloadUrl: ((_d = att._links) == null ? void 0 : _d.download) ? `${baseUrl}${att._links.download}` : "",
           pageId
@@ -12679,29 +18027,6 @@ ${result.join("\n")}
     } catch (error) {
       return [];
     }
-  }
-  function identifyDiagram(attachment) {
-    const { filename, mediaType } = attachment;
-    const baseUrl = getBaseUrl();
-    if (mediaType === "application/vnd.jgraph.mxfile" || filename.endsWith(".drawio") || filename.endsWith(".drawio.xml")) {
-      const diagramName = filename.replace(/\.(drawio|drawio\.xml)$/, "");
-      return {
-        ...attachment,
-        diagramType: "drawio",
-        diagramName,
-        renderUrl: `${baseUrl}/plugins/servlet/drawio/export?pageId=${attachment.pageId}&diagramName=${encodeURIComponent(diagramName)}&format=png`
-      };
-    }
-    if (mediaType === "application/gliffy+json" || filename.endsWith(".gliffy")) {
-      const diagramName = filename.replace(/\.gliffy$/, "");
-      return {
-        ...attachment,
-        diagramType: "gliffy",
-        diagramName,
-        renderUrl: `${baseUrl}/plugins/servlet/gliffy/export?pageId=${attachment.pageId}&diagramName=${encodeURIComponent(diagramName)}&format=png`
-      };
-    }
-    return null;
   }
   function isImageAttachment(attachment) {
     const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml", "image/webp"];
@@ -12724,23 +18049,60 @@ ${result.join("\n")}
       return null;
     }
   }
+  function isEmptyMermaidOutput(mermaidCode) {
+    const trimmed = mermaidCode.trim();
+    const emptyFlowchartPattern = /^flowchart\s+(TB|BT|LR|RL|TD)\s*$/;
+    if (emptyFlowchartPattern.test(trimmed)) {
+      return true;
+    }
+    const lines = trimmed.split("\n").slice(1);
+    const hasContent = lines.some((line) => {
+      const l = line.trim();
+      if (!l || l.startsWith("%%") || l === "end") return false;
+      return l.length > 0;
+    });
+    return !hasContent;
+  }
+  function isValidPlantUmlCode(code) {
+    const trimmed = code.trim();
+    if (trimmed.includes("@startuml") || trimmed.includes("@startmindmap") || trimmed.includes("@startwbs") || trimmed.includes("@startgantt") || trimmed.includes("@startsalt") || trimmed.includes("@startjson") || trimmed.includes("@startyaml")) {
+      return true;
+    }
+    const hasArrow = /\w+\s*-+>|<-+\s*\w+/.test(trimmed);
+    const hasClassDef = /^(class|interface|abstract|enum)\s+\w+/m.test(trimmed);
+    const hasUseCaseDef = /^\s*\([^)]+\)\s*$/m.test(trimmed);
+    if (hasArrow || hasClassDef || hasUseCaseDef) {
+      return true;
+    }
+    if (trimmed.includes("Welcome to PlantUML") || trimmed.includes("You can start with") || trimmed.includes("plantuml.com")) {
+      return false;
+    }
+    if (trimmed.length < 10) {
+      return false;
+    }
+    return false;
+  }
   async function convertDiagramsInMarkdown(markdown, pageId, format) {
     if (format === "wikilink") {
       return markdown;
     }
     let result = markdown;
-    const diagramPattern = /!\[\[([^\]]+)\.png\]\](?:%% Editable source: ([^\s]+)\.drawio %%)?/g;
+    const diagramPattern = /!\[\[([^\]]+)\.png\]\]\s*(?:\n\s*)*(?:%% Editable source: ([^\s]+)\.drawio %%)?(?:\s*%% Note:[^%]*%%)?/g;
     const conversions = [];
     let match;
     while ((match = diagramPattern.exec(markdown)) !== null) {
       const [fullMatch, diagramName] = match;
+      console.log(`[Exporter] Found diagram: ${diagramName}, converting to ${format}`);
       if (format === "mermaid") {
         const mermaidCode = await convertDrawioToMermaid(pageId, diagramName);
         if (mermaidCode) {
+          console.log(`[Exporter] Successfully converted ${diagramName} to Mermaid`);
           const replacement = `\`\`\`mermaid
 ${mermaidCode}
 \`\`\``;
           conversions.push({ original: fullMatch, replacement });
+        } else {
+          console.log(`[Exporter] Failed to convert ${diagramName}, keeping wikilink`);
         }
       } else if (format === "drawio-xml") {
         try {
@@ -12751,6 +18113,7 @@ ${mermaidCode}
           if (drawioAttachment == null ? void 0 : drawioAttachment.downloadUrl) {
             const xmlBlob = await downloadAttachment(drawioAttachment.downloadUrl);
             const xmlText = await xmlBlob.text();
+            console.log(`[Exporter] Successfully downloaded ${diagramName} XML`);
             const replacement = `\`\`\`xml
 ${xmlText}
 \`\`\``;
@@ -12767,8 +18130,13 @@ ${xmlText}
     if (format === "mermaid") {
       const plantumlPattern = /```plantuml\n([\s\S]*?)\n```/g;
       result = result.replace(plantumlPattern, (fullMatch, plantumlCode) => {
+        const code = plantumlCode.trim();
+        if (!isValidPlantUmlCode(code)) {
+          console.warn("[Exporter] Invalid PlantUML code (placeholder or garbage), keeping original");
+          return fullMatch;
+        }
         try {
-          const converted = convert(plantumlCode.trim(), {
+          const converted = convert(code, {
             from: "plantuml",
             to: "mermaid",
             layout: {
@@ -12776,10 +18144,13 @@ ${xmlText}
               direction: "TB"
             }
           });
-          if (converted.output) {
+          if (converted.output && !isEmptyMermaidOutput(converted.output)) {
+            console.log("[Exporter] Successfully converted PlantUML to Mermaid");
             return `\`\`\`mermaid
 ${converted.output}
 \`\`\``;
+          } else {
+            console.warn("[Exporter] PlantUML conversion produced empty diagram, keeping original");
           }
         } catch (error) {
           console.warn("Failed to convert PlantUML to Mermaid:", error);
@@ -12789,7 +18160,7 @@ ${converted.output}
     }
     return result;
   }
-  async function buildMarkdownDocument(pages, rootNode, exportTitle, settings, diagramFormat = "wikilink") {
+  async function buildMarkdownDocument(pages, rootNode, exportTitle, settings, diagramFormat = "wikilink", diagramExportMode = "copy-as-is") {
     const flatTree = flattenTree(rootNode);
     const treeMap = new Map(flatTree.map((n) => [n.id, n]));
     const lines = [];
@@ -12842,7 +18213,11 @@ ${converted.output}
           includeImages: settings.includeImages,
           includeComments: settings.includeComments
         }, page.id);
-        let markdown = convertToMarkdown(sanitizedHtml);
+        let markdown = convertToMarkdown(sanitizedHtml, {
+          diagramExportMode,
+          diagramTargetFormat: diagramFormat,
+          embedDiagramsAsCode: true
+        });
         markdown = await convertDiagramsInMarkdown(markdown, page.id, diagramFormat);
         lines.push(markdown);
       }
@@ -13397,2324 +18772,677 @@ ${converted.output}
     div.textContent = text;
     return div.innerHTML;
   }
-  var jszip_min = { exports: {} };
-  /*!
-
-  JSZip v3.10.1 - A JavaScript class for generating and reading zip files
-  <http://stuartk.com/jszip>
-
-  (c) 2009-2016 Stuart Knightley <stuart [at] stuartk.com>
-  Dual licenced under the MIT license or GPLv3. See https://raw.github.com/Stuk/jszip/main/LICENSE.markdown.
-
-  JSZip uses the library pako released under the MIT license :
-  https://github.com/nodeca/pako/blob/main/LICENSE
-  */
-  (function(module, exports$1) {
-    !function(e) {
-      module.exports = e();
-    }(function() {
-      return function s(a, o, h) {
-        function u(r, e2) {
-          if (!o[r]) {
-            if (!a[r]) {
-              var t = "function" == typeof commonjsRequire && commonjsRequire;
-              if (!e2 && t) return t(r, true);
-              if (l) return l(r, true);
-              var n = new Error("Cannot find module '" + r + "'");
-              throw n.code = "MODULE_NOT_FOUND", n;
-            }
-            var i = o[r] = { exports: {} };
-            a[r][0].call(i.exports, function(e3) {
-              var t2 = a[r][1][e3];
-              return u(t2 || e3);
-            }, i, i.exports, s, a, o, h);
-          }
-          return o[r].exports;
-        }
-        for (var l = "function" == typeof commonjsRequire && commonjsRequire, e = 0; e < h.length; e++) u(h[e]);
-        return u;
-      }({ 1: [function(e, t, r) {
-        var d = e("./utils"), c = e("./support"), p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-        r.encode = function(e2) {
-          for (var t2, r2, n, i, s, a, o, h = [], u = 0, l = e2.length, f = l, c2 = "string" !== d.getTypeOf(e2); u < e2.length; ) f = l - u, n = c2 ? (t2 = e2[u++], r2 = u < l ? e2[u++] : 0, u < l ? e2[u++] : 0) : (t2 = e2.charCodeAt(u++), r2 = u < l ? e2.charCodeAt(u++) : 0, u < l ? e2.charCodeAt(u++) : 0), i = t2 >> 2, s = (3 & t2) << 4 | r2 >> 4, a = 1 < f ? (15 & r2) << 2 | n >> 6 : 64, o = 2 < f ? 63 & n : 64, h.push(p.charAt(i) + p.charAt(s) + p.charAt(a) + p.charAt(o));
-          return h.join("");
-        }, r.decode = function(e2) {
-          var t2, r2, n, i, s, a, o = 0, h = 0, u = "data:";
-          if (e2.substr(0, u.length) === u) throw new Error("Invalid base64 input, it looks like a data url.");
-          var l, f = 3 * (e2 = e2.replace(/[^A-Za-z0-9+/=]/g, "")).length / 4;
-          if (e2.charAt(e2.length - 1) === p.charAt(64) && f--, e2.charAt(e2.length - 2) === p.charAt(64) && f--, f % 1 != 0) throw new Error("Invalid base64 input, bad content length.");
-          for (l = c.uint8array ? new Uint8Array(0 | f) : new Array(0 | f); o < e2.length; ) t2 = p.indexOf(e2.charAt(o++)) << 2 | (i = p.indexOf(e2.charAt(o++))) >> 4, r2 = (15 & i) << 4 | (s = p.indexOf(e2.charAt(o++))) >> 2, n = (3 & s) << 6 | (a = p.indexOf(e2.charAt(o++))), l[h++] = t2, 64 !== s && (l[h++] = r2), 64 !== a && (l[h++] = n);
-          return l;
-        };
-      }, { "./support": 30, "./utils": 32 }], 2: [function(e, t, r) {
-        var n = e("./external"), i = e("./stream/DataWorker"), s = e("./stream/Crc32Probe"), a = e("./stream/DataLengthProbe");
-        function o(e2, t2, r2, n2, i2) {
-          this.compressedSize = e2, this.uncompressedSize = t2, this.crc32 = r2, this.compression = n2, this.compressedContent = i2;
-        }
-        o.prototype = { getContentWorker: function() {
-          var e2 = new i(n.Promise.resolve(this.compressedContent)).pipe(this.compression.uncompressWorker()).pipe(new a("data_length")), t2 = this;
-          return e2.on("end", function() {
-            if (this.streamInfo.data_length !== t2.uncompressedSize) throw new Error("Bug : uncompressed data size mismatch");
-          }), e2;
-        }, getCompressedWorker: function() {
-          return new i(n.Promise.resolve(this.compressedContent)).withStreamInfo("compressedSize", this.compressedSize).withStreamInfo("uncompressedSize", this.uncompressedSize).withStreamInfo("crc32", this.crc32).withStreamInfo("compression", this.compression);
-        } }, o.createWorkerFrom = function(e2, t2, r2) {
-          return e2.pipe(new s()).pipe(new a("uncompressedSize")).pipe(t2.compressWorker(r2)).pipe(new a("compressedSize")).withStreamInfo("compression", t2);
-        }, t.exports = o;
-      }, { "./external": 6, "./stream/Crc32Probe": 25, "./stream/DataLengthProbe": 26, "./stream/DataWorker": 27 }], 3: [function(e, t, r) {
-        var n = e("./stream/GenericWorker");
-        r.STORE = { magic: "\0\0", compressWorker: function() {
-          return new n("STORE compression");
-        }, uncompressWorker: function() {
-          return new n("STORE decompression");
-        } }, r.DEFLATE = e("./flate");
-      }, { "./flate": 7, "./stream/GenericWorker": 28 }], 4: [function(e, t, r) {
-        var n = e("./utils");
-        var o = function() {
-          for (var e2, t2 = [], r2 = 0; r2 < 256; r2++) {
-            e2 = r2;
-            for (var n2 = 0; n2 < 8; n2++) e2 = 1 & e2 ? 3988292384 ^ e2 >>> 1 : e2 >>> 1;
-            t2[r2] = e2;
-          }
-          return t2;
-        }();
-        t.exports = function(e2, t2) {
-          return void 0 !== e2 && e2.length ? "string" !== n.getTypeOf(e2) ? function(e3, t3, r2, n2) {
-            var i = o, s = n2 + r2;
-            e3 ^= -1;
-            for (var a = n2; a < s; a++) e3 = e3 >>> 8 ^ i[255 & (e3 ^ t3[a])];
-            return -1 ^ e3;
-          }(0 | t2, e2, e2.length, 0) : function(e3, t3, r2, n2) {
-            var i = o, s = n2 + r2;
-            e3 ^= -1;
-            for (var a = n2; a < s; a++) e3 = e3 >>> 8 ^ i[255 & (e3 ^ t3.charCodeAt(a))];
-            return -1 ^ e3;
-          }(0 | t2, e2, e2.length, 0) : 0;
-        };
-      }, { "./utils": 32 }], 5: [function(e, t, r) {
-        r.base64 = false, r.binary = false, r.dir = false, r.createFolders = true, r.date = null, r.compression = null, r.compressionOptions = null, r.comment = null, r.unixPermissions = null, r.dosPermissions = null;
-      }, {}], 6: [function(e, t, r) {
-        var n = null;
-        n = "undefined" != typeof Promise ? Promise : e("lie"), t.exports = { Promise: n };
-      }, { lie: 37 }], 7: [function(e, t, r) {
-        var n = "undefined" != typeof Uint8Array && "undefined" != typeof Uint16Array && "undefined" != typeof Uint32Array, i = e("pako"), s = e("./utils"), a = e("./stream/GenericWorker"), o = n ? "uint8array" : "array";
-        function h(e2, t2) {
-          a.call(this, "FlateWorker/" + e2), this._pako = null, this._pakoAction = e2, this._pakoOptions = t2, this.meta = {};
-        }
-        r.magic = "\b\0", s.inherits(h, a), h.prototype.processChunk = function(e2) {
-          this.meta = e2.meta, null === this._pako && this._createPako(), this._pako.push(s.transformTo(o, e2.data), false);
-        }, h.prototype.flush = function() {
-          a.prototype.flush.call(this), null === this._pako && this._createPako(), this._pako.push([], true);
-        }, h.prototype.cleanUp = function() {
-          a.prototype.cleanUp.call(this), this._pako = null;
-        }, h.prototype._createPako = function() {
-          this._pako = new i[this._pakoAction]({ raw: true, level: this._pakoOptions.level || -1 });
-          var t2 = this;
-          this._pako.onData = function(e2) {
-            t2.push({ data: e2, meta: t2.meta });
-          };
-        }, r.compressWorker = function(e2) {
-          return new h("Deflate", e2);
-        }, r.uncompressWorker = function() {
-          return new h("Inflate", {});
-        };
-      }, { "./stream/GenericWorker": 28, "./utils": 32, pako: 38 }], 8: [function(e, t, r) {
-        function A(e2, t2) {
-          var r2, n2 = "";
-          for (r2 = 0; r2 < t2; r2++) n2 += String.fromCharCode(255 & e2), e2 >>>= 8;
-          return n2;
-        }
-        function n(e2, t2, r2, n2, i2, s2) {
-          var a, o, h = e2.file, u = e2.compression, l = s2 !== O.utf8encode, f = I.transformTo("string", s2(h.name)), c = I.transformTo("string", O.utf8encode(h.name)), d = h.comment, p = I.transformTo("string", s2(d)), m = I.transformTo("string", O.utf8encode(d)), _2 = c.length !== h.name.length, g = m.length !== d.length, b = "", v = "", y = "", w = h.dir, k = h.date, x = { crc32: 0, compressedSize: 0, uncompressedSize: 0 };
-          t2 && !r2 || (x.crc32 = e2.crc32, x.compressedSize = e2.compressedSize, x.uncompressedSize = e2.uncompressedSize);
-          var S = 0;
-          t2 && (S |= 8), l || !_2 && !g || (S |= 2048);
-          var z = 0, C = 0;
-          w && (z |= 16), "UNIX" === i2 ? (C = 798, z |= function(e3, t3) {
-            var r3 = e3;
-            return e3 || (r3 = t3 ? 16893 : 33204), (65535 & r3) << 16;
-          }(h.unixPermissions, w)) : (C = 20, z |= function(e3) {
-            return 63 & (e3 || 0);
-          }(h.dosPermissions)), a = k.getUTCHours(), a <<= 6, a |= k.getUTCMinutes(), a <<= 5, a |= k.getUTCSeconds() / 2, o = k.getUTCFullYear() - 1980, o <<= 4, o |= k.getUTCMonth() + 1, o <<= 5, o |= k.getUTCDate(), _2 && (v = A(1, 1) + A(B(f), 4) + c, b += "up" + A(v.length, 2) + v), g && (y = A(1, 1) + A(B(p), 4) + m, b += "uc" + A(y.length, 2) + y);
-          var E = "";
-          return E += "\n\0", E += A(S, 2), E += u.magic, E += A(a, 2), E += A(o, 2), E += A(x.crc32, 4), E += A(x.compressedSize, 4), E += A(x.uncompressedSize, 4), E += A(f.length, 2), E += A(b.length, 2), { fileRecord: R.LOCAL_FILE_HEADER + E + f + b, dirRecord: R.CENTRAL_FILE_HEADER + A(C, 2) + E + A(p.length, 2) + "\0\0\0\0" + A(z, 4) + A(n2, 4) + f + b + p };
-        }
-        var I = e("../utils"), i = e("../stream/GenericWorker"), O = e("../utf8"), B = e("../crc32"), R = e("../signature");
-        function s(e2, t2, r2, n2) {
-          i.call(this, "ZipFileWorker"), this.bytesWritten = 0, this.zipComment = t2, this.zipPlatform = r2, this.encodeFileName = n2, this.streamFiles = e2, this.accumulate = false, this.contentBuffer = [], this.dirRecords = [], this.currentSourceOffset = 0, this.entriesCount = 0, this.currentFile = null, this._sources = [];
-        }
-        I.inherits(s, i), s.prototype.push = function(e2) {
-          var t2 = e2.meta.percent || 0, r2 = this.entriesCount, n2 = this._sources.length;
-          this.accumulate ? this.contentBuffer.push(e2) : (this.bytesWritten += e2.data.length, i.prototype.push.call(this, { data: e2.data, meta: { currentFile: this.currentFile, percent: r2 ? (t2 + 100 * (r2 - n2 - 1)) / r2 : 100 } }));
-        }, s.prototype.openedSource = function(e2) {
-          this.currentSourceOffset = this.bytesWritten, this.currentFile = e2.file.name;
-          var t2 = this.streamFiles && !e2.file.dir;
-          if (t2) {
-            var r2 = n(e2, t2, false, this.currentSourceOffset, this.zipPlatform, this.encodeFileName);
-            this.push({ data: r2.fileRecord, meta: { percent: 0 } });
-          } else this.accumulate = true;
-        }, s.prototype.closedSource = function(e2) {
-          this.accumulate = false;
-          var t2 = this.streamFiles && !e2.file.dir, r2 = n(e2, t2, true, this.currentSourceOffset, this.zipPlatform, this.encodeFileName);
-          if (this.dirRecords.push(r2.dirRecord), t2) this.push({ data: function(e3) {
-            return R.DATA_DESCRIPTOR + A(e3.crc32, 4) + A(e3.compressedSize, 4) + A(e3.uncompressedSize, 4);
-          }(e2), meta: { percent: 100 } });
-          else for (this.push({ data: r2.fileRecord, meta: { percent: 0 } }); this.contentBuffer.length; ) this.push(this.contentBuffer.shift());
-          this.currentFile = null;
-        }, s.prototype.flush = function() {
-          for (var e2 = this.bytesWritten, t2 = 0; t2 < this.dirRecords.length; t2++) this.push({ data: this.dirRecords[t2], meta: { percent: 100 } });
-          var r2 = this.bytesWritten - e2, n2 = function(e3, t3, r3, n3, i2) {
-            var s2 = I.transformTo("string", i2(n3));
-            return R.CENTRAL_DIRECTORY_END + "\0\0\0\0" + A(e3, 2) + A(e3, 2) + A(t3, 4) + A(r3, 4) + A(s2.length, 2) + s2;
-          }(this.dirRecords.length, r2, e2, this.zipComment, this.encodeFileName);
-          this.push({ data: n2, meta: { percent: 100 } });
-        }, s.prototype.prepareNextSource = function() {
-          this.previous = this._sources.shift(), this.openedSource(this.previous.streamInfo), this.isPaused ? this.previous.pause() : this.previous.resume();
-        }, s.prototype.registerPrevious = function(e2) {
-          this._sources.push(e2);
-          var t2 = this;
-          return e2.on("data", function(e3) {
-            t2.processChunk(e3);
-          }), e2.on("end", function() {
-            t2.closedSource(t2.previous.streamInfo), t2._sources.length ? t2.prepareNextSource() : t2.end();
-          }), e2.on("error", function(e3) {
-            t2.error(e3);
-          }), this;
-        }, s.prototype.resume = function() {
-          return !!i.prototype.resume.call(this) && (!this.previous && this._sources.length ? (this.prepareNextSource(), true) : this.previous || this._sources.length || this.generatedError ? void 0 : (this.end(), true));
-        }, s.prototype.error = function(e2) {
-          var t2 = this._sources;
-          if (!i.prototype.error.call(this, e2)) return false;
-          for (var r2 = 0; r2 < t2.length; r2++) try {
-            t2[r2].error(e2);
-          } catch (e3) {
-          }
-          return true;
-        }, s.prototype.lock = function() {
-          i.prototype.lock.call(this);
-          for (var e2 = this._sources, t2 = 0; t2 < e2.length; t2++) e2[t2].lock();
-        }, t.exports = s;
-      }, { "../crc32": 4, "../signature": 23, "../stream/GenericWorker": 28, "../utf8": 31, "../utils": 32 }], 9: [function(e, t, r) {
-        var u = e("../compressions"), n = e("./ZipFileWorker");
-        r.generateWorker = function(e2, a, t2) {
-          var o = new n(a.streamFiles, t2, a.platform, a.encodeFileName), h = 0;
-          try {
-            e2.forEach(function(e3, t3) {
-              h++;
-              var r2 = function(e4, t4) {
-                var r3 = e4 || t4, n3 = u[r3];
-                if (!n3) throw new Error(r3 + " is not a valid compression method !");
-                return n3;
-              }(t3.options.compression, a.compression), n2 = t3.options.compressionOptions || a.compressionOptions || {}, i = t3.dir, s = t3.date;
-              t3._compressWorker(r2, n2).withStreamInfo("file", { name: e3, dir: i, date: s, comment: t3.comment || "", unixPermissions: t3.unixPermissions, dosPermissions: t3.dosPermissions }).pipe(o);
-            }), o.entriesCount = h;
-          } catch (e3) {
-            o.error(e3);
-          }
-          return o;
-        };
-      }, { "../compressions": 3, "./ZipFileWorker": 8 }], 10: [function(e, t, r) {
-        function n() {
-          if (!(this instanceof n)) return new n();
-          if (arguments.length) throw new Error("The constructor with parameters has been removed in JSZip 3.0, please check the upgrade guide.");
-          this.files = /* @__PURE__ */ Object.create(null), this.comment = null, this.root = "", this.clone = function() {
-            var e2 = new n();
-            for (var t2 in this) "function" != typeof this[t2] && (e2[t2] = this[t2]);
-            return e2;
-          };
-        }
-        (n.prototype = e("./object")).loadAsync = e("./load"), n.support = e("./support"), n.defaults = e("./defaults"), n.version = "3.10.1", n.loadAsync = function(e2, t2) {
-          return new n().loadAsync(e2, t2);
-        }, n.external = e("./external"), t.exports = n;
-      }, { "./defaults": 5, "./external": 6, "./load": 11, "./object": 15, "./support": 30 }], 11: [function(e, t, r) {
-        var u = e("./utils"), i = e("./external"), n = e("./utf8"), s = e("./zipEntries"), a = e("./stream/Crc32Probe"), l = e("./nodejsUtils");
-        function f(n2) {
-          return new i.Promise(function(e2, t2) {
-            var r2 = n2.decompressed.getContentWorker().pipe(new a());
-            r2.on("error", function(e3) {
-              t2(e3);
-            }).on("end", function() {
-              r2.streamInfo.crc32 !== n2.decompressed.crc32 ? t2(new Error("Corrupted zip : CRC32 mismatch")) : e2();
-            }).resume();
-          });
-        }
-        t.exports = function(e2, o) {
-          var h = this;
-          return o = u.extend(o || {}, { base64: false, checkCRC32: false, optimizedBinaryString: false, createFolders: false, decodeFileName: n.utf8decode }), l.isNode && l.isStream(e2) ? i.Promise.reject(new Error("JSZip can't accept a stream when loading a zip file.")) : u.prepareContent("the loaded zip file", e2, true, o.optimizedBinaryString, o.base64).then(function(e3) {
-            var t2 = new s(o);
-            return t2.load(e3), t2;
-          }).then(function(e3) {
-            var t2 = [i.Promise.resolve(e3)], r2 = e3.files;
-            if (o.checkCRC32) for (var n2 = 0; n2 < r2.length; n2++) t2.push(f(r2[n2]));
-            return i.Promise.all(t2);
-          }).then(function(e3) {
-            for (var t2 = e3.shift(), r2 = t2.files, n2 = 0; n2 < r2.length; n2++) {
-              var i2 = r2[n2], s2 = i2.fileNameStr, a2 = u.resolve(i2.fileNameStr);
-              h.file(a2, i2.decompressed, { binary: true, optimizedBinaryString: true, date: i2.date, dir: i2.dir, comment: i2.fileCommentStr.length ? i2.fileCommentStr : null, unixPermissions: i2.unixPermissions, dosPermissions: i2.dosPermissions, createFolders: o.createFolders }), i2.dir || (h.file(a2).unsafeOriginalName = s2);
-            }
-            return t2.zipComment.length && (h.comment = t2.zipComment), h;
-          });
-        };
-      }, { "./external": 6, "./nodejsUtils": 14, "./stream/Crc32Probe": 25, "./utf8": 31, "./utils": 32, "./zipEntries": 33 }], 12: [function(e, t, r) {
-        var n = e("../utils"), i = e("../stream/GenericWorker");
-        function s(e2, t2) {
-          i.call(this, "Nodejs stream input adapter for " + e2), this._upstreamEnded = false, this._bindStream(t2);
-        }
-        n.inherits(s, i), s.prototype._bindStream = function(e2) {
-          var t2 = this;
-          (this._stream = e2).pause(), e2.on("data", function(e3) {
-            t2.push({ data: e3, meta: { percent: 0 } });
-          }).on("error", function(e3) {
-            t2.isPaused ? this.generatedError = e3 : t2.error(e3);
-          }).on("end", function() {
-            t2.isPaused ? t2._upstreamEnded = true : t2.end();
-          });
-        }, s.prototype.pause = function() {
-          return !!i.prototype.pause.call(this) && (this._stream.pause(), true);
-        }, s.prototype.resume = function() {
-          return !!i.prototype.resume.call(this) && (this._upstreamEnded ? this.end() : this._stream.resume(), true);
-        }, t.exports = s;
-      }, { "../stream/GenericWorker": 28, "../utils": 32 }], 13: [function(e, t, r) {
-        var i = e("readable-stream").Readable;
-        function n(e2, t2, r2) {
-          i.call(this, t2), this._helper = e2;
-          var n2 = this;
-          e2.on("data", function(e3, t3) {
-            n2.push(e3) || n2._helper.pause(), r2 && r2(t3);
-          }).on("error", function(e3) {
-            n2.emit("error", e3);
-          }).on("end", function() {
-            n2.push(null);
-          });
-        }
-        e("../utils").inherits(n, i), n.prototype._read = function() {
-          this._helper.resume();
-        }, t.exports = n;
-      }, { "../utils": 32, "readable-stream": 16 }], 14: [function(e, t, r) {
-        t.exports = { isNode: "undefined" != typeof Buffer, newBufferFrom: function(e2, t2) {
-          if (Buffer.from && Buffer.from !== Uint8Array.from) return Buffer.from(e2, t2);
-          if ("number" == typeof e2) throw new Error('The "data" argument must not be a number');
-          return new Buffer(e2, t2);
-        }, allocBuffer: function(e2) {
-          if (Buffer.alloc) return Buffer.alloc(e2);
-          var t2 = new Buffer(e2);
-          return t2.fill(0), t2;
-        }, isBuffer: function(e2) {
-          return Buffer.isBuffer(e2);
-        }, isStream: function(e2) {
-          return e2 && "function" == typeof e2.on && "function" == typeof e2.pause && "function" == typeof e2.resume;
-        } };
-      }, {}], 15: [function(e, t, r) {
-        function s(e2, t2, r2) {
-          var n2, i2 = u.getTypeOf(t2), s2 = u.extend(r2 || {}, f);
-          s2.date = s2.date || /* @__PURE__ */ new Date(), null !== s2.compression && (s2.compression = s2.compression.toUpperCase()), "string" == typeof s2.unixPermissions && (s2.unixPermissions = parseInt(s2.unixPermissions, 8)), s2.unixPermissions && 16384 & s2.unixPermissions && (s2.dir = true), s2.dosPermissions && 16 & s2.dosPermissions && (s2.dir = true), s2.dir && (e2 = g(e2)), s2.createFolders && (n2 = _2(e2)) && b.call(this, n2, true);
-          var a2 = "string" === i2 && false === s2.binary && false === s2.base64;
-          r2 && void 0 !== r2.binary || (s2.binary = !a2), (t2 instanceof c && 0 === t2.uncompressedSize || s2.dir || !t2 || 0 === t2.length) && (s2.base64 = false, s2.binary = true, t2 = "", s2.compression = "STORE", i2 = "string");
-          var o2 = null;
-          o2 = t2 instanceof c || t2 instanceof l ? t2 : p.isNode && p.isStream(t2) ? new m(e2, t2) : u.prepareContent(e2, t2, s2.binary, s2.optimizedBinaryString, s2.base64);
-          var h2 = new d(e2, o2, s2);
-          this.files[e2] = h2;
-        }
-        var i = e("./utf8"), u = e("./utils"), l = e("./stream/GenericWorker"), a = e("./stream/StreamHelper"), f = e("./defaults"), c = e("./compressedObject"), d = e("./zipObject"), o = e("./generate"), p = e("./nodejsUtils"), m = e("./nodejs/NodejsStreamInputAdapter"), _2 = function(e2) {
-          "/" === e2.slice(-1) && (e2 = e2.substring(0, e2.length - 1));
-          var t2 = e2.lastIndexOf("/");
-          return 0 < t2 ? e2.substring(0, t2) : "";
-        }, g = function(e2) {
-          return "/" !== e2.slice(-1) && (e2 += "/"), e2;
-        }, b = function(e2, t2) {
-          return t2 = void 0 !== t2 ? t2 : f.createFolders, e2 = g(e2), this.files[e2] || s.call(this, e2, null, { dir: true, createFolders: t2 }), this.files[e2];
-        };
-        function h(e2) {
-          return "[object RegExp]" === Object.prototype.toString.call(e2);
-        }
-        var n = { load: function() {
-          throw new Error("This method has been removed in JSZip 3.0, please check the upgrade guide.");
-        }, forEach: function(e2) {
-          var t2, r2, n2;
-          for (t2 in this.files) n2 = this.files[t2], (r2 = t2.slice(this.root.length, t2.length)) && t2.slice(0, this.root.length) === this.root && e2(r2, n2);
-        }, filter: function(r2) {
-          var n2 = [];
-          return this.forEach(function(e2, t2) {
-            r2(e2, t2) && n2.push(t2);
-          }), n2;
-        }, file: function(e2, t2, r2) {
-          if (1 !== arguments.length) return e2 = this.root + e2, s.call(this, e2, t2, r2), this;
-          if (h(e2)) {
-            var n2 = e2;
-            return this.filter(function(e3, t3) {
-              return !t3.dir && n2.test(e3);
-            });
-          }
-          var i2 = this.files[this.root + e2];
-          return i2 && !i2.dir ? i2 : null;
-        }, folder: function(r2) {
-          if (!r2) return this;
-          if (h(r2)) return this.filter(function(e3, t3) {
-            return t3.dir && r2.test(e3);
-          });
-          var e2 = this.root + r2, t2 = b.call(this, e2), n2 = this.clone();
-          return n2.root = t2.name, n2;
-        }, remove: function(r2) {
-          r2 = this.root + r2;
-          var e2 = this.files[r2];
-          if (e2 || ("/" !== r2.slice(-1) && (r2 += "/"), e2 = this.files[r2]), e2 && !e2.dir) delete this.files[r2];
-          else for (var t2 = this.filter(function(e3, t3) {
-            return t3.name.slice(0, r2.length) === r2;
-          }), n2 = 0; n2 < t2.length; n2++) delete this.files[t2[n2].name];
-          return this;
-        }, generate: function() {
-          throw new Error("This method has been removed in JSZip 3.0, please check the upgrade guide.");
-        }, generateInternalStream: function(e2) {
-          var t2, r2 = {};
-          try {
-            if ((r2 = u.extend(e2 || {}, { streamFiles: false, compression: "STORE", compressionOptions: null, type: "", platform: "DOS", comment: null, mimeType: "application/zip", encodeFileName: i.utf8encode })).type = r2.type.toLowerCase(), r2.compression = r2.compression.toUpperCase(), "binarystring" === r2.type && (r2.type = "string"), !r2.type) throw new Error("No output type specified.");
-            u.checkSupport(r2.type), "darwin" !== r2.platform && "freebsd" !== r2.platform && "linux" !== r2.platform && "sunos" !== r2.platform || (r2.platform = "UNIX"), "win32" === r2.platform && (r2.platform = "DOS");
-            var n2 = r2.comment || this.comment || "";
-            t2 = o.generateWorker(this, r2, n2);
-          } catch (e3) {
-            (t2 = new l("error")).error(e3);
-          }
-          return new a(t2, r2.type || "string", r2.mimeType);
-        }, generateAsync: function(e2, t2) {
-          return this.generateInternalStream(e2).accumulate(t2);
-        }, generateNodeStream: function(e2, t2) {
-          return (e2 = e2 || {}).type || (e2.type = "nodebuffer"), this.generateInternalStream(e2).toNodejsStream(t2);
-        } };
-        t.exports = n;
-      }, { "./compressedObject": 2, "./defaults": 5, "./generate": 9, "./nodejs/NodejsStreamInputAdapter": 12, "./nodejsUtils": 14, "./stream/GenericWorker": 28, "./stream/StreamHelper": 29, "./utf8": 31, "./utils": 32, "./zipObject": 35 }], 16: [function(e, t, r) {
-        t.exports = e("stream");
-      }, { stream: void 0 }], 17: [function(e, t, r) {
-        var n = e("./DataReader");
-        function i(e2) {
-          n.call(this, e2);
-          for (var t2 = 0; t2 < this.data.length; t2++) e2[t2] = 255 & e2[t2];
-        }
-        e("../utils").inherits(i, n), i.prototype.byteAt = function(e2) {
-          return this.data[this.zero + e2];
-        }, i.prototype.lastIndexOfSignature = function(e2) {
-          for (var t2 = e2.charCodeAt(0), r2 = e2.charCodeAt(1), n2 = e2.charCodeAt(2), i2 = e2.charCodeAt(3), s = this.length - 4; 0 <= s; --s) if (this.data[s] === t2 && this.data[s + 1] === r2 && this.data[s + 2] === n2 && this.data[s + 3] === i2) return s - this.zero;
-          return -1;
-        }, i.prototype.readAndCheckSignature = function(e2) {
-          var t2 = e2.charCodeAt(0), r2 = e2.charCodeAt(1), n2 = e2.charCodeAt(2), i2 = e2.charCodeAt(3), s = this.readData(4);
-          return t2 === s[0] && r2 === s[1] && n2 === s[2] && i2 === s[3];
-        }, i.prototype.readData = function(e2) {
-          if (this.checkOffset(e2), 0 === e2) return [];
-          var t2 = this.data.slice(this.zero + this.index, this.zero + this.index + e2);
-          return this.index += e2, t2;
-        }, t.exports = i;
-      }, { "../utils": 32, "./DataReader": 18 }], 18: [function(e, t, r) {
-        var n = e("../utils");
-        function i(e2) {
-          this.data = e2, this.length = e2.length, this.index = 0, this.zero = 0;
-        }
-        i.prototype = { checkOffset: function(e2) {
-          this.checkIndex(this.index + e2);
-        }, checkIndex: function(e2) {
-          if (this.length < this.zero + e2 || e2 < 0) throw new Error("End of data reached (data length = " + this.length + ", asked index = " + e2 + "). Corrupted zip ?");
-        }, setIndex: function(e2) {
-          this.checkIndex(e2), this.index = e2;
-        }, skip: function(e2) {
-          this.setIndex(this.index + e2);
-        }, byteAt: function() {
-        }, readInt: function(e2) {
-          var t2, r2 = 0;
-          for (this.checkOffset(e2), t2 = this.index + e2 - 1; t2 >= this.index; t2--) r2 = (r2 << 8) + this.byteAt(t2);
-          return this.index += e2, r2;
-        }, readString: function(e2) {
-          return n.transformTo("string", this.readData(e2));
-        }, readData: function() {
-        }, lastIndexOfSignature: function() {
-        }, readAndCheckSignature: function() {
-        }, readDate: function() {
-          var e2 = this.readInt(4);
-          return new Date(Date.UTC(1980 + (e2 >> 25 & 127), (e2 >> 21 & 15) - 1, e2 >> 16 & 31, e2 >> 11 & 31, e2 >> 5 & 63, (31 & e2) << 1));
-        } }, t.exports = i;
-      }, { "../utils": 32 }], 19: [function(e, t, r) {
-        var n = e("./Uint8ArrayReader");
-        function i(e2) {
-          n.call(this, e2);
-        }
-        e("../utils").inherits(i, n), i.prototype.readData = function(e2) {
-          this.checkOffset(e2);
-          var t2 = this.data.slice(this.zero + this.index, this.zero + this.index + e2);
-          return this.index += e2, t2;
-        }, t.exports = i;
-      }, { "../utils": 32, "./Uint8ArrayReader": 21 }], 20: [function(e, t, r) {
-        var n = e("./DataReader");
-        function i(e2) {
-          n.call(this, e2);
-        }
-        e("../utils").inherits(i, n), i.prototype.byteAt = function(e2) {
-          return this.data.charCodeAt(this.zero + e2);
-        }, i.prototype.lastIndexOfSignature = function(e2) {
-          return this.data.lastIndexOf(e2) - this.zero;
-        }, i.prototype.readAndCheckSignature = function(e2) {
-          return e2 === this.readData(4);
-        }, i.prototype.readData = function(e2) {
-          this.checkOffset(e2);
-          var t2 = this.data.slice(this.zero + this.index, this.zero + this.index + e2);
-          return this.index += e2, t2;
-        }, t.exports = i;
-      }, { "../utils": 32, "./DataReader": 18 }], 21: [function(e, t, r) {
-        var n = e("./ArrayReader");
-        function i(e2) {
-          n.call(this, e2);
-        }
-        e("../utils").inherits(i, n), i.prototype.readData = function(e2) {
-          if (this.checkOffset(e2), 0 === e2) return new Uint8Array(0);
-          var t2 = this.data.subarray(this.zero + this.index, this.zero + this.index + e2);
-          return this.index += e2, t2;
-        }, t.exports = i;
-      }, { "../utils": 32, "./ArrayReader": 17 }], 22: [function(e, t, r) {
-        var n = e("../utils"), i = e("../support"), s = e("./ArrayReader"), a = e("./StringReader"), o = e("./NodeBufferReader"), h = e("./Uint8ArrayReader");
-        t.exports = function(e2) {
-          var t2 = n.getTypeOf(e2);
-          return n.checkSupport(t2), "string" !== t2 || i.uint8array ? "nodebuffer" === t2 ? new o(e2) : i.uint8array ? new h(n.transformTo("uint8array", e2)) : new s(n.transformTo("array", e2)) : new a(e2);
-        };
-      }, { "../support": 30, "../utils": 32, "./ArrayReader": 17, "./NodeBufferReader": 19, "./StringReader": 20, "./Uint8ArrayReader": 21 }], 23: [function(e, t, r) {
-        r.LOCAL_FILE_HEADER = "PK", r.CENTRAL_FILE_HEADER = "PK", r.CENTRAL_DIRECTORY_END = "PK", r.ZIP64_CENTRAL_DIRECTORY_LOCATOR = "PK\x07", r.ZIP64_CENTRAL_DIRECTORY_END = "PK", r.DATA_DESCRIPTOR = "PK\x07\b";
-      }, {}], 24: [function(e, t, r) {
-        var n = e("./GenericWorker"), i = e("../utils");
-        function s(e2) {
-          n.call(this, "ConvertWorker to " + e2), this.destType = e2;
-        }
-        i.inherits(s, n), s.prototype.processChunk = function(e2) {
-          this.push({ data: i.transformTo(this.destType, e2.data), meta: e2.meta });
-        }, t.exports = s;
-      }, { "../utils": 32, "./GenericWorker": 28 }], 25: [function(e, t, r) {
-        var n = e("./GenericWorker"), i = e("../crc32");
-        function s() {
-          n.call(this, "Crc32Probe"), this.withStreamInfo("crc32", 0);
-        }
-        e("../utils").inherits(s, n), s.prototype.processChunk = function(e2) {
-          this.streamInfo.crc32 = i(e2.data, this.streamInfo.crc32 || 0), this.push(e2);
-        }, t.exports = s;
-      }, { "../crc32": 4, "../utils": 32, "./GenericWorker": 28 }], 26: [function(e, t, r) {
-        var n = e("../utils"), i = e("./GenericWorker");
-        function s(e2) {
-          i.call(this, "DataLengthProbe for " + e2), this.propName = e2, this.withStreamInfo(e2, 0);
-        }
-        n.inherits(s, i), s.prototype.processChunk = function(e2) {
-          if (e2) {
-            var t2 = this.streamInfo[this.propName] || 0;
-            this.streamInfo[this.propName] = t2 + e2.data.length;
-          }
-          i.prototype.processChunk.call(this, e2);
-        }, t.exports = s;
-      }, { "../utils": 32, "./GenericWorker": 28 }], 27: [function(e, t, r) {
-        var n = e("../utils"), i = e("./GenericWorker");
-        function s(e2) {
-          i.call(this, "DataWorker");
-          var t2 = this;
-          this.dataIsReady = false, this.index = 0, this.max = 0, this.data = null, this.type = "", this._tickScheduled = false, e2.then(function(e3) {
-            t2.dataIsReady = true, t2.data = e3, t2.max = e3 && e3.length || 0, t2.type = n.getTypeOf(e3), t2.isPaused || t2._tickAndRepeat();
-          }, function(e3) {
-            t2.error(e3);
-          });
-        }
-        n.inherits(s, i), s.prototype.cleanUp = function() {
-          i.prototype.cleanUp.call(this), this.data = null;
-        }, s.prototype.resume = function() {
-          return !!i.prototype.resume.call(this) && (!this._tickScheduled && this.dataIsReady && (this._tickScheduled = true, n.delay(this._tickAndRepeat, [], this)), true);
-        }, s.prototype._tickAndRepeat = function() {
-          this._tickScheduled = false, this.isPaused || this.isFinished || (this._tick(), this.isFinished || (n.delay(this._tickAndRepeat, [], this), this._tickScheduled = true));
-        }, s.prototype._tick = function() {
-          if (this.isPaused || this.isFinished) return false;
-          var e2 = null, t2 = Math.min(this.max, this.index + 16384);
-          if (this.index >= this.max) return this.end();
-          switch (this.type) {
-            case "string":
-              e2 = this.data.substring(this.index, t2);
-              break;
-            case "uint8array":
-              e2 = this.data.subarray(this.index, t2);
-              break;
-            case "array":
-            case "nodebuffer":
-              e2 = this.data.slice(this.index, t2);
-          }
-          return this.index = t2, this.push({ data: e2, meta: { percent: this.max ? this.index / this.max * 100 : 0 } });
-        }, t.exports = s;
-      }, { "../utils": 32, "./GenericWorker": 28 }], 28: [function(e, t, r) {
-        function n(e2) {
-          this.name = e2 || "default", this.streamInfo = {}, this.generatedError = null, this.extraStreamInfo = {}, this.isPaused = true, this.isFinished = false, this.isLocked = false, this._listeners = { data: [], end: [], error: [] }, this.previous = null;
-        }
-        n.prototype = { push: function(e2) {
-          this.emit("data", e2);
-        }, end: function() {
-          if (this.isFinished) return false;
-          this.flush();
-          try {
-            this.emit("end"), this.cleanUp(), this.isFinished = true;
-          } catch (e2) {
-            this.emit("error", e2);
-          }
-          return true;
-        }, error: function(e2) {
-          return !this.isFinished && (this.isPaused ? this.generatedError = e2 : (this.isFinished = true, this.emit("error", e2), this.previous && this.previous.error(e2), this.cleanUp()), true);
-        }, on: function(e2, t2) {
-          return this._listeners[e2].push(t2), this;
-        }, cleanUp: function() {
-          this.streamInfo = this.generatedError = this.extraStreamInfo = null, this._listeners = [];
-        }, emit: function(e2, t2) {
-          if (this._listeners[e2]) for (var r2 = 0; r2 < this._listeners[e2].length; r2++) this._listeners[e2][r2].call(this, t2);
-        }, pipe: function(e2) {
-          return e2.registerPrevious(this);
-        }, registerPrevious: function(e2) {
-          if (this.isLocked) throw new Error("The stream '" + this + "' has already been used.");
-          this.streamInfo = e2.streamInfo, this.mergeStreamInfo(), this.previous = e2;
-          var t2 = this;
-          return e2.on("data", function(e3) {
-            t2.processChunk(e3);
-          }), e2.on("end", function() {
-            t2.end();
-          }), e2.on("error", function(e3) {
-            t2.error(e3);
-          }), this;
-        }, pause: function() {
-          return !this.isPaused && !this.isFinished && (this.isPaused = true, this.previous && this.previous.pause(), true);
-        }, resume: function() {
-          if (!this.isPaused || this.isFinished) return false;
-          var e2 = this.isPaused = false;
-          return this.generatedError && (this.error(this.generatedError), e2 = true), this.previous && this.previous.resume(), !e2;
-        }, flush: function() {
-        }, processChunk: function(e2) {
-          this.push(e2);
-        }, withStreamInfo: function(e2, t2) {
-          return this.extraStreamInfo[e2] = t2, this.mergeStreamInfo(), this;
-        }, mergeStreamInfo: function() {
-          for (var e2 in this.extraStreamInfo) Object.prototype.hasOwnProperty.call(this.extraStreamInfo, e2) && (this.streamInfo[e2] = this.extraStreamInfo[e2]);
-        }, lock: function() {
-          if (this.isLocked) throw new Error("The stream '" + this + "' has already been used.");
-          this.isLocked = true, this.previous && this.previous.lock();
-        }, toString: function() {
-          var e2 = "Worker " + this.name;
-          return this.previous ? this.previous + " -> " + e2 : e2;
-        } }, t.exports = n;
-      }, {}], 29: [function(e, t, r) {
-        var h = e("../utils"), i = e("./ConvertWorker"), s = e("./GenericWorker"), u = e("../base64"), n = e("../support"), a = e("../external"), o = null;
-        if (n.nodestream) try {
-          o = e("../nodejs/NodejsStreamOutputAdapter");
-        } catch (e2) {
-        }
-        function l(e2, o2) {
-          return new a.Promise(function(t2, r2) {
-            var n2 = [], i2 = e2._internalType, s2 = e2._outputType, a2 = e2._mimeType;
-            e2.on("data", function(e3, t3) {
-              n2.push(e3), o2 && o2(t3);
-            }).on("error", function(e3) {
-              n2 = [], r2(e3);
-            }).on("end", function() {
-              try {
-                var e3 = function(e4, t3, r3) {
-                  switch (e4) {
-                    case "blob":
-                      return h.newBlob(h.transformTo("arraybuffer", t3), r3);
-                    case "base64":
-                      return u.encode(t3);
-                    default:
-                      return h.transformTo(e4, t3);
-                  }
-                }(s2, function(e4, t3) {
-                  var r3, n3 = 0, i3 = null, s3 = 0;
-                  for (r3 = 0; r3 < t3.length; r3++) s3 += t3[r3].length;
-                  switch (e4) {
-                    case "string":
-                      return t3.join("");
-                    case "array":
-                      return Array.prototype.concat.apply([], t3);
-                    case "uint8array":
-                      for (i3 = new Uint8Array(s3), r3 = 0; r3 < t3.length; r3++) i3.set(t3[r3], n3), n3 += t3[r3].length;
-                      return i3;
-                    case "nodebuffer":
-                      return Buffer.concat(t3);
-                    default:
-                      throw new Error("concat : unsupported type '" + e4 + "'");
-                  }
-                }(i2, n2), a2);
-                t2(e3);
-              } catch (e4) {
-                r2(e4);
-              }
-              n2 = [];
-            }).resume();
-          });
-        }
-        function f(e2, t2, r2) {
-          var n2 = t2;
-          switch (t2) {
-            case "blob":
-            case "arraybuffer":
-              n2 = "uint8array";
-              break;
-            case "base64":
-              n2 = "string";
-          }
-          try {
-            this._internalType = n2, this._outputType = t2, this._mimeType = r2, h.checkSupport(n2), this._worker = e2.pipe(new i(n2)), e2.lock();
-          } catch (e3) {
-            this._worker = new s("error"), this._worker.error(e3);
-          }
-        }
-        f.prototype = { accumulate: function(e2) {
-          return l(this, e2);
-        }, on: function(e2, t2) {
-          var r2 = this;
-          return "data" === e2 ? this._worker.on(e2, function(e3) {
-            t2.call(r2, e3.data, e3.meta);
-          }) : this._worker.on(e2, function() {
-            h.delay(t2, arguments, r2);
-          }), this;
-        }, resume: function() {
-          return h.delay(this._worker.resume, [], this._worker), this;
-        }, pause: function() {
-          return this._worker.pause(), this;
-        }, toNodejsStream: function(e2) {
-          if (h.checkSupport("nodestream"), "nodebuffer" !== this._outputType) throw new Error(this._outputType + " is not supported by this method");
-          return new o(this, { objectMode: "nodebuffer" !== this._outputType }, e2);
-        } }, t.exports = f;
-      }, { "../base64": 1, "../external": 6, "../nodejs/NodejsStreamOutputAdapter": 13, "../support": 30, "../utils": 32, "./ConvertWorker": 24, "./GenericWorker": 28 }], 30: [function(e, t, r) {
-        if (r.base64 = true, r.array = true, r.string = true, r.arraybuffer = "undefined" != typeof ArrayBuffer && "undefined" != typeof Uint8Array, r.nodebuffer = "undefined" != typeof Buffer, r.uint8array = "undefined" != typeof Uint8Array, "undefined" == typeof ArrayBuffer) r.blob = false;
-        else {
-          var n = new ArrayBuffer(0);
-          try {
-            r.blob = 0 === new Blob([n], { type: "application/zip" }).size;
-          } catch (e2) {
-            try {
-              var i = new (self.BlobBuilder || self.WebKitBlobBuilder || self.MozBlobBuilder || self.MSBlobBuilder)();
-              i.append(n), r.blob = 0 === i.getBlob("application/zip").size;
-            } catch (e3) {
-              r.blob = false;
-            }
-          }
-        }
-        try {
-          r.nodestream = !!e("readable-stream").Readable;
-        } catch (e2) {
-          r.nodestream = false;
-        }
-      }, { "readable-stream": 16 }], 31: [function(e, t, s) {
-        for (var o = e("./utils"), h = e("./support"), r = e("./nodejsUtils"), n = e("./stream/GenericWorker"), u = new Array(256), i = 0; i < 256; i++) u[i] = 252 <= i ? 6 : 248 <= i ? 5 : 240 <= i ? 4 : 224 <= i ? 3 : 192 <= i ? 2 : 1;
-        u[254] = u[254] = 1;
-        function a() {
-          n.call(this, "utf-8 decode"), this.leftOver = null;
-        }
-        function l() {
-          n.call(this, "utf-8 encode");
-        }
-        s.utf8encode = function(e2) {
-          return h.nodebuffer ? r.newBufferFrom(e2, "utf-8") : function(e3) {
-            var t2, r2, n2, i2, s2, a2 = e3.length, o2 = 0;
-            for (i2 = 0; i2 < a2; i2++) 55296 == (64512 & (r2 = e3.charCodeAt(i2))) && i2 + 1 < a2 && 56320 == (64512 & (n2 = e3.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), o2 += r2 < 128 ? 1 : r2 < 2048 ? 2 : r2 < 65536 ? 3 : 4;
-            for (t2 = h.uint8array ? new Uint8Array(o2) : new Array(o2), i2 = s2 = 0; s2 < o2; i2++) 55296 == (64512 & (r2 = e3.charCodeAt(i2))) && i2 + 1 < a2 && 56320 == (64512 & (n2 = e3.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), r2 < 128 ? t2[s2++] = r2 : (r2 < 2048 ? t2[s2++] = 192 | r2 >>> 6 : (r2 < 65536 ? t2[s2++] = 224 | r2 >>> 12 : (t2[s2++] = 240 | r2 >>> 18, t2[s2++] = 128 | r2 >>> 12 & 63), t2[s2++] = 128 | r2 >>> 6 & 63), t2[s2++] = 128 | 63 & r2);
-            return t2;
-          }(e2);
-        }, s.utf8decode = function(e2) {
-          return h.nodebuffer ? o.transformTo("nodebuffer", e2).toString("utf-8") : function(e3) {
-            var t2, r2, n2, i2, s2 = e3.length, a2 = new Array(2 * s2);
-            for (t2 = r2 = 0; t2 < s2; ) if ((n2 = e3[t2++]) < 128) a2[r2++] = n2;
-            else if (4 < (i2 = u[n2])) a2[r2++] = 65533, t2 += i2 - 1;
-            else {
-              for (n2 &= 2 === i2 ? 31 : 3 === i2 ? 15 : 7; 1 < i2 && t2 < s2; ) n2 = n2 << 6 | 63 & e3[t2++], i2--;
-              1 < i2 ? a2[r2++] = 65533 : n2 < 65536 ? a2[r2++] = n2 : (n2 -= 65536, a2[r2++] = 55296 | n2 >> 10 & 1023, a2[r2++] = 56320 | 1023 & n2);
-            }
-            return a2.length !== r2 && (a2.subarray ? a2 = a2.subarray(0, r2) : a2.length = r2), o.applyFromCharCode(a2);
-          }(e2 = o.transformTo(h.uint8array ? "uint8array" : "array", e2));
-        }, o.inherits(a, n), a.prototype.processChunk = function(e2) {
-          var t2 = o.transformTo(h.uint8array ? "uint8array" : "array", e2.data);
-          if (this.leftOver && this.leftOver.length) {
-            if (h.uint8array) {
-              var r2 = t2;
-              (t2 = new Uint8Array(r2.length + this.leftOver.length)).set(this.leftOver, 0), t2.set(r2, this.leftOver.length);
-            } else t2 = this.leftOver.concat(t2);
-            this.leftOver = null;
-          }
-          var n2 = function(e3, t3) {
-            var r3;
-            for ((t3 = t3 || e3.length) > e3.length && (t3 = e3.length), r3 = t3 - 1; 0 <= r3 && 128 == (192 & e3[r3]); ) r3--;
-            return r3 < 0 ? t3 : 0 === r3 ? t3 : r3 + u[e3[r3]] > t3 ? r3 : t3;
-          }(t2), i2 = t2;
-          n2 !== t2.length && (h.uint8array ? (i2 = t2.subarray(0, n2), this.leftOver = t2.subarray(n2, t2.length)) : (i2 = t2.slice(0, n2), this.leftOver = t2.slice(n2, t2.length))), this.push({ data: s.utf8decode(i2), meta: e2.meta });
-        }, a.prototype.flush = function() {
-          this.leftOver && this.leftOver.length && (this.push({ data: s.utf8decode(this.leftOver), meta: {} }), this.leftOver = null);
-        }, s.Utf8DecodeWorker = a, o.inherits(l, n), l.prototype.processChunk = function(e2) {
-          this.push({ data: s.utf8encode(e2.data), meta: e2.meta });
-        }, s.Utf8EncodeWorker = l;
-      }, { "./nodejsUtils": 14, "./stream/GenericWorker": 28, "./support": 30, "./utils": 32 }], 32: [function(e, t, a) {
-        var o = e("./support"), h = e("./base64"), r = e("./nodejsUtils"), u = e("./external");
-        function n(e2) {
-          return e2;
-        }
-        function l(e2, t2) {
-          for (var r2 = 0; r2 < e2.length; ++r2) t2[r2] = 255 & e2.charCodeAt(r2);
-          return t2;
-        }
-        e("setimmediate"), a.newBlob = function(t2, r2) {
-          a.checkSupport("blob");
-          try {
-            return new Blob([t2], { type: r2 });
-          } catch (e2) {
-            try {
-              var n2 = new (self.BlobBuilder || self.WebKitBlobBuilder || self.MozBlobBuilder || self.MSBlobBuilder)();
-              return n2.append(t2), n2.getBlob(r2);
-            } catch (e3) {
-              throw new Error("Bug : can't construct the Blob.");
-            }
-          }
-        };
-        var i = { stringifyByChunk: function(e2, t2, r2) {
-          var n2 = [], i2 = 0, s2 = e2.length;
-          if (s2 <= r2) return String.fromCharCode.apply(null, e2);
-          for (; i2 < s2; ) "array" === t2 || "nodebuffer" === t2 ? n2.push(String.fromCharCode.apply(null, e2.slice(i2, Math.min(i2 + r2, s2)))) : n2.push(String.fromCharCode.apply(null, e2.subarray(i2, Math.min(i2 + r2, s2)))), i2 += r2;
-          return n2.join("");
-        }, stringifyByChar: function(e2) {
-          for (var t2 = "", r2 = 0; r2 < e2.length; r2++) t2 += String.fromCharCode(e2[r2]);
-          return t2;
-        }, applyCanBeUsed: { uint8array: function() {
-          try {
-            return o.uint8array && 1 === String.fromCharCode.apply(null, new Uint8Array(1)).length;
-          } catch (e2) {
-            return false;
-          }
-        }(), nodebuffer: function() {
-          try {
-            return o.nodebuffer && 1 === String.fromCharCode.apply(null, r.allocBuffer(1)).length;
-          } catch (e2) {
-            return false;
-          }
-        }() } };
-        function s(e2) {
-          var t2 = 65536, r2 = a.getTypeOf(e2), n2 = true;
-          if ("uint8array" === r2 ? n2 = i.applyCanBeUsed.uint8array : "nodebuffer" === r2 && (n2 = i.applyCanBeUsed.nodebuffer), n2) for (; 1 < t2; ) try {
-            return i.stringifyByChunk(e2, r2, t2);
-          } catch (e3) {
-            t2 = Math.floor(t2 / 2);
-          }
-          return i.stringifyByChar(e2);
-        }
-        function f(e2, t2) {
-          for (var r2 = 0; r2 < e2.length; r2++) t2[r2] = e2[r2];
-          return t2;
-        }
-        a.applyFromCharCode = s;
-        var c = {};
-        c.string = { string: n, array: function(e2) {
-          return l(e2, new Array(e2.length));
-        }, arraybuffer: function(e2) {
-          return c.string.uint8array(e2).buffer;
-        }, uint8array: function(e2) {
-          return l(e2, new Uint8Array(e2.length));
-        }, nodebuffer: function(e2) {
-          return l(e2, r.allocBuffer(e2.length));
-        } }, c.array = { string: s, array: n, arraybuffer: function(e2) {
-          return new Uint8Array(e2).buffer;
-        }, uint8array: function(e2) {
-          return new Uint8Array(e2);
-        }, nodebuffer: function(e2) {
-          return r.newBufferFrom(e2);
-        } }, c.arraybuffer = { string: function(e2) {
-          return s(new Uint8Array(e2));
-        }, array: function(e2) {
-          return f(new Uint8Array(e2), new Array(e2.byteLength));
-        }, arraybuffer: n, uint8array: function(e2) {
-          return new Uint8Array(e2);
-        }, nodebuffer: function(e2) {
-          return r.newBufferFrom(new Uint8Array(e2));
-        } }, c.uint8array = { string: s, array: function(e2) {
-          return f(e2, new Array(e2.length));
-        }, arraybuffer: function(e2) {
-          return e2.buffer;
-        }, uint8array: n, nodebuffer: function(e2) {
-          return r.newBufferFrom(e2);
-        } }, c.nodebuffer = { string: s, array: function(e2) {
-          return f(e2, new Array(e2.length));
-        }, arraybuffer: function(e2) {
-          return c.nodebuffer.uint8array(e2).buffer;
-        }, uint8array: function(e2) {
-          return f(e2, new Uint8Array(e2.length));
-        }, nodebuffer: n }, a.transformTo = function(e2, t2) {
-          if (t2 = t2 || "", !e2) return t2;
-          a.checkSupport(e2);
-          var r2 = a.getTypeOf(t2);
-          return c[r2][e2](t2);
-        }, a.resolve = function(e2) {
-          for (var t2 = e2.split("/"), r2 = [], n2 = 0; n2 < t2.length; n2++) {
-            var i2 = t2[n2];
-            "." === i2 || "" === i2 && 0 !== n2 && n2 !== t2.length - 1 || (".." === i2 ? r2.pop() : r2.push(i2));
-          }
-          return r2.join("/");
-        }, a.getTypeOf = function(e2) {
-          return "string" == typeof e2 ? "string" : "[object Array]" === Object.prototype.toString.call(e2) ? "array" : o.nodebuffer && r.isBuffer(e2) ? "nodebuffer" : o.uint8array && e2 instanceof Uint8Array ? "uint8array" : o.arraybuffer && e2 instanceof ArrayBuffer ? "arraybuffer" : void 0;
-        }, a.checkSupport = function(e2) {
-          if (!o[e2.toLowerCase()]) throw new Error(e2 + " is not supported by this platform");
-        }, a.MAX_VALUE_16BITS = 65535, a.MAX_VALUE_32BITS = -1, a.pretty = function(e2) {
-          var t2, r2, n2 = "";
-          for (r2 = 0; r2 < (e2 || "").length; r2++) n2 += "\\x" + ((t2 = e2.charCodeAt(r2)) < 16 ? "0" : "") + t2.toString(16).toUpperCase();
-          return n2;
-        }, a.delay = function(e2, t2, r2) {
-          setImmediate(function() {
-            e2.apply(r2 || null, t2 || []);
-          });
-        }, a.inherits = function(e2, t2) {
-          function r2() {
-          }
-          r2.prototype = t2.prototype, e2.prototype = new r2();
-        }, a.extend = function() {
-          var e2, t2, r2 = {};
-          for (e2 = 0; e2 < arguments.length; e2++) for (t2 in arguments[e2]) Object.prototype.hasOwnProperty.call(arguments[e2], t2) && void 0 === r2[t2] && (r2[t2] = arguments[e2][t2]);
-          return r2;
-        }, a.prepareContent = function(r2, e2, n2, i2, s2) {
-          return u.Promise.resolve(e2).then(function(n3) {
-            return o.blob && (n3 instanceof Blob || -1 !== ["[object File]", "[object Blob]"].indexOf(Object.prototype.toString.call(n3))) && "undefined" != typeof FileReader ? new u.Promise(function(t2, r3) {
-              var e3 = new FileReader();
-              e3.onload = function(e4) {
-                t2(e4.target.result);
-              }, e3.onerror = function(e4) {
-                r3(e4.target.error);
-              }, e3.readAsArrayBuffer(n3);
-            }) : n3;
-          }).then(function(e3) {
-            var t2 = a.getTypeOf(e3);
-            return t2 ? ("arraybuffer" === t2 ? e3 = a.transformTo("uint8array", e3) : "string" === t2 && (s2 ? e3 = h.decode(e3) : n2 && true !== i2 && (e3 = function(e4) {
-              return l(e4, o.uint8array ? new Uint8Array(e4.length) : new Array(e4.length));
-            }(e3))), e3) : u.Promise.reject(new Error("Can't read the data of '" + r2 + "'. Is it in a supported JavaScript type (String, Blob, ArrayBuffer, etc) ?"));
-          });
-        };
-      }, { "./base64": 1, "./external": 6, "./nodejsUtils": 14, "./support": 30, setimmediate: 54 }], 33: [function(e, t, r) {
-        var n = e("./reader/readerFor"), i = e("./utils"), s = e("./signature"), a = e("./zipEntry"), o = e("./support");
-        function h(e2) {
-          this.files = [], this.loadOptions = e2;
-        }
-        h.prototype = { checkSignature: function(e2) {
-          if (!this.reader.readAndCheckSignature(e2)) {
-            this.reader.index -= 4;
-            var t2 = this.reader.readString(4);
-            throw new Error("Corrupted zip or bug: unexpected signature (" + i.pretty(t2) + ", expected " + i.pretty(e2) + ")");
-          }
-        }, isSignature: function(e2, t2) {
-          var r2 = this.reader.index;
-          this.reader.setIndex(e2);
-          var n2 = this.reader.readString(4) === t2;
-          return this.reader.setIndex(r2), n2;
-        }, readBlockEndOfCentral: function() {
-          this.diskNumber = this.reader.readInt(2), this.diskWithCentralDirStart = this.reader.readInt(2), this.centralDirRecordsOnThisDisk = this.reader.readInt(2), this.centralDirRecords = this.reader.readInt(2), this.centralDirSize = this.reader.readInt(4), this.centralDirOffset = this.reader.readInt(4), this.zipCommentLength = this.reader.readInt(2);
-          var e2 = this.reader.readData(this.zipCommentLength), t2 = o.uint8array ? "uint8array" : "array", r2 = i.transformTo(t2, e2);
-          this.zipComment = this.loadOptions.decodeFileName(r2);
-        }, readBlockZip64EndOfCentral: function() {
-          this.zip64EndOfCentralSize = this.reader.readInt(8), this.reader.skip(4), this.diskNumber = this.reader.readInt(4), this.diskWithCentralDirStart = this.reader.readInt(4), this.centralDirRecordsOnThisDisk = this.reader.readInt(8), this.centralDirRecords = this.reader.readInt(8), this.centralDirSize = this.reader.readInt(8), this.centralDirOffset = this.reader.readInt(8), this.zip64ExtensibleData = {};
-          for (var e2, t2, r2, n2 = this.zip64EndOfCentralSize - 44; 0 < n2; ) e2 = this.reader.readInt(2), t2 = this.reader.readInt(4), r2 = this.reader.readData(t2), this.zip64ExtensibleData[e2] = { id: e2, length: t2, value: r2 };
-        }, readBlockZip64EndOfCentralLocator: function() {
-          if (this.diskWithZip64CentralDirStart = this.reader.readInt(4), this.relativeOffsetEndOfZip64CentralDir = this.reader.readInt(8), this.disksCount = this.reader.readInt(4), 1 < this.disksCount) throw new Error("Multi-volumes zip are not supported");
-        }, readLocalFiles: function() {
-          var e2, t2;
-          for (e2 = 0; e2 < this.files.length; e2++) t2 = this.files[e2], this.reader.setIndex(t2.localHeaderOffset), this.checkSignature(s.LOCAL_FILE_HEADER), t2.readLocalPart(this.reader), t2.handleUTF8(), t2.processAttributes();
-        }, readCentralDir: function() {
-          var e2;
-          for (this.reader.setIndex(this.centralDirOffset); this.reader.readAndCheckSignature(s.CENTRAL_FILE_HEADER); ) (e2 = new a({ zip64: this.zip64 }, this.loadOptions)).readCentralPart(this.reader), this.files.push(e2);
-          if (this.centralDirRecords !== this.files.length && 0 !== this.centralDirRecords && 0 === this.files.length) throw new Error("Corrupted zip or bug: expected " + this.centralDirRecords + " records in central dir, got " + this.files.length);
-        }, readEndOfCentral: function() {
-          var e2 = this.reader.lastIndexOfSignature(s.CENTRAL_DIRECTORY_END);
-          if (e2 < 0) throw !this.isSignature(0, s.LOCAL_FILE_HEADER) ? new Error("Can't find end of central directory : is this a zip file ? If it is, see https://stuk.github.io/jszip/documentation/howto/read_zip.html") : new Error("Corrupted zip: can't find end of central directory");
-          this.reader.setIndex(e2);
-          var t2 = e2;
-          if (this.checkSignature(s.CENTRAL_DIRECTORY_END), this.readBlockEndOfCentral(), this.diskNumber === i.MAX_VALUE_16BITS || this.diskWithCentralDirStart === i.MAX_VALUE_16BITS || this.centralDirRecordsOnThisDisk === i.MAX_VALUE_16BITS || this.centralDirRecords === i.MAX_VALUE_16BITS || this.centralDirSize === i.MAX_VALUE_32BITS || this.centralDirOffset === i.MAX_VALUE_32BITS) {
-            if (this.zip64 = true, (e2 = this.reader.lastIndexOfSignature(s.ZIP64_CENTRAL_DIRECTORY_LOCATOR)) < 0) throw new Error("Corrupted zip: can't find the ZIP64 end of central directory locator");
-            if (this.reader.setIndex(e2), this.checkSignature(s.ZIP64_CENTRAL_DIRECTORY_LOCATOR), this.readBlockZip64EndOfCentralLocator(), !this.isSignature(this.relativeOffsetEndOfZip64CentralDir, s.ZIP64_CENTRAL_DIRECTORY_END) && (this.relativeOffsetEndOfZip64CentralDir = this.reader.lastIndexOfSignature(s.ZIP64_CENTRAL_DIRECTORY_END), this.relativeOffsetEndOfZip64CentralDir < 0)) throw new Error("Corrupted zip: can't find the ZIP64 end of central directory");
-            this.reader.setIndex(this.relativeOffsetEndOfZip64CentralDir), this.checkSignature(s.ZIP64_CENTRAL_DIRECTORY_END), this.readBlockZip64EndOfCentral();
-          }
-          var r2 = this.centralDirOffset + this.centralDirSize;
-          this.zip64 && (r2 += 20, r2 += 12 + this.zip64EndOfCentralSize);
-          var n2 = t2 - r2;
-          if (0 < n2) this.isSignature(t2, s.CENTRAL_FILE_HEADER) || (this.reader.zero = n2);
-          else if (n2 < 0) throw new Error("Corrupted zip: missing " + Math.abs(n2) + " bytes.");
-        }, prepareReader: function(e2) {
-          this.reader = n(e2);
-        }, load: function(e2) {
-          this.prepareReader(e2), this.readEndOfCentral(), this.readCentralDir(), this.readLocalFiles();
-        } }, t.exports = h;
-      }, { "./reader/readerFor": 22, "./signature": 23, "./support": 30, "./utils": 32, "./zipEntry": 34 }], 34: [function(e, t, r) {
-        var n = e("./reader/readerFor"), s = e("./utils"), i = e("./compressedObject"), a = e("./crc32"), o = e("./utf8"), h = e("./compressions"), u = e("./support");
-        function l(e2, t2) {
-          this.options = e2, this.loadOptions = t2;
-        }
-        l.prototype = { isEncrypted: function() {
-          return 1 == (1 & this.bitFlag);
-        }, useUTF8: function() {
-          return 2048 == (2048 & this.bitFlag);
-        }, readLocalPart: function(e2) {
-          var t2, r2;
-          if (e2.skip(22), this.fileNameLength = e2.readInt(2), r2 = e2.readInt(2), this.fileName = e2.readData(this.fileNameLength), e2.skip(r2), -1 === this.compressedSize || -1 === this.uncompressedSize) throw new Error("Bug or corrupted zip : didn't get enough information from the central directory (compressedSize === -1 || uncompressedSize === -1)");
-          if (null === (t2 = function(e3) {
-            for (var t3 in h) if (Object.prototype.hasOwnProperty.call(h, t3) && h[t3].magic === e3) return h[t3];
-            return null;
-          }(this.compressionMethod))) throw new Error("Corrupted zip : compression " + s.pretty(this.compressionMethod) + " unknown (inner file : " + s.transformTo("string", this.fileName) + ")");
-          this.decompressed = new i(this.compressedSize, this.uncompressedSize, this.crc32, t2, e2.readData(this.compressedSize));
-        }, readCentralPart: function(e2) {
-          this.versionMadeBy = e2.readInt(2), e2.skip(2), this.bitFlag = e2.readInt(2), this.compressionMethod = e2.readString(2), this.date = e2.readDate(), this.crc32 = e2.readInt(4), this.compressedSize = e2.readInt(4), this.uncompressedSize = e2.readInt(4);
-          var t2 = e2.readInt(2);
-          if (this.extraFieldsLength = e2.readInt(2), this.fileCommentLength = e2.readInt(2), this.diskNumberStart = e2.readInt(2), this.internalFileAttributes = e2.readInt(2), this.externalFileAttributes = e2.readInt(4), this.localHeaderOffset = e2.readInt(4), this.isEncrypted()) throw new Error("Encrypted zip are not supported");
-          e2.skip(t2), this.readExtraFields(e2), this.parseZIP64ExtraField(e2), this.fileComment = e2.readData(this.fileCommentLength);
-        }, processAttributes: function() {
-          this.unixPermissions = null, this.dosPermissions = null;
-          var e2 = this.versionMadeBy >> 8;
-          this.dir = !!(16 & this.externalFileAttributes), 0 == e2 && (this.dosPermissions = 63 & this.externalFileAttributes), 3 == e2 && (this.unixPermissions = this.externalFileAttributes >> 16 & 65535), this.dir || "/" !== this.fileNameStr.slice(-1) || (this.dir = true);
-        }, parseZIP64ExtraField: function() {
-          if (this.extraFields[1]) {
-            var e2 = n(this.extraFields[1].value);
-            this.uncompressedSize === s.MAX_VALUE_32BITS && (this.uncompressedSize = e2.readInt(8)), this.compressedSize === s.MAX_VALUE_32BITS && (this.compressedSize = e2.readInt(8)), this.localHeaderOffset === s.MAX_VALUE_32BITS && (this.localHeaderOffset = e2.readInt(8)), this.diskNumberStart === s.MAX_VALUE_32BITS && (this.diskNumberStart = e2.readInt(4));
-          }
-        }, readExtraFields: function(e2) {
-          var t2, r2, n2, i2 = e2.index + this.extraFieldsLength;
-          for (this.extraFields || (this.extraFields = {}); e2.index + 4 < i2; ) t2 = e2.readInt(2), r2 = e2.readInt(2), n2 = e2.readData(r2), this.extraFields[t2] = { id: t2, length: r2, value: n2 };
-          e2.setIndex(i2);
-        }, handleUTF8: function() {
-          var e2 = u.uint8array ? "uint8array" : "array";
-          if (this.useUTF8()) this.fileNameStr = o.utf8decode(this.fileName), this.fileCommentStr = o.utf8decode(this.fileComment);
-          else {
-            var t2 = this.findExtraFieldUnicodePath();
-            if (null !== t2) this.fileNameStr = t2;
-            else {
-              var r2 = s.transformTo(e2, this.fileName);
-              this.fileNameStr = this.loadOptions.decodeFileName(r2);
-            }
-            var n2 = this.findExtraFieldUnicodeComment();
-            if (null !== n2) this.fileCommentStr = n2;
-            else {
-              var i2 = s.transformTo(e2, this.fileComment);
-              this.fileCommentStr = this.loadOptions.decodeFileName(i2);
-            }
-          }
-        }, findExtraFieldUnicodePath: function() {
-          var e2 = this.extraFields[28789];
-          if (e2) {
-            var t2 = n(e2.value);
-            return 1 !== t2.readInt(1) ? null : a(this.fileName) !== t2.readInt(4) ? null : o.utf8decode(t2.readData(e2.length - 5));
-          }
-          return null;
-        }, findExtraFieldUnicodeComment: function() {
-          var e2 = this.extraFields[25461];
-          if (e2) {
-            var t2 = n(e2.value);
-            return 1 !== t2.readInt(1) ? null : a(this.fileComment) !== t2.readInt(4) ? null : o.utf8decode(t2.readData(e2.length - 5));
-          }
-          return null;
-        } }, t.exports = l;
-      }, { "./compressedObject": 2, "./compressions": 3, "./crc32": 4, "./reader/readerFor": 22, "./support": 30, "./utf8": 31, "./utils": 32 }], 35: [function(e, t, r) {
-        function n(e2, t2, r2) {
-          this.name = e2, this.dir = r2.dir, this.date = r2.date, this.comment = r2.comment, this.unixPermissions = r2.unixPermissions, this.dosPermissions = r2.dosPermissions, this._data = t2, this._dataBinary = r2.binary, this.options = { compression: r2.compression, compressionOptions: r2.compressionOptions };
-        }
-        var s = e("./stream/StreamHelper"), i = e("./stream/DataWorker"), a = e("./utf8"), o = e("./compressedObject"), h = e("./stream/GenericWorker");
-        n.prototype = { internalStream: function(e2) {
-          var t2 = null, r2 = "string";
-          try {
-            if (!e2) throw new Error("No output type specified.");
-            var n2 = "string" === (r2 = e2.toLowerCase()) || "text" === r2;
-            "binarystring" !== r2 && "text" !== r2 || (r2 = "string"), t2 = this._decompressWorker();
-            var i2 = !this._dataBinary;
-            i2 && !n2 && (t2 = t2.pipe(new a.Utf8EncodeWorker())), !i2 && n2 && (t2 = t2.pipe(new a.Utf8DecodeWorker()));
-          } catch (e3) {
-            (t2 = new h("error")).error(e3);
-          }
-          return new s(t2, r2, "");
-        }, async: function(e2, t2) {
-          return this.internalStream(e2).accumulate(t2);
-        }, nodeStream: function(e2, t2) {
-          return this.internalStream(e2 || "nodebuffer").toNodejsStream(t2);
-        }, _compressWorker: function(e2, t2) {
-          if (this._data instanceof o && this._data.compression.magic === e2.magic) return this._data.getCompressedWorker();
-          var r2 = this._decompressWorker();
-          return this._dataBinary || (r2 = r2.pipe(new a.Utf8EncodeWorker())), o.createWorkerFrom(r2, e2, t2);
-        }, _decompressWorker: function() {
-          return this._data instanceof o ? this._data.getContentWorker() : this._data instanceof h ? this._data : new i(this._data);
-        } };
-        for (var u = ["asText", "asBinary", "asNodeBuffer", "asUint8Array", "asArrayBuffer"], l = function() {
-          throw new Error("This method has been removed in JSZip 3.0, please check the upgrade guide.");
-        }, f = 0; f < u.length; f++) n.prototype[u[f]] = l;
-        t.exports = n;
-      }, { "./compressedObject": 2, "./stream/DataWorker": 27, "./stream/GenericWorker": 28, "./stream/StreamHelper": 29, "./utf8": 31 }], 36: [function(e, l, t) {
-        (function(t2) {
-          var r, n, e2 = t2.MutationObserver || t2.WebKitMutationObserver;
-          if (e2) {
-            var i = 0, s = new e2(u), a = t2.document.createTextNode("");
-            s.observe(a, { characterData: true }), r = function() {
-              a.data = i = ++i % 2;
-            };
-          } else if (t2.setImmediate || void 0 === t2.MessageChannel) r = "document" in t2 && "onreadystatechange" in t2.document.createElement("script") ? function() {
-            var e3 = t2.document.createElement("script");
-            e3.onreadystatechange = function() {
-              u(), e3.onreadystatechange = null, e3.parentNode.removeChild(e3), e3 = null;
-            }, t2.document.documentElement.appendChild(e3);
-          } : function() {
-            setTimeout(u, 0);
-          };
-          else {
-            var o = new t2.MessageChannel();
-            o.port1.onmessage = u, r = function() {
-              o.port2.postMessage(0);
-            };
-          }
-          var h = [];
-          function u() {
-            var e3, t3;
-            n = true;
-            for (var r2 = h.length; r2; ) {
-              for (t3 = h, h = [], e3 = -1; ++e3 < r2; ) t3[e3]();
-              r2 = h.length;
-            }
-            n = false;
-          }
-          l.exports = function(e3) {
-            1 !== h.push(e3) || n || r();
-          };
-        }).call(this, "undefined" != typeof commonjsGlobal ? commonjsGlobal : "undefined" != typeof self ? self : "undefined" != typeof window ? window : {});
-      }, {}], 37: [function(e, t, r) {
-        var i = e("immediate");
-        function u() {
-        }
-        var l = {}, s = ["REJECTED"], a = ["FULFILLED"], n = ["PENDING"];
-        function o(e2) {
-          if ("function" != typeof e2) throw new TypeError("resolver must be a function");
-          this.state = n, this.queue = [], this.outcome = void 0, e2 !== u && d(this, e2);
-        }
-        function h(e2, t2, r2) {
-          this.promise = e2, "function" == typeof t2 && (this.onFulfilled = t2, this.callFulfilled = this.otherCallFulfilled), "function" == typeof r2 && (this.onRejected = r2, this.callRejected = this.otherCallRejected);
-        }
-        function f(t2, r2, n2) {
-          i(function() {
-            var e2;
-            try {
-              e2 = r2(n2);
-            } catch (e3) {
-              return l.reject(t2, e3);
-            }
-            e2 === t2 ? l.reject(t2, new TypeError("Cannot resolve promise with itself")) : l.resolve(t2, e2);
-          });
-        }
-        function c(e2) {
-          var t2 = e2 && e2.then;
-          if (e2 && ("object" == typeof e2 || "function" == typeof e2) && "function" == typeof t2) return function() {
-            t2.apply(e2, arguments);
-          };
-        }
-        function d(t2, e2) {
-          var r2 = false;
-          function n2(e3) {
-            r2 || (r2 = true, l.reject(t2, e3));
-          }
-          function i2(e3) {
-            r2 || (r2 = true, l.resolve(t2, e3));
-          }
-          var s2 = p(function() {
-            e2(i2, n2);
-          });
-          "error" === s2.status && n2(s2.value);
-        }
-        function p(e2, t2) {
-          var r2 = {};
-          try {
-            r2.value = e2(t2), r2.status = "success";
-          } catch (e3) {
-            r2.status = "error", r2.value = e3;
-          }
-          return r2;
-        }
-        (t.exports = o).prototype.finally = function(t2) {
-          if ("function" != typeof t2) return this;
-          var r2 = this.constructor;
-          return this.then(function(e2) {
-            return r2.resolve(t2()).then(function() {
-              return e2;
-            });
-          }, function(e2) {
-            return r2.resolve(t2()).then(function() {
-              throw e2;
-            });
-          });
-        }, o.prototype.catch = function(e2) {
-          return this.then(null, e2);
-        }, o.prototype.then = function(e2, t2) {
-          if ("function" != typeof e2 && this.state === a || "function" != typeof t2 && this.state === s) return this;
-          var r2 = new this.constructor(u);
-          this.state !== n ? f(r2, this.state === a ? e2 : t2, this.outcome) : this.queue.push(new h(r2, e2, t2));
-          return r2;
-        }, h.prototype.callFulfilled = function(e2) {
-          l.resolve(this.promise, e2);
-        }, h.prototype.otherCallFulfilled = function(e2) {
-          f(this.promise, this.onFulfilled, e2);
-        }, h.prototype.callRejected = function(e2) {
-          l.reject(this.promise, e2);
-        }, h.prototype.otherCallRejected = function(e2) {
-          f(this.promise, this.onRejected, e2);
-        }, l.resolve = function(e2, t2) {
-          var r2 = p(c, t2);
-          if ("error" === r2.status) return l.reject(e2, r2.value);
-          var n2 = r2.value;
-          if (n2) d(e2, n2);
-          else {
-            e2.state = a, e2.outcome = t2;
-            for (var i2 = -1, s2 = e2.queue.length; ++i2 < s2; ) e2.queue[i2].callFulfilled(t2);
-          }
-          return e2;
-        }, l.reject = function(e2, t2) {
-          e2.state = s, e2.outcome = t2;
-          for (var r2 = -1, n2 = e2.queue.length; ++r2 < n2; ) e2.queue[r2].callRejected(t2);
-          return e2;
-        }, o.resolve = function(e2) {
-          if (e2 instanceof this) return e2;
-          return l.resolve(new this(u), e2);
-        }, o.reject = function(e2) {
-          var t2 = new this(u);
-          return l.reject(t2, e2);
-        }, o.all = function(e2) {
-          var r2 = this;
-          if ("[object Array]" !== Object.prototype.toString.call(e2)) return this.reject(new TypeError("must be an array"));
-          var n2 = e2.length, i2 = false;
-          if (!n2) return this.resolve([]);
-          var s2 = new Array(n2), a2 = 0, t2 = -1, o2 = new this(u);
-          for (; ++t2 < n2; ) h2(e2[t2], t2);
-          return o2;
-          function h2(e3, t3) {
-            r2.resolve(e3).then(function(e4) {
-              s2[t3] = e4, ++a2 !== n2 || i2 || (i2 = true, l.resolve(o2, s2));
-            }, function(e4) {
-              i2 || (i2 = true, l.reject(o2, e4));
-            });
-          }
-        }, o.race = function(e2) {
-          var t2 = this;
-          if ("[object Array]" !== Object.prototype.toString.call(e2)) return this.reject(new TypeError("must be an array"));
-          var r2 = e2.length, n2 = false;
-          if (!r2) return this.resolve([]);
-          var i2 = -1, s2 = new this(u);
-          for (; ++i2 < r2; ) a2 = e2[i2], t2.resolve(a2).then(function(e3) {
-            n2 || (n2 = true, l.resolve(s2, e3));
-          }, function(e3) {
-            n2 || (n2 = true, l.reject(s2, e3));
-          });
-          var a2;
-          return s2;
-        };
-      }, { immediate: 36 }], 38: [function(e, t, r) {
-        var n = {};
-        (0, e("./lib/utils/common").assign)(n, e("./lib/deflate"), e("./lib/inflate"), e("./lib/zlib/constants")), t.exports = n;
-      }, { "./lib/deflate": 39, "./lib/inflate": 40, "./lib/utils/common": 41, "./lib/zlib/constants": 44 }], 39: [function(e, t, r) {
-        var a = e("./zlib/deflate"), o = e("./utils/common"), h = e("./utils/strings"), i = e("./zlib/messages"), s = e("./zlib/zstream"), u = Object.prototype.toString, l = 0, f = -1, c = 0, d = 8;
-        function p(e2) {
-          if (!(this instanceof p)) return new p(e2);
-          this.options = o.assign({ level: f, method: d, chunkSize: 16384, windowBits: 15, memLevel: 8, strategy: c, to: "" }, e2 || {});
-          var t2 = this.options;
-          t2.raw && 0 < t2.windowBits ? t2.windowBits = -t2.windowBits : t2.gzip && 0 < t2.windowBits && t2.windowBits < 16 && (t2.windowBits += 16), this.err = 0, this.msg = "", this.ended = false, this.chunks = [], this.strm = new s(), this.strm.avail_out = 0;
-          var r2 = a.deflateInit2(this.strm, t2.level, t2.method, t2.windowBits, t2.memLevel, t2.strategy);
-          if (r2 !== l) throw new Error(i[r2]);
-          if (t2.header && a.deflateSetHeader(this.strm, t2.header), t2.dictionary) {
-            var n2;
-            if (n2 = "string" == typeof t2.dictionary ? h.string2buf(t2.dictionary) : "[object ArrayBuffer]" === u.call(t2.dictionary) ? new Uint8Array(t2.dictionary) : t2.dictionary, (r2 = a.deflateSetDictionary(this.strm, n2)) !== l) throw new Error(i[r2]);
-            this._dict_set = true;
-          }
-        }
-        function n(e2, t2) {
-          var r2 = new p(t2);
-          if (r2.push(e2, true), r2.err) throw r2.msg || i[r2.err];
-          return r2.result;
-        }
-        p.prototype.push = function(e2, t2) {
-          var r2, n2, i2 = this.strm, s2 = this.options.chunkSize;
-          if (this.ended) return false;
-          n2 = t2 === ~~t2 ? t2 : true === t2 ? 4 : 0, "string" == typeof e2 ? i2.input = h.string2buf(e2) : "[object ArrayBuffer]" === u.call(e2) ? i2.input = new Uint8Array(e2) : i2.input = e2, i2.next_in = 0, i2.avail_in = i2.input.length;
-          do {
-            if (0 === i2.avail_out && (i2.output = new o.Buf8(s2), i2.next_out = 0, i2.avail_out = s2), 1 !== (r2 = a.deflate(i2, n2)) && r2 !== l) return this.onEnd(r2), !(this.ended = true);
-            0 !== i2.avail_out && (0 !== i2.avail_in || 4 !== n2 && 2 !== n2) || ("string" === this.options.to ? this.onData(h.buf2binstring(o.shrinkBuf(i2.output, i2.next_out))) : this.onData(o.shrinkBuf(i2.output, i2.next_out)));
-          } while ((0 < i2.avail_in || 0 === i2.avail_out) && 1 !== r2);
-          return 4 === n2 ? (r2 = a.deflateEnd(this.strm), this.onEnd(r2), this.ended = true, r2 === l) : 2 !== n2 || (this.onEnd(l), !(i2.avail_out = 0));
-        }, p.prototype.onData = function(e2) {
-          this.chunks.push(e2);
-        }, p.prototype.onEnd = function(e2) {
-          e2 === l && ("string" === this.options.to ? this.result = this.chunks.join("") : this.result = o.flattenChunks(this.chunks)), this.chunks = [], this.err = e2, this.msg = this.strm.msg;
-        }, r.Deflate = p, r.deflate = n, r.deflateRaw = function(e2, t2) {
-          return (t2 = t2 || {}).raw = true, n(e2, t2);
-        }, r.gzip = function(e2, t2) {
-          return (t2 = t2 || {}).gzip = true, n(e2, t2);
-        };
-      }, { "./utils/common": 41, "./utils/strings": 42, "./zlib/deflate": 46, "./zlib/messages": 51, "./zlib/zstream": 53 }], 40: [function(e, t, r) {
-        var c = e("./zlib/inflate"), d = e("./utils/common"), p = e("./utils/strings"), m = e("./zlib/constants"), n = e("./zlib/messages"), i = e("./zlib/zstream"), s = e("./zlib/gzheader"), _2 = Object.prototype.toString;
-        function a(e2) {
-          if (!(this instanceof a)) return new a(e2);
-          this.options = d.assign({ chunkSize: 16384, windowBits: 0, to: "" }, e2 || {});
-          var t2 = this.options;
-          t2.raw && 0 <= t2.windowBits && t2.windowBits < 16 && (t2.windowBits = -t2.windowBits, 0 === t2.windowBits && (t2.windowBits = -15)), !(0 <= t2.windowBits && t2.windowBits < 16) || e2 && e2.windowBits || (t2.windowBits += 32), 15 < t2.windowBits && t2.windowBits < 48 && 0 == (15 & t2.windowBits) && (t2.windowBits |= 15), this.err = 0, this.msg = "", this.ended = false, this.chunks = [], this.strm = new i(), this.strm.avail_out = 0;
-          var r2 = c.inflateInit2(this.strm, t2.windowBits);
-          if (r2 !== m.Z_OK) throw new Error(n[r2]);
-          this.header = new s(), c.inflateGetHeader(this.strm, this.header);
-        }
-        function o(e2, t2) {
-          var r2 = new a(t2);
-          if (r2.push(e2, true), r2.err) throw r2.msg || n[r2.err];
-          return r2.result;
-        }
-        a.prototype.push = function(e2, t2) {
-          var r2, n2, i2, s2, a2, o2, h = this.strm, u = this.options.chunkSize, l = this.options.dictionary, f = false;
-          if (this.ended) return false;
-          n2 = t2 === ~~t2 ? t2 : true === t2 ? m.Z_FINISH : m.Z_NO_FLUSH, "string" == typeof e2 ? h.input = p.binstring2buf(e2) : "[object ArrayBuffer]" === _2.call(e2) ? h.input = new Uint8Array(e2) : h.input = e2, h.next_in = 0, h.avail_in = h.input.length;
-          do {
-            if (0 === h.avail_out && (h.output = new d.Buf8(u), h.next_out = 0, h.avail_out = u), (r2 = c.inflate(h, m.Z_NO_FLUSH)) === m.Z_NEED_DICT && l && (o2 = "string" == typeof l ? p.string2buf(l) : "[object ArrayBuffer]" === _2.call(l) ? new Uint8Array(l) : l, r2 = c.inflateSetDictionary(this.strm, o2)), r2 === m.Z_BUF_ERROR && true === f && (r2 = m.Z_OK, f = false), r2 !== m.Z_STREAM_END && r2 !== m.Z_OK) return this.onEnd(r2), !(this.ended = true);
-            h.next_out && (0 !== h.avail_out && r2 !== m.Z_STREAM_END && (0 !== h.avail_in || n2 !== m.Z_FINISH && n2 !== m.Z_SYNC_FLUSH) || ("string" === this.options.to ? (i2 = p.utf8border(h.output, h.next_out), s2 = h.next_out - i2, a2 = p.buf2string(h.output, i2), h.next_out = s2, h.avail_out = u - s2, s2 && d.arraySet(h.output, h.output, i2, s2, 0), this.onData(a2)) : this.onData(d.shrinkBuf(h.output, h.next_out)))), 0 === h.avail_in && 0 === h.avail_out && (f = true);
-          } while ((0 < h.avail_in || 0 === h.avail_out) && r2 !== m.Z_STREAM_END);
-          return r2 === m.Z_STREAM_END && (n2 = m.Z_FINISH), n2 === m.Z_FINISH ? (r2 = c.inflateEnd(this.strm), this.onEnd(r2), this.ended = true, r2 === m.Z_OK) : n2 !== m.Z_SYNC_FLUSH || (this.onEnd(m.Z_OK), !(h.avail_out = 0));
-        }, a.prototype.onData = function(e2) {
-          this.chunks.push(e2);
-        }, a.prototype.onEnd = function(e2) {
-          e2 === m.Z_OK && ("string" === this.options.to ? this.result = this.chunks.join("") : this.result = d.flattenChunks(this.chunks)), this.chunks = [], this.err = e2, this.msg = this.strm.msg;
-        }, r.Inflate = a, r.inflate = o, r.inflateRaw = function(e2, t2) {
-          return (t2 = t2 || {}).raw = true, o(e2, t2);
-        }, r.ungzip = o;
-      }, { "./utils/common": 41, "./utils/strings": 42, "./zlib/constants": 44, "./zlib/gzheader": 47, "./zlib/inflate": 49, "./zlib/messages": 51, "./zlib/zstream": 53 }], 41: [function(e, t, r) {
-        var n = "undefined" != typeof Uint8Array && "undefined" != typeof Uint16Array && "undefined" != typeof Int32Array;
-        r.assign = function(e2) {
-          for (var t2 = Array.prototype.slice.call(arguments, 1); t2.length; ) {
-            var r2 = t2.shift();
-            if (r2) {
-              if ("object" != typeof r2) throw new TypeError(r2 + "must be non-object");
-              for (var n2 in r2) r2.hasOwnProperty(n2) && (e2[n2] = r2[n2]);
-            }
-          }
-          return e2;
-        }, r.shrinkBuf = function(e2, t2) {
-          return e2.length === t2 ? e2 : e2.subarray ? e2.subarray(0, t2) : (e2.length = t2, e2);
-        };
-        var i = { arraySet: function(e2, t2, r2, n2, i2) {
-          if (t2.subarray && e2.subarray) e2.set(t2.subarray(r2, r2 + n2), i2);
-          else for (var s2 = 0; s2 < n2; s2++) e2[i2 + s2] = t2[r2 + s2];
-        }, flattenChunks: function(e2) {
-          var t2, r2, n2, i2, s2, a;
-          for (t2 = n2 = 0, r2 = e2.length; t2 < r2; t2++) n2 += e2[t2].length;
-          for (a = new Uint8Array(n2), t2 = i2 = 0, r2 = e2.length; t2 < r2; t2++) s2 = e2[t2], a.set(s2, i2), i2 += s2.length;
-          return a;
-        } }, s = { arraySet: function(e2, t2, r2, n2, i2) {
-          for (var s2 = 0; s2 < n2; s2++) e2[i2 + s2] = t2[r2 + s2];
-        }, flattenChunks: function(e2) {
-          return [].concat.apply([], e2);
-        } };
-        r.setTyped = function(e2) {
-          e2 ? (r.Buf8 = Uint8Array, r.Buf16 = Uint16Array, r.Buf32 = Int32Array, r.assign(r, i)) : (r.Buf8 = Array, r.Buf16 = Array, r.Buf32 = Array, r.assign(r, s));
-        }, r.setTyped(n);
-      }, {}], 42: [function(e, t, r) {
-        var h = e("./common"), i = true, s = true;
-        try {
-          String.fromCharCode.apply(null, [0]);
-        } catch (e2) {
-          i = false;
-        }
-        try {
-          String.fromCharCode.apply(null, new Uint8Array(1));
-        } catch (e2) {
-          s = false;
-        }
-        for (var u = new h.Buf8(256), n = 0; n < 256; n++) u[n] = 252 <= n ? 6 : 248 <= n ? 5 : 240 <= n ? 4 : 224 <= n ? 3 : 192 <= n ? 2 : 1;
-        function l(e2, t2) {
-          if (t2 < 65537 && (e2.subarray && s || !e2.subarray && i)) return String.fromCharCode.apply(null, h.shrinkBuf(e2, t2));
-          for (var r2 = "", n2 = 0; n2 < t2; n2++) r2 += String.fromCharCode(e2[n2]);
-          return r2;
-        }
-        u[254] = u[254] = 1, r.string2buf = function(e2) {
-          var t2, r2, n2, i2, s2, a = e2.length, o = 0;
-          for (i2 = 0; i2 < a; i2++) 55296 == (64512 & (r2 = e2.charCodeAt(i2))) && i2 + 1 < a && 56320 == (64512 & (n2 = e2.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), o += r2 < 128 ? 1 : r2 < 2048 ? 2 : r2 < 65536 ? 3 : 4;
-          for (t2 = new h.Buf8(o), i2 = s2 = 0; s2 < o; i2++) 55296 == (64512 & (r2 = e2.charCodeAt(i2))) && i2 + 1 < a && 56320 == (64512 & (n2 = e2.charCodeAt(i2 + 1))) && (r2 = 65536 + (r2 - 55296 << 10) + (n2 - 56320), i2++), r2 < 128 ? t2[s2++] = r2 : (r2 < 2048 ? t2[s2++] = 192 | r2 >>> 6 : (r2 < 65536 ? t2[s2++] = 224 | r2 >>> 12 : (t2[s2++] = 240 | r2 >>> 18, t2[s2++] = 128 | r2 >>> 12 & 63), t2[s2++] = 128 | r2 >>> 6 & 63), t2[s2++] = 128 | 63 & r2);
-          return t2;
-        }, r.buf2binstring = function(e2) {
-          return l(e2, e2.length);
-        }, r.binstring2buf = function(e2) {
-          for (var t2 = new h.Buf8(e2.length), r2 = 0, n2 = t2.length; r2 < n2; r2++) t2[r2] = e2.charCodeAt(r2);
-          return t2;
-        }, r.buf2string = function(e2, t2) {
-          var r2, n2, i2, s2, a = t2 || e2.length, o = new Array(2 * a);
-          for (r2 = n2 = 0; r2 < a; ) if ((i2 = e2[r2++]) < 128) o[n2++] = i2;
-          else if (4 < (s2 = u[i2])) o[n2++] = 65533, r2 += s2 - 1;
-          else {
-            for (i2 &= 2 === s2 ? 31 : 3 === s2 ? 15 : 7; 1 < s2 && r2 < a; ) i2 = i2 << 6 | 63 & e2[r2++], s2--;
-            1 < s2 ? o[n2++] = 65533 : i2 < 65536 ? o[n2++] = i2 : (i2 -= 65536, o[n2++] = 55296 | i2 >> 10 & 1023, o[n2++] = 56320 | 1023 & i2);
-          }
-          return l(o, n2);
-        }, r.utf8border = function(e2, t2) {
-          var r2;
-          for ((t2 = t2 || e2.length) > e2.length && (t2 = e2.length), r2 = t2 - 1; 0 <= r2 && 128 == (192 & e2[r2]); ) r2--;
-          return r2 < 0 ? t2 : 0 === r2 ? t2 : r2 + u[e2[r2]] > t2 ? r2 : t2;
-        };
-      }, { "./common": 41 }], 43: [function(e, t, r) {
-        t.exports = function(e2, t2, r2, n) {
-          for (var i = 65535 & e2 | 0, s = e2 >>> 16 & 65535 | 0, a = 0; 0 !== r2; ) {
-            for (r2 -= a = 2e3 < r2 ? 2e3 : r2; s = s + (i = i + t2[n++] | 0) | 0, --a; ) ;
-            i %= 65521, s %= 65521;
-          }
-          return i | s << 16 | 0;
-        };
-      }, {}], 44: [function(e, t, r) {
-        t.exports = { Z_NO_FLUSH: 0, Z_PARTIAL_FLUSH: 1, Z_SYNC_FLUSH: 2, Z_FULL_FLUSH: 3, Z_FINISH: 4, Z_BLOCK: 5, Z_TREES: 6, Z_OK: 0, Z_STREAM_END: 1, Z_NEED_DICT: 2, Z_ERRNO: -1, Z_STREAM_ERROR: -2, Z_DATA_ERROR: -3, Z_BUF_ERROR: -5, Z_NO_COMPRESSION: 0, Z_BEST_SPEED: 1, Z_BEST_COMPRESSION: 9, Z_DEFAULT_COMPRESSION: -1, Z_FILTERED: 1, Z_HUFFMAN_ONLY: 2, Z_RLE: 3, Z_FIXED: 4, Z_DEFAULT_STRATEGY: 0, Z_BINARY: 0, Z_TEXT: 1, Z_UNKNOWN: 2, Z_DEFLATED: 8 };
-      }, {}], 45: [function(e, t, r) {
-        var o = function() {
-          for (var e2, t2 = [], r2 = 0; r2 < 256; r2++) {
-            e2 = r2;
-            for (var n = 0; n < 8; n++) e2 = 1 & e2 ? 3988292384 ^ e2 >>> 1 : e2 >>> 1;
-            t2[r2] = e2;
-          }
-          return t2;
-        }();
-        t.exports = function(e2, t2, r2, n) {
-          var i = o, s = n + r2;
-          e2 ^= -1;
-          for (var a = n; a < s; a++) e2 = e2 >>> 8 ^ i[255 & (e2 ^ t2[a])];
-          return -1 ^ e2;
-        };
-      }, {}], 46: [function(e, t, r) {
-        var h, c = e("../utils/common"), u = e("./trees"), d = e("./adler32"), p = e("./crc32"), n = e("./messages"), l = 0, f = 4, m = 0, _2 = -2, g = -1, b = 4, i = 2, v = 8, y = 9, s = 286, a = 30, o = 19, w = 2 * s + 1, k = 15, x = 3, S = 258, z = S + x + 1, C = 42, E = 113, A = 1, I = 2, O = 3, B = 4;
-        function R(e2, t2) {
-          return e2.msg = n[t2], t2;
-        }
-        function T(e2) {
-          return (e2 << 1) - (4 < e2 ? 9 : 0);
-        }
-        function D(e2) {
-          for (var t2 = e2.length; 0 <= --t2; ) e2[t2] = 0;
-        }
-        function F(e2) {
-          var t2 = e2.state, r2 = t2.pending;
-          r2 > e2.avail_out && (r2 = e2.avail_out), 0 !== r2 && (c.arraySet(e2.output, t2.pending_buf, t2.pending_out, r2, e2.next_out), e2.next_out += r2, t2.pending_out += r2, e2.total_out += r2, e2.avail_out -= r2, t2.pending -= r2, 0 === t2.pending && (t2.pending_out = 0));
-        }
-        function N(e2, t2) {
-          u._tr_flush_block(e2, 0 <= e2.block_start ? e2.block_start : -1, e2.strstart - e2.block_start, t2), e2.block_start = e2.strstart, F(e2.strm);
-        }
-        function U(e2, t2) {
-          e2.pending_buf[e2.pending++] = t2;
-        }
-        function P(e2, t2) {
-          e2.pending_buf[e2.pending++] = t2 >>> 8 & 255, e2.pending_buf[e2.pending++] = 255 & t2;
-        }
-        function L(e2, t2) {
-          var r2, n2, i2 = e2.max_chain_length, s2 = e2.strstart, a2 = e2.prev_length, o2 = e2.nice_match, h2 = e2.strstart > e2.w_size - z ? e2.strstart - (e2.w_size - z) : 0, u2 = e2.window, l2 = e2.w_mask, f2 = e2.prev, c2 = e2.strstart + S, d2 = u2[s2 + a2 - 1], p2 = u2[s2 + a2];
-          e2.prev_length >= e2.good_match && (i2 >>= 2), o2 > e2.lookahead && (o2 = e2.lookahead);
-          do {
-            if (u2[(r2 = t2) + a2] === p2 && u2[r2 + a2 - 1] === d2 && u2[r2] === u2[s2] && u2[++r2] === u2[s2 + 1]) {
-              s2 += 2, r2++;
-              do {
-              } while (u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && u2[++s2] === u2[++r2] && s2 < c2);
-              if (n2 = S - (c2 - s2), s2 = c2 - S, a2 < n2) {
-                if (e2.match_start = t2, o2 <= (a2 = n2)) break;
-                d2 = u2[s2 + a2 - 1], p2 = u2[s2 + a2];
-              }
-            }
-          } while ((t2 = f2[t2 & l2]) > h2 && 0 != --i2);
-          return a2 <= e2.lookahead ? a2 : e2.lookahead;
-        }
-        function j(e2) {
-          var t2, r2, n2, i2, s2, a2, o2, h2, u2, l2, f2 = e2.w_size;
-          do {
-            if (i2 = e2.window_size - e2.lookahead - e2.strstart, e2.strstart >= f2 + (f2 - z)) {
-              for (c.arraySet(e2.window, e2.window, f2, f2, 0), e2.match_start -= f2, e2.strstart -= f2, e2.block_start -= f2, t2 = r2 = e2.hash_size; n2 = e2.head[--t2], e2.head[t2] = f2 <= n2 ? n2 - f2 : 0, --r2; ) ;
-              for (t2 = r2 = f2; n2 = e2.prev[--t2], e2.prev[t2] = f2 <= n2 ? n2 - f2 : 0, --r2; ) ;
-              i2 += f2;
-            }
-            if (0 === e2.strm.avail_in) break;
-            if (a2 = e2.strm, o2 = e2.window, h2 = e2.strstart + e2.lookahead, u2 = i2, l2 = void 0, l2 = a2.avail_in, u2 < l2 && (l2 = u2), r2 = 0 === l2 ? 0 : (a2.avail_in -= l2, c.arraySet(o2, a2.input, a2.next_in, l2, h2), 1 === a2.state.wrap ? a2.adler = d(a2.adler, o2, l2, h2) : 2 === a2.state.wrap && (a2.adler = p(a2.adler, o2, l2, h2)), a2.next_in += l2, a2.total_in += l2, l2), e2.lookahead += r2, e2.lookahead + e2.insert >= x) for (s2 = e2.strstart - e2.insert, e2.ins_h = e2.window[s2], e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[s2 + 1]) & e2.hash_mask; e2.insert && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[s2 + x - 1]) & e2.hash_mask, e2.prev[s2 & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = s2, s2++, e2.insert--, !(e2.lookahead + e2.insert < x)); ) ;
-          } while (e2.lookahead < z && 0 !== e2.strm.avail_in);
-        }
-        function Z(e2, t2) {
-          for (var r2, n2; ; ) {
-            if (e2.lookahead < z) {
-              if (j(e2), e2.lookahead < z && t2 === l) return A;
-              if (0 === e2.lookahead) break;
-            }
-            if (r2 = 0, e2.lookahead >= x && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart), 0 !== r2 && e2.strstart - r2 <= e2.w_size - z && (e2.match_length = L(e2, r2)), e2.match_length >= x) if (n2 = u._tr_tally(e2, e2.strstart - e2.match_start, e2.match_length - x), e2.lookahead -= e2.match_length, e2.match_length <= e2.max_lazy_match && e2.lookahead >= x) {
-              for (e2.match_length--; e2.strstart++, e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart, 0 != --e2.match_length; ) ;
-              e2.strstart++;
-            } else e2.strstart += e2.match_length, e2.match_length = 0, e2.ins_h = e2.window[e2.strstart], e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + 1]) & e2.hash_mask;
-            else n2 = u._tr_tally(e2, 0, e2.window[e2.strstart]), e2.lookahead--, e2.strstart++;
-            if (n2 && (N(e2, false), 0 === e2.strm.avail_out)) return A;
-          }
-          return e2.insert = e2.strstart < x - 1 ? e2.strstart : x - 1, t2 === f ? (N(e2, true), 0 === e2.strm.avail_out ? O : B) : e2.last_lit && (N(e2, false), 0 === e2.strm.avail_out) ? A : I;
-        }
-        function W(e2, t2) {
-          for (var r2, n2, i2; ; ) {
-            if (e2.lookahead < z) {
-              if (j(e2), e2.lookahead < z && t2 === l) return A;
-              if (0 === e2.lookahead) break;
-            }
-            if (r2 = 0, e2.lookahead >= x && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart), e2.prev_length = e2.match_length, e2.prev_match = e2.match_start, e2.match_length = x - 1, 0 !== r2 && e2.prev_length < e2.max_lazy_match && e2.strstart - r2 <= e2.w_size - z && (e2.match_length = L(e2, r2), e2.match_length <= 5 && (1 === e2.strategy || e2.match_length === x && 4096 < e2.strstart - e2.match_start) && (e2.match_length = x - 1)), e2.prev_length >= x && e2.match_length <= e2.prev_length) {
-              for (i2 = e2.strstart + e2.lookahead - x, n2 = u._tr_tally(e2, e2.strstart - 1 - e2.prev_match, e2.prev_length - x), e2.lookahead -= e2.prev_length - 1, e2.prev_length -= 2; ++e2.strstart <= i2 && (e2.ins_h = (e2.ins_h << e2.hash_shift ^ e2.window[e2.strstart + x - 1]) & e2.hash_mask, r2 = e2.prev[e2.strstart & e2.w_mask] = e2.head[e2.ins_h], e2.head[e2.ins_h] = e2.strstart), 0 != --e2.prev_length; ) ;
-              if (e2.match_available = 0, e2.match_length = x - 1, e2.strstart++, n2 && (N(e2, false), 0 === e2.strm.avail_out)) return A;
-            } else if (e2.match_available) {
-              if ((n2 = u._tr_tally(e2, 0, e2.window[e2.strstart - 1])) && N(e2, false), e2.strstart++, e2.lookahead--, 0 === e2.strm.avail_out) return A;
-            } else e2.match_available = 1, e2.strstart++, e2.lookahead--;
-          }
-          return e2.match_available && (n2 = u._tr_tally(e2, 0, e2.window[e2.strstart - 1]), e2.match_available = 0), e2.insert = e2.strstart < x - 1 ? e2.strstart : x - 1, t2 === f ? (N(e2, true), 0 === e2.strm.avail_out ? O : B) : e2.last_lit && (N(e2, false), 0 === e2.strm.avail_out) ? A : I;
-        }
-        function M(e2, t2, r2, n2, i2) {
-          this.good_length = e2, this.max_lazy = t2, this.nice_length = r2, this.max_chain = n2, this.func = i2;
-        }
-        function H() {
-          this.strm = null, this.status = 0, this.pending_buf = null, this.pending_buf_size = 0, this.pending_out = 0, this.pending = 0, this.wrap = 0, this.gzhead = null, this.gzindex = 0, this.method = v, this.last_flush = -1, this.w_size = 0, this.w_bits = 0, this.w_mask = 0, this.window = null, this.window_size = 0, this.prev = null, this.head = null, this.ins_h = 0, this.hash_size = 0, this.hash_bits = 0, this.hash_mask = 0, this.hash_shift = 0, this.block_start = 0, this.match_length = 0, this.prev_match = 0, this.match_available = 0, this.strstart = 0, this.match_start = 0, this.lookahead = 0, this.prev_length = 0, this.max_chain_length = 0, this.max_lazy_match = 0, this.level = 0, this.strategy = 0, this.good_match = 0, this.nice_match = 0, this.dyn_ltree = new c.Buf16(2 * w), this.dyn_dtree = new c.Buf16(2 * (2 * a + 1)), this.bl_tree = new c.Buf16(2 * (2 * o + 1)), D(this.dyn_ltree), D(this.dyn_dtree), D(this.bl_tree), this.l_desc = null, this.d_desc = null, this.bl_desc = null, this.bl_count = new c.Buf16(k + 1), this.heap = new c.Buf16(2 * s + 1), D(this.heap), this.heap_len = 0, this.heap_max = 0, this.depth = new c.Buf16(2 * s + 1), D(this.depth), this.l_buf = 0, this.lit_bufsize = 0, this.last_lit = 0, this.d_buf = 0, this.opt_len = 0, this.static_len = 0, this.matches = 0, this.insert = 0, this.bi_buf = 0, this.bi_valid = 0;
-        }
-        function G(e2) {
-          var t2;
-          return e2 && e2.state ? (e2.total_in = e2.total_out = 0, e2.data_type = i, (t2 = e2.state).pending = 0, t2.pending_out = 0, t2.wrap < 0 && (t2.wrap = -t2.wrap), t2.status = t2.wrap ? C : E, e2.adler = 2 === t2.wrap ? 0 : 1, t2.last_flush = l, u._tr_init(t2), m) : R(e2, _2);
-        }
-        function K(e2) {
-          var t2 = G(e2);
-          return t2 === m && function(e3) {
-            e3.window_size = 2 * e3.w_size, D(e3.head), e3.max_lazy_match = h[e3.level].max_lazy, e3.good_match = h[e3.level].good_length, e3.nice_match = h[e3.level].nice_length, e3.max_chain_length = h[e3.level].max_chain, e3.strstart = 0, e3.block_start = 0, e3.lookahead = 0, e3.insert = 0, e3.match_length = e3.prev_length = x - 1, e3.match_available = 0, e3.ins_h = 0;
-          }(e2.state), t2;
-        }
-        function Y(e2, t2, r2, n2, i2, s2) {
-          if (!e2) return _2;
-          var a2 = 1;
-          if (t2 === g && (t2 = 6), n2 < 0 ? (a2 = 0, n2 = -n2) : 15 < n2 && (a2 = 2, n2 -= 16), i2 < 1 || y < i2 || r2 !== v || n2 < 8 || 15 < n2 || t2 < 0 || 9 < t2 || s2 < 0 || b < s2) return R(e2, _2);
-          8 === n2 && (n2 = 9);
-          var o2 = new H();
-          return (e2.state = o2).strm = e2, o2.wrap = a2, o2.gzhead = null, o2.w_bits = n2, o2.w_size = 1 << o2.w_bits, o2.w_mask = o2.w_size - 1, o2.hash_bits = i2 + 7, o2.hash_size = 1 << o2.hash_bits, o2.hash_mask = o2.hash_size - 1, o2.hash_shift = ~~((o2.hash_bits + x - 1) / x), o2.window = new c.Buf8(2 * o2.w_size), o2.head = new c.Buf16(o2.hash_size), o2.prev = new c.Buf16(o2.w_size), o2.lit_bufsize = 1 << i2 + 6, o2.pending_buf_size = 4 * o2.lit_bufsize, o2.pending_buf = new c.Buf8(o2.pending_buf_size), o2.d_buf = 1 * o2.lit_bufsize, o2.l_buf = 3 * o2.lit_bufsize, o2.level = t2, o2.strategy = s2, o2.method = r2, K(e2);
-        }
-        h = [new M(0, 0, 0, 0, function(e2, t2) {
-          var r2 = 65535;
-          for (r2 > e2.pending_buf_size - 5 && (r2 = e2.pending_buf_size - 5); ; ) {
-            if (e2.lookahead <= 1) {
-              if (j(e2), 0 === e2.lookahead && t2 === l) return A;
-              if (0 === e2.lookahead) break;
-            }
-            e2.strstart += e2.lookahead, e2.lookahead = 0;
-            var n2 = e2.block_start + r2;
-            if ((0 === e2.strstart || e2.strstart >= n2) && (e2.lookahead = e2.strstart - n2, e2.strstart = n2, N(e2, false), 0 === e2.strm.avail_out)) return A;
-            if (e2.strstart - e2.block_start >= e2.w_size - z && (N(e2, false), 0 === e2.strm.avail_out)) return A;
-          }
-          return e2.insert = 0, t2 === f ? (N(e2, true), 0 === e2.strm.avail_out ? O : B) : (e2.strstart > e2.block_start && (N(e2, false), e2.strm.avail_out), A);
-        }), new M(4, 4, 8, 4, Z), new M(4, 5, 16, 8, Z), new M(4, 6, 32, 32, Z), new M(4, 4, 16, 16, W), new M(8, 16, 32, 32, W), new M(8, 16, 128, 128, W), new M(8, 32, 128, 256, W), new M(32, 128, 258, 1024, W), new M(32, 258, 258, 4096, W)], r.deflateInit = function(e2, t2) {
-          return Y(e2, t2, v, 15, 8, 0);
-        }, r.deflateInit2 = Y, r.deflateReset = K, r.deflateResetKeep = G, r.deflateSetHeader = function(e2, t2) {
-          return e2 && e2.state ? 2 !== e2.state.wrap ? _2 : (e2.state.gzhead = t2, m) : _2;
-        }, r.deflate = function(e2, t2) {
-          var r2, n2, i2, s2;
-          if (!e2 || !e2.state || 5 < t2 || t2 < 0) return e2 ? R(e2, _2) : _2;
-          if (n2 = e2.state, !e2.output || !e2.input && 0 !== e2.avail_in || 666 === n2.status && t2 !== f) return R(e2, 0 === e2.avail_out ? -5 : _2);
-          if (n2.strm = e2, r2 = n2.last_flush, n2.last_flush = t2, n2.status === C) if (2 === n2.wrap) e2.adler = 0, U(n2, 31), U(n2, 139), U(n2, 8), n2.gzhead ? (U(n2, (n2.gzhead.text ? 1 : 0) + (n2.gzhead.hcrc ? 2 : 0) + (n2.gzhead.extra ? 4 : 0) + (n2.gzhead.name ? 8 : 0) + (n2.gzhead.comment ? 16 : 0)), U(n2, 255 & n2.gzhead.time), U(n2, n2.gzhead.time >> 8 & 255), U(n2, n2.gzhead.time >> 16 & 255), U(n2, n2.gzhead.time >> 24 & 255), U(n2, 9 === n2.level ? 2 : 2 <= n2.strategy || n2.level < 2 ? 4 : 0), U(n2, 255 & n2.gzhead.os), n2.gzhead.extra && n2.gzhead.extra.length && (U(n2, 255 & n2.gzhead.extra.length), U(n2, n2.gzhead.extra.length >> 8 & 255)), n2.gzhead.hcrc && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending, 0)), n2.gzindex = 0, n2.status = 69) : (U(n2, 0), U(n2, 0), U(n2, 0), U(n2, 0), U(n2, 0), U(n2, 9 === n2.level ? 2 : 2 <= n2.strategy || n2.level < 2 ? 4 : 0), U(n2, 3), n2.status = E);
-          else {
-            var a2 = v + (n2.w_bits - 8 << 4) << 8;
-            a2 |= (2 <= n2.strategy || n2.level < 2 ? 0 : n2.level < 6 ? 1 : 6 === n2.level ? 2 : 3) << 6, 0 !== n2.strstart && (a2 |= 32), a2 += 31 - a2 % 31, n2.status = E, P(n2, a2), 0 !== n2.strstart && (P(n2, e2.adler >>> 16), P(n2, 65535 & e2.adler)), e2.adler = 1;
-          }
-          if (69 === n2.status) if (n2.gzhead.extra) {
-            for (i2 = n2.pending; n2.gzindex < (65535 & n2.gzhead.extra.length) && (n2.pending !== n2.pending_buf_size || (n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), F(e2), i2 = n2.pending, n2.pending !== n2.pending_buf_size)); ) U(n2, 255 & n2.gzhead.extra[n2.gzindex]), n2.gzindex++;
-            n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), n2.gzindex === n2.gzhead.extra.length && (n2.gzindex = 0, n2.status = 73);
-          } else n2.status = 73;
-          if (73 === n2.status) if (n2.gzhead.name) {
-            i2 = n2.pending;
-            do {
-              if (n2.pending === n2.pending_buf_size && (n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), F(e2), i2 = n2.pending, n2.pending === n2.pending_buf_size)) {
-                s2 = 1;
-                break;
-              }
-              s2 = n2.gzindex < n2.gzhead.name.length ? 255 & n2.gzhead.name.charCodeAt(n2.gzindex++) : 0, U(n2, s2);
-            } while (0 !== s2);
-            n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), 0 === s2 && (n2.gzindex = 0, n2.status = 91);
-          } else n2.status = 91;
-          if (91 === n2.status) if (n2.gzhead.comment) {
-            i2 = n2.pending;
-            do {
-              if (n2.pending === n2.pending_buf_size && (n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), F(e2), i2 = n2.pending, n2.pending === n2.pending_buf_size)) {
-                s2 = 1;
-                break;
-              }
-              s2 = n2.gzindex < n2.gzhead.comment.length ? 255 & n2.gzhead.comment.charCodeAt(n2.gzindex++) : 0, U(n2, s2);
-            } while (0 !== s2);
-            n2.gzhead.hcrc && n2.pending > i2 && (e2.adler = p(e2.adler, n2.pending_buf, n2.pending - i2, i2)), 0 === s2 && (n2.status = 103);
-          } else n2.status = 103;
-          if (103 === n2.status && (n2.gzhead.hcrc ? (n2.pending + 2 > n2.pending_buf_size && F(e2), n2.pending + 2 <= n2.pending_buf_size && (U(n2, 255 & e2.adler), U(n2, e2.adler >> 8 & 255), e2.adler = 0, n2.status = E)) : n2.status = E), 0 !== n2.pending) {
-            if (F(e2), 0 === e2.avail_out) return n2.last_flush = -1, m;
-          } else if (0 === e2.avail_in && T(t2) <= T(r2) && t2 !== f) return R(e2, -5);
-          if (666 === n2.status && 0 !== e2.avail_in) return R(e2, -5);
-          if (0 !== e2.avail_in || 0 !== n2.lookahead || t2 !== l && 666 !== n2.status) {
-            var o2 = 2 === n2.strategy ? function(e3, t3) {
-              for (var r3; ; ) {
-                if (0 === e3.lookahead && (j(e3), 0 === e3.lookahead)) {
-                  if (t3 === l) return A;
-                  break;
-                }
-                if (e3.match_length = 0, r3 = u._tr_tally(e3, 0, e3.window[e3.strstart]), e3.lookahead--, e3.strstart++, r3 && (N(e3, false), 0 === e3.strm.avail_out)) return A;
-              }
-              return e3.insert = 0, t3 === f ? (N(e3, true), 0 === e3.strm.avail_out ? O : B) : e3.last_lit && (N(e3, false), 0 === e3.strm.avail_out) ? A : I;
-            }(n2, t2) : 3 === n2.strategy ? function(e3, t3) {
-              for (var r3, n3, i3, s3, a3 = e3.window; ; ) {
-                if (e3.lookahead <= S) {
-                  if (j(e3), e3.lookahead <= S && t3 === l) return A;
-                  if (0 === e3.lookahead) break;
-                }
-                if (e3.match_length = 0, e3.lookahead >= x && 0 < e3.strstart && (n3 = a3[i3 = e3.strstart - 1]) === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3]) {
-                  s3 = e3.strstart + S;
-                  do {
-                  } while (n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && n3 === a3[++i3] && i3 < s3);
-                  e3.match_length = S - (s3 - i3), e3.match_length > e3.lookahead && (e3.match_length = e3.lookahead);
-                }
-                if (e3.match_length >= x ? (r3 = u._tr_tally(e3, 1, e3.match_length - x), e3.lookahead -= e3.match_length, e3.strstart += e3.match_length, e3.match_length = 0) : (r3 = u._tr_tally(e3, 0, e3.window[e3.strstart]), e3.lookahead--, e3.strstart++), r3 && (N(e3, false), 0 === e3.strm.avail_out)) return A;
-              }
-              return e3.insert = 0, t3 === f ? (N(e3, true), 0 === e3.strm.avail_out ? O : B) : e3.last_lit && (N(e3, false), 0 === e3.strm.avail_out) ? A : I;
-            }(n2, t2) : h[n2.level].func(n2, t2);
-            if (o2 !== O && o2 !== B || (n2.status = 666), o2 === A || o2 === O) return 0 === e2.avail_out && (n2.last_flush = -1), m;
-            if (o2 === I && (1 === t2 ? u._tr_align(n2) : 5 !== t2 && (u._tr_stored_block(n2, 0, 0, false), 3 === t2 && (D(n2.head), 0 === n2.lookahead && (n2.strstart = 0, n2.block_start = 0, n2.insert = 0))), F(e2), 0 === e2.avail_out)) return n2.last_flush = -1, m;
-          }
-          return t2 !== f ? m : n2.wrap <= 0 ? 1 : (2 === n2.wrap ? (U(n2, 255 & e2.adler), U(n2, e2.adler >> 8 & 255), U(n2, e2.adler >> 16 & 255), U(n2, e2.adler >> 24 & 255), U(n2, 255 & e2.total_in), U(n2, e2.total_in >> 8 & 255), U(n2, e2.total_in >> 16 & 255), U(n2, e2.total_in >> 24 & 255)) : (P(n2, e2.adler >>> 16), P(n2, 65535 & e2.adler)), F(e2), 0 < n2.wrap && (n2.wrap = -n2.wrap), 0 !== n2.pending ? m : 1);
-        }, r.deflateEnd = function(e2) {
-          var t2;
-          return e2 && e2.state ? (t2 = e2.state.status) !== C && 69 !== t2 && 73 !== t2 && 91 !== t2 && 103 !== t2 && t2 !== E && 666 !== t2 ? R(e2, _2) : (e2.state = null, t2 === E ? R(e2, -3) : m) : _2;
-        }, r.deflateSetDictionary = function(e2, t2) {
-          var r2, n2, i2, s2, a2, o2, h2, u2, l2 = t2.length;
-          if (!e2 || !e2.state) return _2;
-          if (2 === (s2 = (r2 = e2.state).wrap) || 1 === s2 && r2.status !== C || r2.lookahead) return _2;
-          for (1 === s2 && (e2.adler = d(e2.adler, t2, l2, 0)), r2.wrap = 0, l2 >= r2.w_size && (0 === s2 && (D(r2.head), r2.strstart = 0, r2.block_start = 0, r2.insert = 0), u2 = new c.Buf8(r2.w_size), c.arraySet(u2, t2, l2 - r2.w_size, r2.w_size, 0), t2 = u2, l2 = r2.w_size), a2 = e2.avail_in, o2 = e2.next_in, h2 = e2.input, e2.avail_in = l2, e2.next_in = 0, e2.input = t2, j(r2); r2.lookahead >= x; ) {
-            for (n2 = r2.strstart, i2 = r2.lookahead - (x - 1); r2.ins_h = (r2.ins_h << r2.hash_shift ^ r2.window[n2 + x - 1]) & r2.hash_mask, r2.prev[n2 & r2.w_mask] = r2.head[r2.ins_h], r2.head[r2.ins_h] = n2, n2++, --i2; ) ;
-            r2.strstart = n2, r2.lookahead = x - 1, j(r2);
-          }
-          return r2.strstart += r2.lookahead, r2.block_start = r2.strstart, r2.insert = r2.lookahead, r2.lookahead = 0, r2.match_length = r2.prev_length = x - 1, r2.match_available = 0, e2.next_in = o2, e2.input = h2, e2.avail_in = a2, r2.wrap = s2, m;
-        }, r.deflateInfo = "pako deflate (from Nodeca project)";
-      }, { "../utils/common": 41, "./adler32": 43, "./crc32": 45, "./messages": 51, "./trees": 52 }], 47: [function(e, t, r) {
-        t.exports = function() {
-          this.text = 0, this.time = 0, this.xflags = 0, this.os = 0, this.extra = null, this.extra_len = 0, this.name = "", this.comment = "", this.hcrc = 0, this.done = false;
-        };
-      }, {}], 48: [function(e, t, r) {
-        t.exports = function(e2, t2) {
-          var r2, n, i, s, a, o, h, u, l, f, c, d, p, m, _2, g, b, v, y, w, k, x, S, z, C;
-          r2 = e2.state, n = e2.next_in, z = e2.input, i = n + (e2.avail_in - 5), s = e2.next_out, C = e2.output, a = s - (t2 - e2.avail_out), o = s + (e2.avail_out - 257), h = r2.dmax, u = r2.wsize, l = r2.whave, f = r2.wnext, c = r2.window, d = r2.hold, p = r2.bits, m = r2.lencode, _2 = r2.distcode, g = (1 << r2.lenbits) - 1, b = (1 << r2.distbits) - 1;
-          e: do {
-            p < 15 && (d += z[n++] << p, p += 8, d += z[n++] << p, p += 8), v = m[d & g];
-            t: for (; ; ) {
-              if (d >>>= y = v >>> 24, p -= y, 0 === (y = v >>> 16 & 255)) C[s++] = 65535 & v;
-              else {
-                if (!(16 & y)) {
-                  if (0 == (64 & y)) {
-                    v = m[(65535 & v) + (d & (1 << y) - 1)];
-                    continue t;
-                  }
-                  if (32 & y) {
-                    r2.mode = 12;
-                    break e;
-                  }
-                  e2.msg = "invalid literal/length code", r2.mode = 30;
-                  break e;
-                }
-                w = 65535 & v, (y &= 15) && (p < y && (d += z[n++] << p, p += 8), w += d & (1 << y) - 1, d >>>= y, p -= y), p < 15 && (d += z[n++] << p, p += 8, d += z[n++] << p, p += 8), v = _2[d & b];
-                r: for (; ; ) {
-                  if (d >>>= y = v >>> 24, p -= y, !(16 & (y = v >>> 16 & 255))) {
-                    if (0 == (64 & y)) {
-                      v = _2[(65535 & v) + (d & (1 << y) - 1)];
-                      continue r;
-                    }
-                    e2.msg = "invalid distance code", r2.mode = 30;
-                    break e;
-                  }
-                  if (k = 65535 & v, p < (y &= 15) && (d += z[n++] << p, (p += 8) < y && (d += z[n++] << p, p += 8)), h < (k += d & (1 << y) - 1)) {
-                    e2.msg = "invalid distance too far back", r2.mode = 30;
-                    break e;
-                  }
-                  if (d >>>= y, p -= y, (y = s - a) < k) {
-                    if (l < (y = k - y) && r2.sane) {
-                      e2.msg = "invalid distance too far back", r2.mode = 30;
-                      break e;
-                    }
-                    if (S = c, (x = 0) === f) {
-                      if (x += u - y, y < w) {
-                        for (w -= y; C[s++] = c[x++], --y; ) ;
-                        x = s - k, S = C;
-                      }
-                    } else if (f < y) {
-                      if (x += u + f - y, (y -= f) < w) {
-                        for (w -= y; C[s++] = c[x++], --y; ) ;
-                        if (x = 0, f < w) {
-                          for (w -= y = f; C[s++] = c[x++], --y; ) ;
-                          x = s - k, S = C;
-                        }
-                      }
-                    } else if (x += f - y, y < w) {
-                      for (w -= y; C[s++] = c[x++], --y; ) ;
-                      x = s - k, S = C;
-                    }
-                    for (; 2 < w; ) C[s++] = S[x++], C[s++] = S[x++], C[s++] = S[x++], w -= 3;
-                    w && (C[s++] = S[x++], 1 < w && (C[s++] = S[x++]));
-                  } else {
-                    for (x = s - k; C[s++] = C[x++], C[s++] = C[x++], C[s++] = C[x++], 2 < (w -= 3); ) ;
-                    w && (C[s++] = C[x++], 1 < w && (C[s++] = C[x++]));
-                  }
-                  break;
-                }
-              }
-              break;
-            }
-          } while (n < i && s < o);
-          n -= w = p >> 3, d &= (1 << (p -= w << 3)) - 1, e2.next_in = n, e2.next_out = s, e2.avail_in = n < i ? i - n + 5 : 5 - (n - i), e2.avail_out = s < o ? o - s + 257 : 257 - (s - o), r2.hold = d, r2.bits = p;
-        };
-      }, {}], 49: [function(e, t, r) {
-        var I = e("../utils/common"), O = e("./adler32"), B = e("./crc32"), R = e("./inffast"), T = e("./inftrees"), D = 1, F = 2, N = 0, U = -2, P = 1, n = 852, i = 592;
-        function L(e2) {
-          return (e2 >>> 24 & 255) + (e2 >>> 8 & 65280) + ((65280 & e2) << 8) + ((255 & e2) << 24);
-        }
-        function s() {
-          this.mode = 0, this.last = false, this.wrap = 0, this.havedict = false, this.flags = 0, this.dmax = 0, this.check = 0, this.total = 0, this.head = null, this.wbits = 0, this.wsize = 0, this.whave = 0, this.wnext = 0, this.window = null, this.hold = 0, this.bits = 0, this.length = 0, this.offset = 0, this.extra = 0, this.lencode = null, this.distcode = null, this.lenbits = 0, this.distbits = 0, this.ncode = 0, this.nlen = 0, this.ndist = 0, this.have = 0, this.next = null, this.lens = new I.Buf16(320), this.work = new I.Buf16(288), this.lendyn = null, this.distdyn = null, this.sane = 0, this.back = 0, this.was = 0;
-        }
-        function a(e2) {
-          var t2;
-          return e2 && e2.state ? (t2 = e2.state, e2.total_in = e2.total_out = t2.total = 0, e2.msg = "", t2.wrap && (e2.adler = 1 & t2.wrap), t2.mode = P, t2.last = 0, t2.havedict = 0, t2.dmax = 32768, t2.head = null, t2.hold = 0, t2.bits = 0, t2.lencode = t2.lendyn = new I.Buf32(n), t2.distcode = t2.distdyn = new I.Buf32(i), t2.sane = 1, t2.back = -1, N) : U;
-        }
-        function o(e2) {
-          var t2;
-          return e2 && e2.state ? ((t2 = e2.state).wsize = 0, t2.whave = 0, t2.wnext = 0, a(e2)) : U;
-        }
-        function h(e2, t2) {
-          var r2, n2;
-          return e2 && e2.state ? (n2 = e2.state, t2 < 0 ? (r2 = 0, t2 = -t2) : (r2 = 1 + (t2 >> 4), t2 < 48 && (t2 &= 15)), t2 && (t2 < 8 || 15 < t2) ? U : (null !== n2.window && n2.wbits !== t2 && (n2.window = null), n2.wrap = r2, n2.wbits = t2, o(e2))) : U;
-        }
-        function u(e2, t2) {
-          var r2, n2;
-          return e2 ? (n2 = new s(), (e2.state = n2).window = null, (r2 = h(e2, t2)) !== N && (e2.state = null), r2) : U;
-        }
-        var l, f, c = true;
-        function j(e2) {
-          if (c) {
-            var t2;
-            for (l = new I.Buf32(512), f = new I.Buf32(32), t2 = 0; t2 < 144; ) e2.lens[t2++] = 8;
-            for (; t2 < 256; ) e2.lens[t2++] = 9;
-            for (; t2 < 280; ) e2.lens[t2++] = 7;
-            for (; t2 < 288; ) e2.lens[t2++] = 8;
-            for (T(D, e2.lens, 0, 288, l, 0, e2.work, { bits: 9 }), t2 = 0; t2 < 32; ) e2.lens[t2++] = 5;
-            T(F, e2.lens, 0, 32, f, 0, e2.work, { bits: 5 }), c = false;
-          }
-          e2.lencode = l, e2.lenbits = 9, e2.distcode = f, e2.distbits = 5;
-        }
-        function Z(e2, t2, r2, n2) {
-          var i2, s2 = e2.state;
-          return null === s2.window && (s2.wsize = 1 << s2.wbits, s2.wnext = 0, s2.whave = 0, s2.window = new I.Buf8(s2.wsize)), n2 >= s2.wsize ? (I.arraySet(s2.window, t2, r2 - s2.wsize, s2.wsize, 0), s2.wnext = 0, s2.whave = s2.wsize) : (n2 < (i2 = s2.wsize - s2.wnext) && (i2 = n2), I.arraySet(s2.window, t2, r2 - n2, i2, s2.wnext), (n2 -= i2) ? (I.arraySet(s2.window, t2, r2 - n2, n2, 0), s2.wnext = n2, s2.whave = s2.wsize) : (s2.wnext += i2, s2.wnext === s2.wsize && (s2.wnext = 0), s2.whave < s2.wsize && (s2.whave += i2))), 0;
-        }
-        r.inflateReset = o, r.inflateReset2 = h, r.inflateResetKeep = a, r.inflateInit = function(e2) {
-          return u(e2, 15);
-        }, r.inflateInit2 = u, r.inflate = function(e2, t2) {
-          var r2, n2, i2, s2, a2, o2, h2, u2, l2, f2, c2, d, p, m, _2, g, b, v, y, w, k, x, S, z, C = 0, E = new I.Buf8(4), A = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
-          if (!e2 || !e2.state || !e2.output || !e2.input && 0 !== e2.avail_in) return U;
-          12 === (r2 = e2.state).mode && (r2.mode = 13), a2 = e2.next_out, i2 = e2.output, h2 = e2.avail_out, s2 = e2.next_in, n2 = e2.input, o2 = e2.avail_in, u2 = r2.hold, l2 = r2.bits, f2 = o2, c2 = h2, x = N;
-          e: for (; ; ) switch (r2.mode) {
-            case P:
-              if (0 === r2.wrap) {
-                r2.mode = 13;
-                break;
-              }
-              for (; l2 < 16; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              if (2 & r2.wrap && 35615 === u2) {
-                E[r2.check = 0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0), l2 = u2 = 0, r2.mode = 2;
-                break;
-              }
-              if (r2.flags = 0, r2.head && (r2.head.done = false), !(1 & r2.wrap) || (((255 & u2) << 8) + (u2 >> 8)) % 31) {
-                e2.msg = "incorrect header check", r2.mode = 30;
-                break;
-              }
-              if (8 != (15 & u2)) {
-                e2.msg = "unknown compression method", r2.mode = 30;
-                break;
-              }
-              if (l2 -= 4, k = 8 + (15 & (u2 >>>= 4)), 0 === r2.wbits) r2.wbits = k;
-              else if (k > r2.wbits) {
-                e2.msg = "invalid window size", r2.mode = 30;
-                break;
-              }
-              r2.dmax = 1 << k, e2.adler = r2.check = 1, r2.mode = 512 & u2 ? 10 : 12, l2 = u2 = 0;
-              break;
-            case 2:
-              for (; l2 < 16; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              if (r2.flags = u2, 8 != (255 & r2.flags)) {
-                e2.msg = "unknown compression method", r2.mode = 30;
-                break;
-              }
-              if (57344 & r2.flags) {
-                e2.msg = "unknown header flags set", r2.mode = 30;
-                break;
-              }
-              r2.head && (r2.head.text = u2 >> 8 & 1), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0)), l2 = u2 = 0, r2.mode = 3;
-            case 3:
-              for (; l2 < 32; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              r2.head && (r2.head.time = u2), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, E[2] = u2 >>> 16 & 255, E[3] = u2 >>> 24 & 255, r2.check = B(r2.check, E, 4, 0)), l2 = u2 = 0, r2.mode = 4;
-            case 4:
-              for (; l2 < 16; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              r2.head && (r2.head.xflags = 255 & u2, r2.head.os = u2 >> 8), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0)), l2 = u2 = 0, r2.mode = 5;
-            case 5:
-              if (1024 & r2.flags) {
-                for (; l2 < 16; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                r2.length = u2, r2.head && (r2.head.extra_len = u2), 512 & r2.flags && (E[0] = 255 & u2, E[1] = u2 >>> 8 & 255, r2.check = B(r2.check, E, 2, 0)), l2 = u2 = 0;
-              } else r2.head && (r2.head.extra = null);
-              r2.mode = 6;
-            case 6:
-              if (1024 & r2.flags && (o2 < (d = r2.length) && (d = o2), d && (r2.head && (k = r2.head.extra_len - r2.length, r2.head.extra || (r2.head.extra = new Array(r2.head.extra_len)), I.arraySet(r2.head.extra, n2, s2, d, k)), 512 & r2.flags && (r2.check = B(r2.check, n2, d, s2)), o2 -= d, s2 += d, r2.length -= d), r2.length)) break e;
-              r2.length = 0, r2.mode = 7;
-            case 7:
-              if (2048 & r2.flags) {
-                if (0 === o2) break e;
-                for (d = 0; k = n2[s2 + d++], r2.head && k && r2.length < 65536 && (r2.head.name += String.fromCharCode(k)), k && d < o2; ) ;
-                if (512 & r2.flags && (r2.check = B(r2.check, n2, d, s2)), o2 -= d, s2 += d, k) break e;
-              } else r2.head && (r2.head.name = null);
-              r2.length = 0, r2.mode = 8;
-            case 8:
-              if (4096 & r2.flags) {
-                if (0 === o2) break e;
-                for (d = 0; k = n2[s2 + d++], r2.head && k && r2.length < 65536 && (r2.head.comment += String.fromCharCode(k)), k && d < o2; ) ;
-                if (512 & r2.flags && (r2.check = B(r2.check, n2, d, s2)), o2 -= d, s2 += d, k) break e;
-              } else r2.head && (r2.head.comment = null);
-              r2.mode = 9;
-            case 9:
-              if (512 & r2.flags) {
-                for (; l2 < 16; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                if (u2 !== (65535 & r2.check)) {
-                  e2.msg = "header crc mismatch", r2.mode = 30;
-                  break;
-                }
-                l2 = u2 = 0;
-              }
-              r2.head && (r2.head.hcrc = r2.flags >> 9 & 1, r2.head.done = true), e2.adler = r2.check = 0, r2.mode = 12;
-              break;
-            case 10:
-              for (; l2 < 32; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              e2.adler = r2.check = L(u2), l2 = u2 = 0, r2.mode = 11;
-            case 11:
-              if (0 === r2.havedict) return e2.next_out = a2, e2.avail_out = h2, e2.next_in = s2, e2.avail_in = o2, r2.hold = u2, r2.bits = l2, 2;
-              e2.adler = r2.check = 1, r2.mode = 12;
-            case 12:
-              if (5 === t2 || 6 === t2) break e;
-            case 13:
-              if (r2.last) {
-                u2 >>>= 7 & l2, l2 -= 7 & l2, r2.mode = 27;
-                break;
-              }
-              for (; l2 < 3; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              switch (r2.last = 1 & u2, l2 -= 1, 3 & (u2 >>>= 1)) {
-                case 0:
-                  r2.mode = 14;
-                  break;
-                case 1:
-                  if (j(r2), r2.mode = 20, 6 !== t2) break;
-                  u2 >>>= 2, l2 -= 2;
-                  break e;
-                case 2:
-                  r2.mode = 17;
-                  break;
-                case 3:
-                  e2.msg = "invalid block type", r2.mode = 30;
-              }
-              u2 >>>= 2, l2 -= 2;
-              break;
-            case 14:
-              for (u2 >>>= 7 & l2, l2 -= 7 & l2; l2 < 32; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              if ((65535 & u2) != (u2 >>> 16 ^ 65535)) {
-                e2.msg = "invalid stored block lengths", r2.mode = 30;
-                break;
-              }
-              if (r2.length = 65535 & u2, l2 = u2 = 0, r2.mode = 15, 6 === t2) break e;
-            case 15:
-              r2.mode = 16;
-            case 16:
-              if (d = r2.length) {
-                if (o2 < d && (d = o2), h2 < d && (d = h2), 0 === d) break e;
-                I.arraySet(i2, n2, s2, d, a2), o2 -= d, s2 += d, h2 -= d, a2 += d, r2.length -= d;
-                break;
-              }
-              r2.mode = 12;
-              break;
-            case 17:
-              for (; l2 < 14; ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              if (r2.nlen = 257 + (31 & u2), u2 >>>= 5, l2 -= 5, r2.ndist = 1 + (31 & u2), u2 >>>= 5, l2 -= 5, r2.ncode = 4 + (15 & u2), u2 >>>= 4, l2 -= 4, 286 < r2.nlen || 30 < r2.ndist) {
-                e2.msg = "too many length or distance symbols", r2.mode = 30;
-                break;
-              }
-              r2.have = 0, r2.mode = 18;
-            case 18:
-              for (; r2.have < r2.ncode; ) {
-                for (; l2 < 3; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                r2.lens[A[r2.have++]] = 7 & u2, u2 >>>= 3, l2 -= 3;
-              }
-              for (; r2.have < 19; ) r2.lens[A[r2.have++]] = 0;
-              if (r2.lencode = r2.lendyn, r2.lenbits = 7, S = { bits: r2.lenbits }, x = T(0, r2.lens, 0, 19, r2.lencode, 0, r2.work, S), r2.lenbits = S.bits, x) {
-                e2.msg = "invalid code lengths set", r2.mode = 30;
-                break;
-              }
-              r2.have = 0, r2.mode = 19;
-            case 19:
-              for (; r2.have < r2.nlen + r2.ndist; ) {
-                for (; g = (C = r2.lencode[u2 & (1 << r2.lenbits) - 1]) >>> 16 & 255, b = 65535 & C, !((_2 = C >>> 24) <= l2); ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                if (b < 16) u2 >>>= _2, l2 -= _2, r2.lens[r2.have++] = b;
-                else {
-                  if (16 === b) {
-                    for (z = _2 + 2; l2 < z; ) {
-                      if (0 === o2) break e;
-                      o2--, u2 += n2[s2++] << l2, l2 += 8;
-                    }
-                    if (u2 >>>= _2, l2 -= _2, 0 === r2.have) {
-                      e2.msg = "invalid bit length repeat", r2.mode = 30;
-                      break;
-                    }
-                    k = r2.lens[r2.have - 1], d = 3 + (3 & u2), u2 >>>= 2, l2 -= 2;
-                  } else if (17 === b) {
-                    for (z = _2 + 3; l2 < z; ) {
-                      if (0 === o2) break e;
-                      o2--, u2 += n2[s2++] << l2, l2 += 8;
-                    }
-                    l2 -= _2, k = 0, d = 3 + (7 & (u2 >>>= _2)), u2 >>>= 3, l2 -= 3;
-                  } else {
-                    for (z = _2 + 7; l2 < z; ) {
-                      if (0 === o2) break e;
-                      o2--, u2 += n2[s2++] << l2, l2 += 8;
-                    }
-                    l2 -= _2, k = 0, d = 11 + (127 & (u2 >>>= _2)), u2 >>>= 7, l2 -= 7;
-                  }
-                  if (r2.have + d > r2.nlen + r2.ndist) {
-                    e2.msg = "invalid bit length repeat", r2.mode = 30;
-                    break;
-                  }
-                  for (; d--; ) r2.lens[r2.have++] = k;
-                }
-              }
-              if (30 === r2.mode) break;
-              if (0 === r2.lens[256]) {
-                e2.msg = "invalid code -- missing end-of-block", r2.mode = 30;
-                break;
-              }
-              if (r2.lenbits = 9, S = { bits: r2.lenbits }, x = T(D, r2.lens, 0, r2.nlen, r2.lencode, 0, r2.work, S), r2.lenbits = S.bits, x) {
-                e2.msg = "invalid literal/lengths set", r2.mode = 30;
-                break;
-              }
-              if (r2.distbits = 6, r2.distcode = r2.distdyn, S = { bits: r2.distbits }, x = T(F, r2.lens, r2.nlen, r2.ndist, r2.distcode, 0, r2.work, S), r2.distbits = S.bits, x) {
-                e2.msg = "invalid distances set", r2.mode = 30;
-                break;
-              }
-              if (r2.mode = 20, 6 === t2) break e;
-            case 20:
-              r2.mode = 21;
-            case 21:
-              if (6 <= o2 && 258 <= h2) {
-                e2.next_out = a2, e2.avail_out = h2, e2.next_in = s2, e2.avail_in = o2, r2.hold = u2, r2.bits = l2, R(e2, c2), a2 = e2.next_out, i2 = e2.output, h2 = e2.avail_out, s2 = e2.next_in, n2 = e2.input, o2 = e2.avail_in, u2 = r2.hold, l2 = r2.bits, 12 === r2.mode && (r2.back = -1);
-                break;
-              }
-              for (r2.back = 0; g = (C = r2.lencode[u2 & (1 << r2.lenbits) - 1]) >>> 16 & 255, b = 65535 & C, !((_2 = C >>> 24) <= l2); ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              if (g && 0 == (240 & g)) {
-                for (v = _2, y = g, w = b; g = (C = r2.lencode[w + ((u2 & (1 << v + y) - 1) >> v)]) >>> 16 & 255, b = 65535 & C, !(v + (_2 = C >>> 24) <= l2); ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                u2 >>>= v, l2 -= v, r2.back += v;
-              }
-              if (u2 >>>= _2, l2 -= _2, r2.back += _2, r2.length = b, 0 === g) {
-                r2.mode = 26;
-                break;
-              }
-              if (32 & g) {
-                r2.back = -1, r2.mode = 12;
-                break;
-              }
-              if (64 & g) {
-                e2.msg = "invalid literal/length code", r2.mode = 30;
-                break;
-              }
-              r2.extra = 15 & g, r2.mode = 22;
-            case 22:
-              if (r2.extra) {
-                for (z = r2.extra; l2 < z; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                r2.length += u2 & (1 << r2.extra) - 1, u2 >>>= r2.extra, l2 -= r2.extra, r2.back += r2.extra;
-              }
-              r2.was = r2.length, r2.mode = 23;
-            case 23:
-              for (; g = (C = r2.distcode[u2 & (1 << r2.distbits) - 1]) >>> 16 & 255, b = 65535 & C, !((_2 = C >>> 24) <= l2); ) {
-                if (0 === o2) break e;
-                o2--, u2 += n2[s2++] << l2, l2 += 8;
-              }
-              if (0 == (240 & g)) {
-                for (v = _2, y = g, w = b; g = (C = r2.distcode[w + ((u2 & (1 << v + y) - 1) >> v)]) >>> 16 & 255, b = 65535 & C, !(v + (_2 = C >>> 24) <= l2); ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                u2 >>>= v, l2 -= v, r2.back += v;
-              }
-              if (u2 >>>= _2, l2 -= _2, r2.back += _2, 64 & g) {
-                e2.msg = "invalid distance code", r2.mode = 30;
-                break;
-              }
-              r2.offset = b, r2.extra = 15 & g, r2.mode = 24;
-            case 24:
-              if (r2.extra) {
-                for (z = r2.extra; l2 < z; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                r2.offset += u2 & (1 << r2.extra) - 1, u2 >>>= r2.extra, l2 -= r2.extra, r2.back += r2.extra;
-              }
-              if (r2.offset > r2.dmax) {
-                e2.msg = "invalid distance too far back", r2.mode = 30;
-                break;
-              }
-              r2.mode = 25;
-            case 25:
-              if (0 === h2) break e;
-              if (d = c2 - h2, r2.offset > d) {
-                if ((d = r2.offset - d) > r2.whave && r2.sane) {
-                  e2.msg = "invalid distance too far back", r2.mode = 30;
-                  break;
-                }
-                p = d > r2.wnext ? (d -= r2.wnext, r2.wsize - d) : r2.wnext - d, d > r2.length && (d = r2.length), m = r2.window;
-              } else m = i2, p = a2 - r2.offset, d = r2.length;
-              for (h2 < d && (d = h2), h2 -= d, r2.length -= d; i2[a2++] = m[p++], --d; ) ;
-              0 === r2.length && (r2.mode = 21);
-              break;
-            case 26:
-              if (0 === h2) break e;
-              i2[a2++] = r2.length, h2--, r2.mode = 21;
-              break;
-            case 27:
-              if (r2.wrap) {
-                for (; l2 < 32; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 |= n2[s2++] << l2, l2 += 8;
-                }
-                if (c2 -= h2, e2.total_out += c2, r2.total += c2, c2 && (e2.adler = r2.check = r2.flags ? B(r2.check, i2, c2, a2 - c2) : O(r2.check, i2, c2, a2 - c2)), c2 = h2, (r2.flags ? u2 : L(u2)) !== r2.check) {
-                  e2.msg = "incorrect data check", r2.mode = 30;
-                  break;
-                }
-                l2 = u2 = 0;
-              }
-              r2.mode = 28;
-            case 28:
-              if (r2.wrap && r2.flags) {
-                for (; l2 < 32; ) {
-                  if (0 === o2) break e;
-                  o2--, u2 += n2[s2++] << l2, l2 += 8;
-                }
-                if (u2 !== (4294967295 & r2.total)) {
-                  e2.msg = "incorrect length check", r2.mode = 30;
-                  break;
-                }
-                l2 = u2 = 0;
-              }
-              r2.mode = 29;
-            case 29:
-              x = 1;
-              break e;
-            case 30:
-              x = -3;
-              break e;
-            case 31:
-              return -4;
-            case 32:
-            default:
-              return U;
-          }
-          return e2.next_out = a2, e2.avail_out = h2, e2.next_in = s2, e2.avail_in = o2, r2.hold = u2, r2.bits = l2, (r2.wsize || c2 !== e2.avail_out && r2.mode < 30 && (r2.mode < 27 || 4 !== t2)) && Z(e2, e2.output, e2.next_out, c2 - e2.avail_out) ? (r2.mode = 31, -4) : (f2 -= e2.avail_in, c2 -= e2.avail_out, e2.total_in += f2, e2.total_out += c2, r2.total += c2, r2.wrap && c2 && (e2.adler = r2.check = r2.flags ? B(r2.check, i2, c2, e2.next_out - c2) : O(r2.check, i2, c2, e2.next_out - c2)), e2.data_type = r2.bits + (r2.last ? 64 : 0) + (12 === r2.mode ? 128 : 0) + (20 === r2.mode || 15 === r2.mode ? 256 : 0), (0 == f2 && 0 === c2 || 4 === t2) && x === N && (x = -5), x);
-        }, r.inflateEnd = function(e2) {
-          if (!e2 || !e2.state) return U;
-          var t2 = e2.state;
-          return t2.window && (t2.window = null), e2.state = null, N;
-        }, r.inflateGetHeader = function(e2, t2) {
-          var r2;
-          return e2 && e2.state ? 0 == (2 & (r2 = e2.state).wrap) ? U : ((r2.head = t2).done = false, N) : U;
-        }, r.inflateSetDictionary = function(e2, t2) {
-          var r2, n2 = t2.length;
-          return e2 && e2.state ? 0 !== (r2 = e2.state).wrap && 11 !== r2.mode ? U : 11 === r2.mode && O(1, t2, n2, 0) !== r2.check ? -3 : Z(e2, t2, n2, n2) ? (r2.mode = 31, -4) : (r2.havedict = 1, N) : U;
-        }, r.inflateInfo = "pako inflate (from Nodeca project)";
-      }, { "../utils/common": 41, "./adler32": 43, "./crc32": 45, "./inffast": 48, "./inftrees": 50 }], 50: [function(e, t, r) {
-        var D = e("../utils/common"), F = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0], N = [16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 72, 78], U = [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0], P = [16, 16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 64, 64];
-        t.exports = function(e2, t2, r2, n, i, s, a, o) {
-          var h, u, l, f, c, d, p, m, _2, g = o.bits, b = 0, v = 0, y = 0, w = 0, k = 0, x = 0, S = 0, z = 0, C = 0, E = 0, A = null, I = 0, O = new D.Buf16(16), B = new D.Buf16(16), R = null, T = 0;
-          for (b = 0; b <= 15; b++) O[b] = 0;
-          for (v = 0; v < n; v++) O[t2[r2 + v]]++;
-          for (k = g, w = 15; 1 <= w && 0 === O[w]; w--) ;
-          if (w < k && (k = w), 0 === w) return i[s++] = 20971520, i[s++] = 20971520, o.bits = 1, 0;
-          for (y = 1; y < w && 0 === O[y]; y++) ;
-          for (k < y && (k = y), b = z = 1; b <= 15; b++) if (z <<= 1, (z -= O[b]) < 0) return -1;
-          if (0 < z && (0 === e2 || 1 !== w)) return -1;
-          for (B[1] = 0, b = 1; b < 15; b++) B[b + 1] = B[b] + O[b];
-          for (v = 0; v < n; v++) 0 !== t2[r2 + v] && (a[B[t2[r2 + v]]++] = v);
-          if (d = 0 === e2 ? (A = R = a, 19) : 1 === e2 ? (A = F, I -= 257, R = N, T -= 257, 256) : (A = U, R = P, -1), b = y, c = s, S = v = E = 0, l = -1, f = (C = 1 << (x = k)) - 1, 1 === e2 && 852 < C || 2 === e2 && 592 < C) return 1;
-          for (; ; ) {
-            for (p = b - S, _2 = a[v] < d ? (m = 0, a[v]) : a[v] > d ? (m = R[T + a[v]], A[I + a[v]]) : (m = 96, 0), h = 1 << b - S, y = u = 1 << x; i[c + (E >> S) + (u -= h)] = p << 24 | m << 16 | _2 | 0, 0 !== u; ) ;
-            for (h = 1 << b - 1; E & h; ) h >>= 1;
-            if (0 !== h ? (E &= h - 1, E += h) : E = 0, v++, 0 == --O[b]) {
-              if (b === w) break;
-              b = t2[r2 + a[v]];
-            }
-            if (k < b && (E & f) !== l) {
-              for (0 === S && (S = k), c += y, z = 1 << (x = b - S); x + S < w && !((z -= O[x + S]) <= 0); ) x++, z <<= 1;
-              if (C += 1 << x, 1 === e2 && 852 < C || 2 === e2 && 592 < C) return 1;
-              i[l = E & f] = k << 24 | x << 16 | c - s | 0;
-            }
-          }
-          return 0 !== E && (i[c + E] = b - S << 24 | 64 << 16 | 0), o.bits = k, 0;
-        };
-      }, { "../utils/common": 41 }], 51: [function(e, t, r) {
-        t.exports = { 2: "need dictionary", 1: "stream end", 0: "", "-1": "file error", "-2": "stream error", "-3": "data error", "-4": "insufficient memory", "-5": "buffer error", "-6": "incompatible version" };
-      }, {}], 52: [function(e, t, r) {
-        var i = e("../utils/common"), o = 0, h = 1;
-        function n(e2) {
-          for (var t2 = e2.length; 0 <= --t2; ) e2[t2] = 0;
-        }
-        var s = 0, a = 29, u = 256, l = u + 1 + a, f = 30, c = 19, _2 = 2 * l + 1, g = 15, d = 16, p = 7, m = 256, b = 16, v = 17, y = 18, w = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0], k = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13], x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7], S = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15], z = new Array(2 * (l + 2));
-        n(z);
-        var C = new Array(2 * f);
-        n(C);
-        var E = new Array(512);
-        n(E);
-        var A = new Array(256);
-        n(A);
-        var I = new Array(a);
-        n(I);
-        var O, B, R, T = new Array(f);
-        function D(e2, t2, r2, n2, i2) {
-          this.static_tree = e2, this.extra_bits = t2, this.extra_base = r2, this.elems = n2, this.max_length = i2, this.has_stree = e2 && e2.length;
-        }
-        function F(e2, t2) {
-          this.dyn_tree = e2, this.max_code = 0, this.stat_desc = t2;
-        }
-        function N(e2) {
-          return e2 < 256 ? E[e2] : E[256 + (e2 >>> 7)];
-        }
-        function U(e2, t2) {
-          e2.pending_buf[e2.pending++] = 255 & t2, e2.pending_buf[e2.pending++] = t2 >>> 8 & 255;
-        }
-        function P(e2, t2, r2) {
-          e2.bi_valid > d - r2 ? (e2.bi_buf |= t2 << e2.bi_valid & 65535, U(e2, e2.bi_buf), e2.bi_buf = t2 >> d - e2.bi_valid, e2.bi_valid += r2 - d) : (e2.bi_buf |= t2 << e2.bi_valid & 65535, e2.bi_valid += r2);
-        }
-        function L(e2, t2, r2) {
-          P(e2, r2[2 * t2], r2[2 * t2 + 1]);
-        }
-        function j(e2, t2) {
-          for (var r2 = 0; r2 |= 1 & e2, e2 >>>= 1, r2 <<= 1, 0 < --t2; ) ;
-          return r2 >>> 1;
-        }
-        function Z(e2, t2, r2) {
-          var n2, i2, s2 = new Array(g + 1), a2 = 0;
-          for (n2 = 1; n2 <= g; n2++) s2[n2] = a2 = a2 + r2[n2 - 1] << 1;
-          for (i2 = 0; i2 <= t2; i2++) {
-            var o2 = e2[2 * i2 + 1];
-            0 !== o2 && (e2[2 * i2] = j(s2[o2]++, o2));
-          }
-        }
-        function W(e2) {
-          var t2;
-          for (t2 = 0; t2 < l; t2++) e2.dyn_ltree[2 * t2] = 0;
-          for (t2 = 0; t2 < f; t2++) e2.dyn_dtree[2 * t2] = 0;
-          for (t2 = 0; t2 < c; t2++) e2.bl_tree[2 * t2] = 0;
-          e2.dyn_ltree[2 * m] = 1, e2.opt_len = e2.static_len = 0, e2.last_lit = e2.matches = 0;
-        }
-        function M(e2) {
-          8 < e2.bi_valid ? U(e2, e2.bi_buf) : 0 < e2.bi_valid && (e2.pending_buf[e2.pending++] = e2.bi_buf), e2.bi_buf = 0, e2.bi_valid = 0;
-        }
-        function H(e2, t2, r2, n2) {
-          var i2 = 2 * t2, s2 = 2 * r2;
-          return e2[i2] < e2[s2] || e2[i2] === e2[s2] && n2[t2] <= n2[r2];
-        }
-        function G(e2, t2, r2) {
-          for (var n2 = e2.heap[r2], i2 = r2 << 1; i2 <= e2.heap_len && (i2 < e2.heap_len && H(t2, e2.heap[i2 + 1], e2.heap[i2], e2.depth) && i2++, !H(t2, n2, e2.heap[i2], e2.depth)); ) e2.heap[r2] = e2.heap[i2], r2 = i2, i2 <<= 1;
-          e2.heap[r2] = n2;
-        }
-        function K(e2, t2, r2) {
-          var n2, i2, s2, a2, o2 = 0;
-          if (0 !== e2.last_lit) for (; n2 = e2.pending_buf[e2.d_buf + 2 * o2] << 8 | e2.pending_buf[e2.d_buf + 2 * o2 + 1], i2 = e2.pending_buf[e2.l_buf + o2], o2++, 0 === n2 ? L(e2, i2, t2) : (L(e2, (s2 = A[i2]) + u + 1, t2), 0 !== (a2 = w[s2]) && P(e2, i2 -= I[s2], a2), L(e2, s2 = N(--n2), r2), 0 !== (a2 = k[s2]) && P(e2, n2 -= T[s2], a2)), o2 < e2.last_lit; ) ;
-          L(e2, m, t2);
-        }
-        function Y(e2, t2) {
-          var r2, n2, i2, s2 = t2.dyn_tree, a2 = t2.stat_desc.static_tree, o2 = t2.stat_desc.has_stree, h2 = t2.stat_desc.elems, u2 = -1;
-          for (e2.heap_len = 0, e2.heap_max = _2, r2 = 0; r2 < h2; r2++) 0 !== s2[2 * r2] ? (e2.heap[++e2.heap_len] = u2 = r2, e2.depth[r2] = 0) : s2[2 * r2 + 1] = 0;
-          for (; e2.heap_len < 2; ) s2[2 * (i2 = e2.heap[++e2.heap_len] = u2 < 2 ? ++u2 : 0)] = 1, e2.depth[i2] = 0, e2.opt_len--, o2 && (e2.static_len -= a2[2 * i2 + 1]);
-          for (t2.max_code = u2, r2 = e2.heap_len >> 1; 1 <= r2; r2--) G(e2, s2, r2);
-          for (i2 = h2; r2 = e2.heap[1], e2.heap[1] = e2.heap[e2.heap_len--], G(e2, s2, 1), n2 = e2.heap[1], e2.heap[--e2.heap_max] = r2, e2.heap[--e2.heap_max] = n2, s2[2 * i2] = s2[2 * r2] + s2[2 * n2], e2.depth[i2] = (e2.depth[r2] >= e2.depth[n2] ? e2.depth[r2] : e2.depth[n2]) + 1, s2[2 * r2 + 1] = s2[2 * n2 + 1] = i2, e2.heap[1] = i2++, G(e2, s2, 1), 2 <= e2.heap_len; ) ;
-          e2.heap[--e2.heap_max] = e2.heap[1], function(e3, t3) {
-            var r3, n3, i3, s3, a3, o3, h3 = t3.dyn_tree, u3 = t3.max_code, l2 = t3.stat_desc.static_tree, f2 = t3.stat_desc.has_stree, c2 = t3.stat_desc.extra_bits, d2 = t3.stat_desc.extra_base, p2 = t3.stat_desc.max_length, m2 = 0;
-            for (s3 = 0; s3 <= g; s3++) e3.bl_count[s3] = 0;
-            for (h3[2 * e3.heap[e3.heap_max] + 1] = 0, r3 = e3.heap_max + 1; r3 < _2; r3++) p2 < (s3 = h3[2 * h3[2 * (n3 = e3.heap[r3]) + 1] + 1] + 1) && (s3 = p2, m2++), h3[2 * n3 + 1] = s3, u3 < n3 || (e3.bl_count[s3]++, a3 = 0, d2 <= n3 && (a3 = c2[n3 - d2]), o3 = h3[2 * n3], e3.opt_len += o3 * (s3 + a3), f2 && (e3.static_len += o3 * (l2[2 * n3 + 1] + a3)));
-            if (0 !== m2) {
-              do {
-                for (s3 = p2 - 1; 0 === e3.bl_count[s3]; ) s3--;
-                e3.bl_count[s3]--, e3.bl_count[s3 + 1] += 2, e3.bl_count[p2]--, m2 -= 2;
-              } while (0 < m2);
-              for (s3 = p2; 0 !== s3; s3--) for (n3 = e3.bl_count[s3]; 0 !== n3; ) u3 < (i3 = e3.heap[--r3]) || (h3[2 * i3 + 1] !== s3 && (e3.opt_len += (s3 - h3[2 * i3 + 1]) * h3[2 * i3], h3[2 * i3 + 1] = s3), n3--);
-            }
-          }(e2, t2), Z(s2, u2, e2.bl_count);
-        }
-        function X(e2, t2, r2) {
-          var n2, i2, s2 = -1, a2 = t2[1], o2 = 0, h2 = 7, u2 = 4;
-          for (0 === a2 && (h2 = 138, u2 = 3), t2[2 * (r2 + 1) + 1] = 65535, n2 = 0; n2 <= r2; n2++) i2 = a2, a2 = t2[2 * (n2 + 1) + 1], ++o2 < h2 && i2 === a2 || (o2 < u2 ? e2.bl_tree[2 * i2] += o2 : 0 !== i2 ? (i2 !== s2 && e2.bl_tree[2 * i2]++, e2.bl_tree[2 * b]++) : o2 <= 10 ? e2.bl_tree[2 * v]++ : e2.bl_tree[2 * y]++, s2 = i2, u2 = (o2 = 0) === a2 ? (h2 = 138, 3) : i2 === a2 ? (h2 = 6, 3) : (h2 = 7, 4));
-        }
-        function V(e2, t2, r2) {
-          var n2, i2, s2 = -1, a2 = t2[1], o2 = 0, h2 = 7, u2 = 4;
-          for (0 === a2 && (h2 = 138, u2 = 3), n2 = 0; n2 <= r2; n2++) if (i2 = a2, a2 = t2[2 * (n2 + 1) + 1], !(++o2 < h2 && i2 === a2)) {
-            if (o2 < u2) for (; L(e2, i2, e2.bl_tree), 0 != --o2; ) ;
-            else 0 !== i2 ? (i2 !== s2 && (L(e2, i2, e2.bl_tree), o2--), L(e2, b, e2.bl_tree), P(e2, o2 - 3, 2)) : o2 <= 10 ? (L(e2, v, e2.bl_tree), P(e2, o2 - 3, 3)) : (L(e2, y, e2.bl_tree), P(e2, o2 - 11, 7));
-            s2 = i2, u2 = (o2 = 0) === a2 ? (h2 = 138, 3) : i2 === a2 ? (h2 = 6, 3) : (h2 = 7, 4);
-          }
-        }
-        n(T);
-        var q = false;
-        function J(e2, t2, r2, n2) {
-          P(e2, (s << 1) + (n2 ? 1 : 0), 3), function(e3, t3, r3, n3) {
-            M(e3), U(e3, r3), U(e3, ~r3), i.arraySet(e3.pending_buf, e3.window, t3, r3, e3.pending), e3.pending += r3;
-          }(e2, t2, r2);
-        }
-        r._tr_init = function(e2) {
-          q || (function() {
-            var e3, t2, r2, n2, i2, s2 = new Array(g + 1);
-            for (n2 = r2 = 0; n2 < a - 1; n2++) for (I[n2] = r2, e3 = 0; e3 < 1 << w[n2]; e3++) A[r2++] = n2;
-            for (A[r2 - 1] = n2, n2 = i2 = 0; n2 < 16; n2++) for (T[n2] = i2, e3 = 0; e3 < 1 << k[n2]; e3++) E[i2++] = n2;
-            for (i2 >>= 7; n2 < f; n2++) for (T[n2] = i2 << 7, e3 = 0; e3 < 1 << k[n2] - 7; e3++) E[256 + i2++] = n2;
-            for (t2 = 0; t2 <= g; t2++) s2[t2] = 0;
-            for (e3 = 0; e3 <= 143; ) z[2 * e3 + 1] = 8, e3++, s2[8]++;
-            for (; e3 <= 255; ) z[2 * e3 + 1] = 9, e3++, s2[9]++;
-            for (; e3 <= 279; ) z[2 * e3 + 1] = 7, e3++, s2[7]++;
-            for (; e3 <= 287; ) z[2 * e3 + 1] = 8, e3++, s2[8]++;
-            for (Z(z, l + 1, s2), e3 = 0; e3 < f; e3++) C[2 * e3 + 1] = 5, C[2 * e3] = j(e3, 5);
-            O = new D(z, w, u + 1, l, g), B = new D(C, k, 0, f, g), R = new D(new Array(0), x, 0, c, p);
-          }(), q = true), e2.l_desc = new F(e2.dyn_ltree, O), e2.d_desc = new F(e2.dyn_dtree, B), e2.bl_desc = new F(e2.bl_tree, R), e2.bi_buf = 0, e2.bi_valid = 0, W(e2);
-        }, r._tr_stored_block = J, r._tr_flush_block = function(e2, t2, r2, n2) {
-          var i2, s2, a2 = 0;
-          0 < e2.level ? (2 === e2.strm.data_type && (e2.strm.data_type = function(e3) {
-            var t3, r3 = 4093624447;
-            for (t3 = 0; t3 <= 31; t3++, r3 >>>= 1) if (1 & r3 && 0 !== e3.dyn_ltree[2 * t3]) return o;
-            if (0 !== e3.dyn_ltree[18] || 0 !== e3.dyn_ltree[20] || 0 !== e3.dyn_ltree[26]) return h;
-            for (t3 = 32; t3 < u; t3++) if (0 !== e3.dyn_ltree[2 * t3]) return h;
-            return o;
-          }(e2)), Y(e2, e2.l_desc), Y(e2, e2.d_desc), a2 = function(e3) {
-            var t3;
-            for (X(e3, e3.dyn_ltree, e3.l_desc.max_code), X(e3, e3.dyn_dtree, e3.d_desc.max_code), Y(e3, e3.bl_desc), t3 = c - 1; 3 <= t3 && 0 === e3.bl_tree[2 * S[t3] + 1]; t3--) ;
-            return e3.opt_len += 3 * (t3 + 1) + 5 + 5 + 4, t3;
-          }(e2), i2 = e2.opt_len + 3 + 7 >>> 3, (s2 = e2.static_len + 3 + 7 >>> 3) <= i2 && (i2 = s2)) : i2 = s2 = r2 + 5, r2 + 4 <= i2 && -1 !== t2 ? J(e2, t2, r2, n2) : 4 === e2.strategy || s2 === i2 ? (P(e2, 2 + (n2 ? 1 : 0), 3), K(e2, z, C)) : (P(e2, 4 + (n2 ? 1 : 0), 3), function(e3, t3, r3, n3) {
-            var i3;
-            for (P(e3, t3 - 257, 5), P(e3, r3 - 1, 5), P(e3, n3 - 4, 4), i3 = 0; i3 < n3; i3++) P(e3, e3.bl_tree[2 * S[i3] + 1], 3);
-            V(e3, e3.dyn_ltree, t3 - 1), V(e3, e3.dyn_dtree, r3 - 1);
-          }(e2, e2.l_desc.max_code + 1, e2.d_desc.max_code + 1, a2 + 1), K(e2, e2.dyn_ltree, e2.dyn_dtree)), W(e2), n2 && M(e2);
-        }, r._tr_tally = function(e2, t2, r2) {
-          return e2.pending_buf[e2.d_buf + 2 * e2.last_lit] = t2 >>> 8 & 255, e2.pending_buf[e2.d_buf + 2 * e2.last_lit + 1] = 255 & t2, e2.pending_buf[e2.l_buf + e2.last_lit] = 255 & r2, e2.last_lit++, 0 === t2 ? e2.dyn_ltree[2 * r2]++ : (e2.matches++, t2--, e2.dyn_ltree[2 * (A[r2] + u + 1)]++, e2.dyn_dtree[2 * N(t2)]++), e2.last_lit === e2.lit_bufsize - 1;
-        }, r._tr_align = function(e2) {
-          P(e2, 2, 3), L(e2, m, z), function(e3) {
-            16 === e3.bi_valid ? (U(e3, e3.bi_buf), e3.bi_buf = 0, e3.bi_valid = 0) : 8 <= e3.bi_valid && (e3.pending_buf[e3.pending++] = 255 & e3.bi_buf, e3.bi_buf >>= 8, e3.bi_valid -= 8);
-          }(e2);
-        };
-      }, { "../utils/common": 41 }], 53: [function(e, t, r) {
-        t.exports = function() {
-          this.input = null, this.next_in = 0, this.avail_in = 0, this.total_in = 0, this.output = null, this.next_out = 0, this.avail_out = 0, this.total_out = 0, this.msg = "", this.state = null, this.data_type = 2, this.adler = 0;
-        };
-      }, {}], 54: [function(e, t, r) {
-        (function(e2) {
-          !function(r2, n) {
-            if (!r2.setImmediate) {
-              var i, s, t2, a, o = 1, h = {}, u = false, l = r2.document, e3 = Object.getPrototypeOf && Object.getPrototypeOf(r2);
-              e3 = e3 && e3.setTimeout ? e3 : r2, i = "[object process]" === {}.toString.call(r2.process) ? function(e4) {
-                process.nextTick(function() {
-                  c(e4);
-                });
-              } : function() {
-                if (r2.postMessage && !r2.importScripts) {
-                  var e4 = true, t3 = r2.onmessage;
-                  return r2.onmessage = function() {
-                    e4 = false;
-                  }, r2.postMessage("", "*"), r2.onmessage = t3, e4;
-                }
-              }() ? (a = "setImmediate$" + Math.random() + "$", r2.addEventListener ? r2.addEventListener("message", d, false) : r2.attachEvent("onmessage", d), function(e4) {
-                r2.postMessage(a + e4, "*");
-              }) : r2.MessageChannel ? ((t2 = new MessageChannel()).port1.onmessage = function(e4) {
-                c(e4.data);
-              }, function(e4) {
-                t2.port2.postMessage(e4);
-              }) : l && "onreadystatechange" in l.createElement("script") ? (s = l.documentElement, function(e4) {
-                var t3 = l.createElement("script");
-                t3.onreadystatechange = function() {
-                  c(e4), t3.onreadystatechange = null, s.removeChild(t3), t3 = null;
-                }, s.appendChild(t3);
-              }) : function(e4) {
-                setTimeout(c, 0, e4);
-              }, e3.setImmediate = function(e4) {
-                "function" != typeof e4 && (e4 = new Function("" + e4));
-                for (var t3 = new Array(arguments.length - 1), r3 = 0; r3 < t3.length; r3++) t3[r3] = arguments[r3 + 1];
-                var n2 = { callback: e4, args: t3 };
-                return h[o] = n2, i(o), o++;
-              }, e3.clearImmediate = f;
-            }
-            function f(e4) {
-              delete h[e4];
-            }
-            function c(e4) {
-              if (u) setTimeout(c, 0, e4);
-              else {
-                var t3 = h[e4];
-                if (t3) {
-                  u = true;
-                  try {
-                    !function(e5) {
-                      var t4 = e5.callback, r3 = e5.args;
-                      switch (r3.length) {
-                        case 0:
-                          t4();
-                          break;
-                        case 1:
-                          t4(r3[0]);
-                          break;
-                        case 2:
-                          t4(r3[0], r3[1]);
-                          break;
-                        case 3:
-                          t4(r3[0], r3[1], r3[2]);
-                          break;
-                        default:
-                          t4.apply(n, r3);
-                      }
-                    }(t3);
-                  } finally {
-                    f(e4), u = false;
-                  }
-                }
-              }
-            }
-            function d(e4) {
-              e4.source === r2 && "string" == typeof e4.data && 0 === e4.data.indexOf(a) && c(+e4.data.slice(a.length));
-            }
-          }("undefined" == typeof self ? void 0 === e2 ? this : e2 : self);
-        }).call(this, "undefined" != typeof commonjsGlobal ? commonjsGlobal : "undefined" != typeof self ? self : "undefined" != typeof window ? window : {});
-      }, {}] }, {}, [10])(10);
+  var u8 = Uint8Array, u16 = Uint16Array, i32 = Int32Array;
+  var fleb = new u8([
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4,
+    5,
+    5,
+    5,
+    5,
+    0,
+    /* unused */
+    0,
+    0,
+    /* impossible */
+    0
+  ]);
+  var fdeb = new u8([
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    2,
+    2,
+    3,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6,
+    6,
+    7,
+    7,
+    8,
+    8,
+    9,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    13,
+    13,
+    /* unused */
+    0,
+    0
+  ]);
+  var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+  var freb = function(eb, start) {
+    var b = new u16(31);
+    for (var i = 0; i < 31; ++i) {
+      b[i] = start += 1 << eb[i - 1];
+    }
+    var r = new i32(b[30]);
+    for (var i = 1; i < 30; ++i) {
+      for (var j = b[i]; j < b[i + 1]; ++j) {
+        r[j] = j - b[i] << 5 | i;
+      }
+    }
+    return { b, r };
+  };
+  var _a = freb(fleb, 2), fl = _a.b, revfl = _a.r;
+  fl[28] = 258, revfl[258] = 28;
+  var _b = freb(fdeb, 0), revfd = _b.r;
+  var rev = new u16(32768);
+  for (var i = 0; i < 32768; ++i) {
+    var x = (i & 43690) >> 1 | (i & 21845) << 1;
+    x = (x & 52428) >> 2 | (x & 13107) << 2;
+    x = (x & 61680) >> 4 | (x & 3855) << 4;
+    rev[i] = ((x & 65280) >> 8 | (x & 255) << 8) >> 1;
+  }
+  var hMap = function(cd, mb, r) {
+    var s = cd.length;
+    var i = 0;
+    var l = new u16(mb);
+    for (; i < s; ++i) {
+      if (cd[i])
+        ++l[cd[i] - 1];
+    }
+    var le = new u16(mb);
+    for (i = 1; i < mb; ++i) {
+      le[i] = le[i - 1] + l[i - 1] << 1;
+    }
+    var co;
+    {
+      co = new u16(s);
+      for (i = 0; i < s; ++i) {
+        if (cd[i]) {
+          co[i] = rev[le[cd[i] - 1]++] >> 15 - cd[i];
+        }
+      }
+    }
+    return co;
+  };
+  var flt = new u8(288);
+  for (var i = 0; i < 144; ++i)
+    flt[i] = 8;
+  for (var i = 144; i < 256; ++i)
+    flt[i] = 9;
+  for (var i = 256; i < 280; ++i)
+    flt[i] = 7;
+  for (var i = 280; i < 288; ++i)
+    flt[i] = 8;
+  var fdt = new u8(32);
+  for (var i = 0; i < 32; ++i)
+    fdt[i] = 5;
+  var flm = /* @__PURE__ */ hMap(flt, 9);
+  var fdm = /* @__PURE__ */ hMap(fdt, 5);
+  var shft = function(p) {
+    return (p + 7) / 8 | 0;
+  };
+  var slc = function(v, s, e) {
+    if (e == null || e > v.length)
+      e = v.length;
+    return new u8(v.subarray(s, e));
+  };
+  var ec = [
+    "unexpected EOF",
+    "invalid block type",
+    "invalid length/literal",
+    "invalid distance",
+    "stream finished",
+    "no stream handler",
+    ,
+    "no callback",
+    "invalid UTF-8 data",
+    "extra field too long",
+    "date not in range 1980-2099",
+    "filename too long",
+    "stream finishing",
+    "invalid zip data"
+    // determined by unknown compression method
+  ];
+  var err = function(ind, msg, nt) {
+    var e = new Error(msg || ec[ind]);
+    e.code = ind;
+    if (Error.captureStackTrace)
+      Error.captureStackTrace(e, err);
+    if (!nt)
+      throw e;
+    return e;
+  };
+  var wbits = function(d, p, v) {
+    v <<= p & 7;
+    var o = p / 8 | 0;
+    d[o] |= v;
+    d[o + 1] |= v >> 8;
+  };
+  var wbits16 = function(d, p, v) {
+    v <<= p & 7;
+    var o = p / 8 | 0;
+    d[o] |= v;
+    d[o + 1] |= v >> 8;
+    d[o + 2] |= v >> 16;
+  };
+  var hTree = function(d, mb) {
+    var t2 = [];
+    for (var i = 0; i < d.length; ++i) {
+      if (d[i])
+        t2.push({ s: i, f: d[i] });
+    }
+    var s = t2.length;
+    var t22 = t2.slice();
+    if (!s)
+      return { t: et, l: 0 };
+    if (s == 1) {
+      var v = new u8(t2[0].s + 1);
+      v[t2[0].s] = 1;
+      return { t: v, l: 1 };
+    }
+    t2.sort(function(a, b) {
+      return a.f - b.f;
     });
-  })(jszip_min);
-  var jszip_minExports = jszip_min.exports;
-  const JSZip = /* @__PURE__ */ getDefaultExportFromCjs(jszip_minExports);
+    t2.push({ s: -1, f: 25001 });
+    var l = t2[0], r = t2[1], i0 = 0, i1 = 1, i2 = 2;
+    t2[0] = { s: -1, f: l.f + r.f, l, r };
+    while (i1 != s - 1) {
+      l = t2[t2[i0].f < t2[i2].f ? i0++ : i2++];
+      r = t2[i0 != i1 && t2[i0].f < t2[i2].f ? i0++ : i2++];
+      t2[i1++] = { s: -1, f: l.f + r.f, l, r };
+    }
+    var maxSym = t22[0].s;
+    for (var i = 1; i < s; ++i) {
+      if (t22[i].s > maxSym)
+        maxSym = t22[i].s;
+    }
+    var tr = new u16(maxSym + 1);
+    var mbt = ln(t2[i1 - 1], tr, 0);
+    if (mbt > mb) {
+      var i = 0, dt = 0;
+      var lft = mbt - mb, cst = 1 << lft;
+      t22.sort(function(a, b) {
+        return tr[b.s] - tr[a.s] || a.f - b.f;
+      });
+      for (; i < s; ++i) {
+        var i2_1 = t22[i].s;
+        if (tr[i2_1] > mb) {
+          dt += cst - (1 << mbt - tr[i2_1]);
+          tr[i2_1] = mb;
+        } else
+          break;
+      }
+      dt >>= lft;
+      while (dt > 0) {
+        var i2_2 = t22[i].s;
+        if (tr[i2_2] < mb)
+          dt -= 1 << mb - tr[i2_2]++ - 1;
+        else
+          ++i;
+      }
+      for (; i >= 0 && dt; --i) {
+        var i2_3 = t22[i].s;
+        if (tr[i2_3] == mb) {
+          --tr[i2_3];
+          ++dt;
+        }
+      }
+      mbt = mb;
+    }
+    return { t: new u8(tr), l: mbt };
+  };
+  var ln = function(n, l, d) {
+    return n.s == -1 ? Math.max(ln(n.l, l, d + 1), ln(n.r, l, d + 1)) : l[n.s] = d;
+  };
+  var lc = function(c) {
+    var s = c.length;
+    while (s && !c[--s])
+      ;
+    var cl = new u16(++s);
+    var cli = 0, cln = c[0], cls = 1;
+    var w = function(v) {
+      cl[cli++] = v;
+    };
+    for (var i = 1; i <= s; ++i) {
+      if (c[i] == cln && i != s)
+        ++cls;
+      else {
+        if (!cln && cls > 2) {
+          for (; cls > 138; cls -= 138)
+            w(32754);
+          if (cls > 2) {
+            w(cls > 10 ? cls - 11 << 5 | 28690 : cls - 3 << 5 | 12305);
+            cls = 0;
+          }
+        } else if (cls > 3) {
+          w(cln), --cls;
+          for (; cls > 6; cls -= 6)
+            w(8304);
+          if (cls > 2)
+            w(cls - 3 << 5 | 8208), cls = 0;
+        }
+        while (cls--)
+          w(cln);
+        cls = 1;
+        cln = c[i];
+      }
+    }
+    return { c: cl.subarray(0, cli), n: s };
+  };
+  var clen = function(cf, cl) {
+    var l = 0;
+    for (var i = 0; i < cl.length; ++i)
+      l += cf[i] * cl[i];
+    return l;
+  };
+  var wfblk = function(out, pos, dat) {
+    var s = dat.length;
+    var o = shft(pos + 2);
+    out[o] = s & 255;
+    out[o + 1] = s >> 8;
+    out[o + 2] = out[o] ^ 255;
+    out[o + 3] = out[o + 1] ^ 255;
+    for (var i = 0; i < s; ++i)
+      out[o + i + 4] = dat[i];
+    return (o + 4 + s) * 8;
+  };
+  var wblk = function(dat, out, final, syms, lf, df, eb, li, bs, bl, p) {
+    wbits(out, p++, final);
+    ++lf[256];
+    var _a2 = hTree(lf, 15), dlt = _a2.t, mlb = _a2.l;
+    var _b2 = hTree(df, 15), ddt = _b2.t, mdb = _b2.l;
+    var _c = lc(dlt), lclt = _c.c, nlc = _c.n;
+    var _d = lc(ddt), lcdt = _d.c, ndc = _d.n;
+    var lcfreq = new u16(19);
+    for (var i = 0; i < lclt.length; ++i)
+      ++lcfreq[lclt[i] & 31];
+    for (var i = 0; i < lcdt.length; ++i)
+      ++lcfreq[lcdt[i] & 31];
+    var _e = hTree(lcfreq, 7), lct = _e.t, mlcb = _e.l;
+    var nlcc = 19;
+    for (; nlcc > 4 && !lct[clim[nlcc - 1]]; --nlcc)
+      ;
+    var flen = bl + 5 << 3;
+    var ftlen = clen(lf, flt) + clen(df, fdt) + eb;
+    var dtlen = clen(lf, dlt) + clen(df, ddt) + eb + 14 + 3 * nlcc + clen(lcfreq, lct) + 2 * lcfreq[16] + 3 * lcfreq[17] + 7 * lcfreq[18];
+    if (bs >= 0 && flen <= ftlen && flen <= dtlen)
+      return wfblk(out, p, dat.subarray(bs, bs + bl));
+    var lm, ll, dm, dl;
+    wbits(out, p, 1 + (dtlen < ftlen)), p += 2;
+    if (dtlen < ftlen) {
+      lm = hMap(dlt, mlb), ll = dlt, dm = hMap(ddt, mdb), dl = ddt;
+      var llm = hMap(lct, mlcb);
+      wbits(out, p, nlc - 257);
+      wbits(out, p + 5, ndc - 1);
+      wbits(out, p + 10, nlcc - 4);
+      p += 14;
+      for (var i = 0; i < nlcc; ++i)
+        wbits(out, p + 3 * i, lct[clim[i]]);
+      p += 3 * nlcc;
+      var lcts = [lclt, lcdt];
+      for (var it = 0; it < 2; ++it) {
+        var clct = lcts[it];
+        for (var i = 0; i < clct.length; ++i) {
+          var len = clct[i] & 31;
+          wbits(out, p, llm[len]), p += lct[len];
+          if (len > 15)
+            wbits(out, p, clct[i] >> 5 & 127), p += clct[i] >> 12;
+        }
+      }
+    } else {
+      lm = flm, ll = flt, dm = fdm, dl = fdt;
+    }
+    for (var i = 0; i < li; ++i) {
+      var sym = syms[i];
+      if (sym > 255) {
+        var len = sym >> 18 & 31;
+        wbits16(out, p, lm[len + 257]), p += ll[len + 257];
+        if (len > 7)
+          wbits(out, p, sym >> 23 & 31), p += fleb[len];
+        var dst = sym & 31;
+        wbits16(out, p, dm[dst]), p += dl[dst];
+        if (dst > 3)
+          wbits16(out, p, sym >> 5 & 8191), p += fdeb[dst];
+      } else {
+        wbits16(out, p, lm[sym]), p += ll[sym];
+      }
+    }
+    wbits16(out, p, lm[256]);
+    return p + ll[256];
+  };
+  var deo = /* @__PURE__ */ new i32([65540, 131080, 131088, 131104, 262176, 1048704, 1048832, 2114560, 2117632]);
+  var et = /* @__PURE__ */ new u8(0);
+  var dflt = function(dat, lvl, plvl, pre, post, st) {
+    var s = st.z || dat.length;
+    var o = new u8(pre + s + 5 * (1 + Math.ceil(s / 7e3)) + post);
+    var w = o.subarray(pre, o.length - post);
+    var lst = st.l;
+    var pos = (st.r || 0) & 7;
+    if (lvl) {
+      if (pos)
+        w[0] = st.r >> 3;
+      var opt = deo[lvl - 1];
+      var n = opt >> 13, c = opt & 8191;
+      var msk_1 = (1 << plvl) - 1;
+      var prev = st.p || new u16(32768), head = st.h || new u16(msk_1 + 1);
+      var bs1_1 = Math.ceil(plvl / 3), bs2_1 = 2 * bs1_1;
+      var hsh = function(i2) {
+        return (dat[i2] ^ dat[i2 + 1] << bs1_1 ^ dat[i2 + 2] << bs2_1) & msk_1;
+      };
+      var syms = new i32(25e3);
+      var lf = new u16(288), df = new u16(32);
+      var lc_1 = 0, eb = 0, i = st.i || 0, li = 0, wi = st.w || 0, bs = 0;
+      for (; i + 2 < s; ++i) {
+        var hv = hsh(i);
+        var imod = i & 32767, pimod = head[hv];
+        prev[imod] = pimod;
+        head[hv] = imod;
+        if (wi <= i) {
+          var rem = s - i;
+          if ((lc_1 > 7e3 || li > 24576) && (rem > 423 || !lst)) {
+            pos = wblk(dat, w, 0, syms, lf, df, eb, li, bs, i - bs, pos);
+            li = lc_1 = eb = 0, bs = i;
+            for (var j = 0; j < 286; ++j)
+              lf[j] = 0;
+            for (var j = 0; j < 30; ++j)
+              df[j] = 0;
+          }
+          var l = 2, d = 0, ch_1 = c, dif = imod - pimod & 32767;
+          if (rem > 2 && hv == hsh(i - dif)) {
+            var maxn = Math.min(n, rem) - 1;
+            var maxd = Math.min(32767, i);
+            var ml = Math.min(258, rem);
+            while (dif <= maxd && --ch_1 && imod != pimod) {
+              if (dat[i + l] == dat[i + l - dif]) {
+                var nl = 0;
+                for (; nl < ml && dat[i + nl] == dat[i + nl - dif]; ++nl)
+                  ;
+                if (nl > l) {
+                  l = nl, d = dif;
+                  if (nl > maxn)
+                    break;
+                  var mmd = Math.min(dif, nl - 2);
+                  var md = 0;
+                  for (var j = 0; j < mmd; ++j) {
+                    var ti = i - dif + j & 32767;
+                    var pti = prev[ti];
+                    var cd = ti - pti & 32767;
+                    if (cd > md)
+                      md = cd, pimod = ti;
+                  }
+                }
+              }
+              imod = pimod, pimod = prev[imod];
+              dif += imod - pimod & 32767;
+            }
+          }
+          if (d) {
+            syms[li++] = 268435456 | revfl[l] << 18 | revfd[d];
+            var lin = revfl[l] & 31, din = revfd[d] & 31;
+            eb += fleb[lin] + fdeb[din];
+            ++lf[257 + lin];
+            ++df[din];
+            wi = i + l;
+            ++lc_1;
+          } else {
+            syms[li++] = dat[i];
+            ++lf[dat[i]];
+          }
+        }
+      }
+      for (i = Math.max(i, wi); i < s; ++i) {
+        syms[li++] = dat[i];
+        ++lf[dat[i]];
+      }
+      pos = wblk(dat, w, lst, syms, lf, df, eb, li, bs, i - bs, pos);
+      if (!lst) {
+        st.r = pos & 7 | w[pos / 8 | 0] << 3;
+        pos -= 7;
+        st.h = head, st.p = prev, st.i = i, st.w = wi;
+      }
+    } else {
+      for (var i = st.w || 0; i < s + lst; i += 65535) {
+        var e = i + 65535;
+        if (e >= s) {
+          w[pos / 8 | 0] = lst;
+          e = s;
+        }
+        pos = wfblk(w, pos + 1, dat.subarray(i, e));
+      }
+      st.i = s;
+    }
+    return slc(o, 0, pre + shft(pos) + post);
+  };
+  var crct = /* @__PURE__ */ function() {
+    var t2 = new Int32Array(256);
+    for (var i = 0; i < 256; ++i) {
+      var c = i, k = 9;
+      while (--k)
+        c = (c & 1 && -306674912) ^ c >>> 1;
+      t2[i] = c;
+    }
+    return t2;
+  }();
+  var crc = function() {
+    var c = -1;
+    return {
+      p: function(d) {
+        var cr = c;
+        for (var i = 0; i < d.length; ++i)
+          cr = crct[cr & 255 ^ d[i]] ^ cr >>> 8;
+        c = cr;
+      },
+      d: function() {
+        return ~c;
+      }
+    };
+  };
+  var dopt = function(dat, opt, pre, post, st) {
+    if (!st) {
+      st = { l: 1 };
+      if (opt.dictionary) {
+        var dict = opt.dictionary.subarray(-32768);
+        var newDat = new u8(dict.length + dat.length);
+        newDat.set(dict);
+        newDat.set(dat, dict.length);
+        dat = newDat;
+        st.w = dict.length;
+      }
+    }
+    return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
+  };
+  var mrg = function(a, b) {
+    var o = {};
+    for (var k in a)
+      o[k] = a[k];
+    for (var k in b)
+      o[k] = b[k];
+    return o;
+  };
+  var wbytes = function(d, b, v) {
+    for (; v; ++b)
+      d[b] = v, v >>>= 8;
+  };
+  function deflateSync(data, opts) {
+    return dopt(data, opts || {}, 0, 0);
+  }
+  var fltn = function(d, p, t2, o) {
+    for (var k in d) {
+      var val = d[k], n = p + k, op = o;
+      if (Array.isArray(val))
+        op = mrg(o, val[1]), val = val[0];
+      if (val instanceof u8)
+        t2[n] = [val, op];
+      else {
+        t2[n += "/"] = [new u8(0), op];
+        fltn(val, n, t2, o);
+      }
+    }
+  };
+  var te = typeof TextEncoder != "undefined" && /* @__PURE__ */ new TextEncoder();
+  var td = typeof TextDecoder != "undefined" && /* @__PURE__ */ new TextDecoder();
+  var tds = 0;
+  try {
+    td.decode(et, { stream: true });
+    tds = 1;
+  } catch (e) {
+  }
+  function strToU8(str, latin1) {
+    var i;
+    if (te)
+      return te.encode(str);
+    var l = str.length;
+    var ar = new u8(str.length + (str.length >> 1));
+    var ai = 0;
+    var w = function(v) {
+      ar[ai++] = v;
+    };
+    for (var i = 0; i < l; ++i) {
+      if (ai + 5 > ar.length) {
+        var n = new u8(ai + 8 + (l - i << 1));
+        n.set(ar);
+        ar = n;
+      }
+      var c = str.charCodeAt(i);
+      if (c < 128 || latin1)
+        w(c);
+      else if (c < 2048)
+        w(192 | c >> 6), w(128 | c & 63);
+      else if (c > 55295 && c < 57344)
+        c = 65536 + (c & 1023 << 10) | str.charCodeAt(++i) & 1023, w(240 | c >> 18), w(128 | c >> 12 & 63), w(128 | c >> 6 & 63), w(128 | c & 63);
+      else
+        w(224 | c >> 12), w(128 | c >> 6 & 63), w(128 | c & 63);
+    }
+    return slc(ar, 0, ai);
+  }
+  var exfl = function(ex) {
+    var le = 0;
+    if (ex) {
+      for (var k in ex) {
+        var l = ex[k].length;
+        if (l > 65535)
+          err(9);
+        le += l + 4;
+      }
+    }
+    return le;
+  };
+  var wzh = function(d, b, f, fn, u, c, ce, co) {
+    var fl2 = fn.length, ex = f.extra, col = co && co.length;
+    var exl = exfl(ex);
+    wbytes(d, b, ce != null ? 33639248 : 67324752), b += 4;
+    if (ce != null)
+      d[b++] = 20, d[b++] = f.os;
+    d[b] = 20, b += 2;
+    d[b++] = f.flag << 1 | (c < 0 && 8), d[b++] = u && 8;
+    d[b++] = f.compression & 255, d[b++] = f.compression >> 8;
+    var dt = new Date(f.mtime == null ? Date.now() : f.mtime), y = dt.getFullYear() - 1980;
+    if (y < 0 || y > 119)
+      err(10);
+    wbytes(d, b, y << 25 | dt.getMonth() + 1 << 21 | dt.getDate() << 16 | dt.getHours() << 11 | dt.getMinutes() << 5 | dt.getSeconds() >> 1), b += 4;
+    if (c != -1) {
+      wbytes(d, b, f.crc);
+      wbytes(d, b + 4, c < 0 ? -c - 2 : c);
+      wbytes(d, b + 8, f.size);
+    }
+    wbytes(d, b + 12, fl2);
+    wbytes(d, b + 14, exl), b += 16;
+    if (ce != null) {
+      wbytes(d, b, col);
+      wbytes(d, b + 6, f.attrs);
+      wbytes(d, b + 10, ce), b += 14;
+    }
+    d.set(fn, b);
+    b += fl2;
+    if (exl) {
+      for (var k in ex) {
+        var exf = ex[k], l = exf.length;
+        wbytes(d, b, +k);
+        wbytes(d, b + 2, l);
+        d.set(exf, b + 4), b += 4 + l;
+      }
+    }
+    if (col)
+      d.set(co, b), b += col;
+    return b;
+  };
+  var wzf = function(o, b, c, d, e) {
+    wbytes(o, b, 101010256);
+    wbytes(o, b + 8, c);
+    wbytes(o, b + 10, c);
+    wbytes(o, b + 12, d);
+    wbytes(o, b + 16, e);
+  };
+  function zipSync(data, opts) {
+    if (!opts)
+      opts = {};
+    var r = {};
+    var files = [];
+    fltn(data, "", r, opts);
+    var o = 0;
+    var tot = 0;
+    for (var fn in r) {
+      var _a2 = r[fn], file = _a2[0], p = _a2[1];
+      var compression = p.level == 0 ? 0 : 8;
+      var f = strToU8(fn), s = f.length;
+      var com = p.comment, m = com && strToU8(com), ms = m && m.length;
+      var exl = exfl(p.extra);
+      if (s > 65535)
+        err(11);
+      var d = compression ? deflateSync(file, p) : file, l = d.length;
+      var c = crc();
+      c.p(file);
+      files.push(mrg(p, {
+        size: file.length,
+        crc: c.d(),
+        c: d,
+        f,
+        m,
+        u: s != fn.length || m && com.length != ms,
+        o,
+        compression
+      }));
+      o += 30 + s + exl + l;
+      tot += 76 + 2 * (s + exl) + (ms || 0) + l;
+    }
+    var out = new u8(tot + 22), oe = o, cdl = tot - o;
+    for (var i = 0; i < files.length; ++i) {
+      var f = files[i];
+      wzh(out, f.o, f, f.f, f.u, f.c.length);
+      var badd = 30 + f.f.length + exfl(f.extra);
+      out.set(f.c, f.o + badd);
+      wzh(out, o, f, f.f, f.u, f.c.length, f.o, f.m), o += 16 + badd + (f.m ? f.m.length : 0);
+    }
+    wzf(out, o, files.length, cdl, oe);
+    return out;
+  }
   function convertToWikilinks(markdown, pageMap, currentPageId) {
     const brokenLinks = [];
     const baseUrl = getBaseUrl();
@@ -15759,7 +19487,7 @@ ${converted.output}
     return `[[${title}]]`;
   }
   function generateFrontmatter(page, node, pageMap, settings) {
-    var _a;
+    var _a2;
     const lines = ["---"];
     const baseUrl = getBaseUrl();
     lines.push(`title: "${page.title.replace(/"/g, '\\"')}"`);
@@ -15787,7 +19515,7 @@ ${converted.output}
     }
     lines.push("tags:");
     lines.push("  - confluence/imported");
-    if ((_a = page.version) == null ? void 0 : _a.when) {
+    if ((_a2 = page.version) == null ? void 0 : _a2.when) {
       const date = page.version.when.split("T")[0];
       lines.push(`updated: ${date}`);
     }
@@ -15802,7 +19530,7 @@ ${converted.output}
     }, page.id);
     let markdown = convertToMarkdown(sanitizedHtml, {
       useObsidianCallouts: settings.useObsidianCallouts,
-      convertDiagrams: settings.convertDiagrams,
+      diagramExportMode: settings.diagramExportMode,
       diagramTargetFormat: settings.diagramTargetFormat,
       embedDiagramsAsCode: settings.embedDiagramsAsCode
     });
@@ -15855,15 +19583,15 @@ ${converted.output}
     lines.push("");
     lines.push("## 🗂️ Structure");
     lines.push("");
-    function renderTree(node, indent = "") {
+    function renderTree2(node, indent = "") {
       const link = makeWikilink(node.title);
       const childCount = node.children.length > 0 ? ` (${node.children.length})` : "";
       lines.push(`${indent}- ${link}${childCount}`);
       for (const child of node.children) {
-        renderTree(child, indent + "  ");
+        renderTree2(child, indent + "  ");
       }
     }
-    renderTree(rootNode);
+    renderTree2(rootNode);
     lines.push("");
     lines.push("## 📊 Statistics");
     lines.push("");
@@ -15877,7 +19605,7 @@ ${converted.output}
     return lines.join("\n");
   }
   async function createObsidianVault(pages, rootNode, rootTitle, settings, onProgress) {
-    const zip = new JSZip();
+    const zipFiles = {};
     const flatTree = flattenTree(rootNode);
     const nodeMap = new Map(flatTree.map((n) => [n.id, n]));
     const pageMap = new Map(pages.map((p) => [p.id, p.title]));
@@ -15916,37 +19644,43 @@ ${converted.output}
       let processedPages = 0;
       for (const page of pages) {
         onProgress == null ? void 0 : onProgress("Downloading attachments...", processedPages, totalPages);
-        const diagramRefs = extractDiagramReferences(page.htmlContent);
-        if (settings.exportDiagrams && diagramRefs.length > 0) {
-          for (const ref of diagramRefs) {
-            try {
-              const baseUrl = getBaseUrl();
-              const format = ref.type === "gliffy" ? "gliffy" : "drawio";
-              const renderUrl = `${baseUrl}/plugins/servlet/${format}/export?pageId=${page.id}&diagramName=${encodeURIComponent(ref.name)}&format=png`;
-              const response = await fetch(renderUrl, { credentials: "include" });
-              if (response.ok) {
-                const blob = await response.blob();
+        console.log(`[Export] Fetching attachments for page ${page.id}`);
+        const attachments = await fetchPageAttachments(page.id);
+        console.log(`[Export] Found ${attachments.length} attachments`);
+        const diagramSourceNames = /* @__PURE__ */ new Set();
+        for (const att of attachments) {
+          if (att.mediaType === "application/vnd.jgraph.mxfile") {
+            diagramSourceNames.add(att.filename);
+            console.log(`[Export] Found diagram source: ${att.filename}`);
+          }
+        }
+        for (const att of attachments) {
+          if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
+            console.log(`[Export] Skipping ${att.filename} - too large`);
+            continue;
+          }
+          if (att.mediaType === "application/vnd.jgraph.mxfile") {
+            continue;
+          }
+          const nameWithoutExt = att.filename.replace(/\.png$/i, "");
+          const isDiagramPng = diagramSourceNames.has(nameWithoutExt);
+          if (isDiagramPng) {
+            if (settings.exportDiagrams) {
+              console.log(`[Export] Downloading diagram PNG: ${att.filename}`);
+              const exported = await exportImageAttachment(att);
+              if (exported) {
                 attachmentFiles.push({
-                  path: `_attachments/${ref.name}.png`,
-                  blob
+                  path: `_attachments/${exported.filename}`,
+                  blob: exported.blob
                 });
                 diagramCount++;
                 attachmentCount++;
+                console.log(`[Export] Downloaded diagram: ${att.filename}`);
               }
-            } catch (error) {
-              console.error(`Failed to download diagram ${ref.name}:`, error);
             }
-          }
-        }
-        if (settings.downloadAttachments) {
-          const attachments = await fetchPageAttachments(page.id);
-          for (const att of attachments) {
-            if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
-              continue;
-            }
-            const diagram = identifyDiagram(att);
-            if (diagram) continue;
-            if (isImageAttachment(att) && settings.includeImages) {
+          } else if (isImageAttachment(att)) {
+            if (settings.downloadAttachments && settings.includeImages) {
+              console.log(`[Export] Downloading image: ${att.filename}`);
               const exported = await exportImageAttachment(att);
               if (exported) {
                 attachmentFiles.push({
@@ -15954,6 +19688,7 @@ ${converted.output}
                   blob: exported.blob
                 });
                 attachmentCount++;
+                console.log(`[Export] Downloaded image: ${att.filename}`);
               }
             }
           }
@@ -15961,23 +19696,43 @@ ${converted.output}
         processedPages++;
       }
     }
+    console.log(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentFiles.length} attachments`);
     onProgress == null ? void 0 : onProgress("Creating ZIP archive...", 0, 1);
     for (const file of pageFiles) {
-      zip.file(file.path, file.content);
+      console.log(`[Export] Adding page: ${file.path}`);
+      zipFiles[file.path] = strToU8(file.content);
     }
     for (const file of attachmentFiles) {
-      zip.file(file.path, file.blob);
+      console.log(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
+      try {
+        const arrayBuffer = await file.blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        console.log(`[Export] Converted to Uint8Array: ${uint8Array.length} bytes`);
+        zipFiles[file.path] = uint8Array;
+      } catch (err2) {
+        console.error(`[Export] Failed to convert blob for ${file.path}:`, err2);
+        throw err2;
+      }
     }
+    console.log(`[Export] All ${attachmentFiles.length} attachments added to ZIP object`);
     const indexContent = generateIndexFile(rootNode, pages, {
       attachments: attachmentCount,
       diagrams: diagramCount
     });
-    zip.file("_Index.md", indexContent);
-    const zipBlob = await zip.generateAsync({
-      type: "blob",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 }
-    });
+    zipFiles["_Index.md"] = strToU8(indexContent);
+    console.log("[Export] Starting ZIP generation with fflate...");
+    console.log(`[Export] Total files in ZIP:`, Object.keys(zipFiles).length);
+    let zipBlob;
+    try {
+      console.log("[Export] Calling zipSync...");
+      const zipData = zipSync(zipFiles, { level: 0 });
+      console.log(`[Export] zipSync completed! Length: ${zipData.length}`);
+      zipBlob = new Blob([zipData], { type: "application/zip" });
+    } catch (error) {
+      console.error("[Export] ZIP generation failed:", error);
+      throw error;
+    }
+    console.log(`[Export] ZIP generated, size: ${zipBlob.size} bytes`);
     onProgress == null ? void 0 : onProgress("Done!", 1, 1);
     return {
       zipBlob,
@@ -16000,6 +19755,786 @@ ${converted.output}
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+  const VALID_TRANSITIONS = {
+    idle: ["ready"],
+    ready: ["processing", "idle"],
+    processing: ["ready", "error", "idle"],
+    error: ["ready", "idle"]
+  };
+  class ModalStateMachine {
+    constructor() {
+      __publicField(this, "state", "idle");
+      __publicField(this, "listeners", /* @__PURE__ */ new Set());
+    }
+    /**
+     * Get current state
+     */
+    getState() {
+      return this.state;
+    }
+    /**
+     * Attempt to transition to a new state
+     * 
+     * @param newState - Target state to transition to
+     * @returns true if transition was successful, false if invalid
+     */
+    setState(newState) {
+      if (this.state === newState) {
+        return true;
+      }
+      if (!this.isValidTransition(this.state, newState)) {
+        console.warn(
+          `[ModalStateMachine] Invalid state transition: ${this.state} -> ${newState}. Valid transitions from '${this.state}': [${VALID_TRANSITIONS[this.state].join(", ")}]`
+        );
+        return false;
+      }
+      const previousState = this.state;
+      this.state = newState;
+      this.notifyListeners(previousState, newState);
+      return true;
+    }
+    /**
+     * Check if a transition is valid
+     * 
+     * @param from - Current state
+     * @param to - Target state
+     * @returns true if transition is allowed
+     */
+    isValidTransition(from, to) {
+      const validTargets = VALID_TRANSITIONS[from];
+      return (validTargets == null ? void 0 : validTargets.includes(to)) ?? false;
+    }
+    /**
+     * Get valid transitions from current state
+     * 
+     * @returns Array of valid target states
+     */
+    getValidTransitions() {
+      return VALID_TRANSITIONS[this.state] ?? [];
+    }
+    /**
+     * Subscribe to state changes
+     * 
+     * @param listener - Callback function for state changes
+     * @returns Unsubscribe function
+     */
+    subscribe(listener) {
+      this.listeners.add(listener);
+      return () => {
+        this.listeners.delete(listener);
+      };
+    }
+    /**
+     * Reset state machine to initial state
+     * Forces reset without transition validation (use for cleanup)
+     */
+    reset() {
+      const previousState = this.state;
+      this.state = "idle";
+      if (previousState !== "idle") {
+        this.notifyListeners(previousState, "idle");
+      }
+    }
+    /**
+     * Check if currently in a specific state
+     * 
+     * @param state - State to check
+     * @returns true if current state matches
+     */
+    isInState(state) {
+      return this.state === state;
+    }
+    /**
+     * Check if modal is in an active state (not idle)
+     */
+    isActive() {
+      return this.state !== "idle";
+    }
+    /**
+     * Check if modal is processing
+     */
+    isProcessing() {
+      return this.state === "processing";
+    }
+    /**
+     * Check if modal has an error
+     */
+    hasError() {
+      return this.state === "error";
+    }
+    /**
+     * Notify all listeners of state change
+     */
+    notifyListeners(from, to) {
+      const event = {
+        from,
+        to,
+        timestamp: Date.now()
+      };
+      this.listeners.forEach((listener) => {
+        try {
+          listener(event);
+        } catch (error) {
+          console.error("[ModalStateMachine] Error in state change listener:", error);
+        }
+      });
+    }
+    /**
+     * Get number of active listeners
+     * Useful for debugging/testing
+     */
+    getListenerCount() {
+      return this.listeners.size;
+    }
+    /**
+     * Clear all listeners
+     * Use for cleanup when destroying the modal
+     */
+    clearListeners() {
+      this.listeners.clear();
+    }
+  }
+  const en = {
+    // Header
+    title: "Export to Markdown",
+    toggleTheme: "Toggle theme",
+    refreshTree: "Refresh page tree",
+    close: "Close",
+    // Source panel
+    searchPlaceholder: "Search pages...",
+    filterAll: "All",
+    filterSelected: "Selected",
+    filterErrors: "Errors",
+    expandAll: "Expand all",
+    collapseAll: "Collapse all",
+    // Stats
+    pages: "Pages",
+    page: "Page",
+    images: "Images",
+    diagrams: "Diagrams",
+    // Config panel
+    exportPreset: "Export Preset",
+    presetObsidian: "💎 Obsidian Vault (Zip)",
+    presetObsidianDesc: "Folders, wikilinks, assets in /attachments",
+    presetSingle: "📄 Single Markdown File",
+    presetSingleDesc: "Everything in one .md file",
+    presetGithub: "🐙 GitHub / GitLab (Zip)",
+    presetGithubDesc: "Standard markdown, repo structure",
+    // Diagrams section
+    diagramsTitle: "Diagrams",
+    diagramCopyAsIs: "Copy as-is",
+    diagramCopyAsIsDesc: "Keep original diagram code",
+    diagramConvert: "Convert",
+    diagramConvertDesc: "Convert to target format",
+    diagramSvgSource: "SVG + Source",
+    diagramSvgSourceDesc: "Image with editable source",
+    diagramFormat: "Format",
+    includeSource: "Include source",
+    includePreview: "Include preview",
+    embedAsCode: "Embed as code",
+    // Content section
+    contentTitle: "Content",
+    optionImages: "Images",
+    optionAttachments: "Attachments",
+    optionMetadata: "Metadata",
+    optionComments: "Comments",
+    optionSourceLinks: "Source links",
+    optionFrontmatter: "Frontmatter",
+    optionHierarchical: "Hierarchical folders",
+    optionWikilinks: "[[Wikilinks]]",
+    optionCallouts: "Callouts",
+    // Footer
+    resetDefaults: "Reset to defaults",
+    copy: "Copy",
+    copyDisabledMultiple: "Copy is available only for single page selection",
+    copyDisabledFormat: "Copy is available only for Single File mode",
+    pdf: "PDF",
+    download: "Download",
+    // Progress
+    progressPreparing: "Preparing...",
+    progressScanning: "Scanning page tree...",
+    progressLoading: "Loading page content...",
+    progressConverting: "Converting to Markdown...",
+    progressCreatingVault: "Creating Obsidian vault...",
+    progressAttachments: "Downloading attachments...",
+    progressDiagrams: "Processing diagrams...",
+    // Toast
+    copiedToClipboard: "Copied to clipboard!",
+    downloadComplete: "Download complete!",
+    exportError: "Export failed"
+  };
+  const ru = {
+    // Header
+    title: "Экспорт в Markdown",
+    toggleTheme: "Переключить тему",
+    refreshTree: "Обновить дерево страниц",
+    close: "Закрыть",
+    // Source panel
+    searchPlaceholder: "Поиск страниц...",
+    filterAll: "Все",
+    filterSelected: "Выбранные",
+    filterErrors: "Ошибки",
+    expandAll: "Развернуть всё",
+    collapseAll: "Свернуть всё",
+    // Stats
+    pages: "Страниц",
+    page: "Страница",
+    images: "Изображений",
+    diagrams: "Диаграмм",
+    // Config panel
+    exportPreset: "Формат экспорта",
+    presetObsidian: "💎 Obsidian Vault (Zip)",
+    presetObsidianDesc: "Папки, wikilinks, вложения в /attachments",
+    presetSingle: "📄 Один Markdown файл",
+    presetSingleDesc: "Всё в одном .md файле",
+    presetGithub: "🐙 GitHub / GitLab (Zip)",
+    presetGithubDesc: "Стандартный markdown, структура репозитория",
+    // Diagrams section
+    diagramsTitle: "Диаграммы",
+    diagramCopyAsIs: "Как есть",
+    diagramCopyAsIsDesc: "Сохранить исходный код диаграммы",
+    diagramConvert: "Конвертировать",
+    diagramConvertDesc: "Преобразовать в целевой формат",
+    diagramSvgSource: "SVG + Исходник",
+    diagramSvgSourceDesc: "Картинка с редактируемым кодом",
+    diagramFormat: "Формат",
+    includeSource: "Включить исходник",
+    includePreview: "Включить превью",
+    embedAsCode: "Встроить как код",
+    // Content section
+    contentTitle: "Контент",
+    optionImages: "Изображения",
+    optionAttachments: "Вложения",
+    optionMetadata: "Метаданные",
+    optionComments: "Комментарии",
+    optionSourceLinks: "Ссылки на источник",
+    optionFrontmatter: "Frontmatter",
+    optionHierarchical: "Иерархия папок",
+    optionWikilinks: "[[Wikilinks]]",
+    optionCallouts: "Callouts",
+    // Footer
+    resetDefaults: "Сбросить настройки",
+    copy: "Копировать",
+    copyDisabledMultiple: "Копирование доступно только для одной страницы",
+    copyDisabledFormat: "Копирование доступно только в режиме Single File",
+    pdf: "PDF",
+    download: "Скачать",
+    // Progress
+    progressPreparing: "Подготовка...",
+    progressScanning: "Сканирование страниц...",
+    progressLoading: "Загрузка контента...",
+    progressConverting: "Конвертация в Markdown...",
+    progressCreatingVault: "Создание Obsidian vault...",
+    progressAttachments: "Загрузка вложений...",
+    progressDiagrams: "Обработка диаграмм...",
+    // Toast
+    copiedToClipboard: "Скопировано в буфер!",
+    downloadComplete: "Загрузка завершена!",
+    exportError: "Ошибка экспорта"
+  };
+  const translations = { en, ru };
+  const LOCALE_STORAGE_KEY = "md-export-locale";
+  let currentLocale = loadLocale();
+  function loadLocale() {
+    try {
+      const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+      if (saved === "en" || saved === "ru") return saved;
+    } catch {
+    }
+    return detectLocale();
+  }
+  function detectLocale() {
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.startsWith("ru")) return "ru";
+    return "en";
+  }
+  function getLocale() {
+    return currentLocale;
+  }
+  function setLocale(locale) {
+    currentLocale = locale;
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    } catch {
+    }
+  }
+  function toggleLocale() {
+    const newLocale = currentLocale === "en" ? "ru" : "en";
+    setLocale(newLocale);
+    return newLocale;
+  }
+  function t(key) {
+    return translations[currentLocale][key] || translations.en[key] || key;
+  }
+  const ICONS = {
+    chevron: `<svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
+    folder: `<svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
+    page: `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
+    download: `<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`,
+    copy: `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`,
+    refresh: `<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`,
+    settings: `<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
+    check: `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+    search: `<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`,
+    close: `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
+    sun: `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`,
+    moon: `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>`,
+    expand: `<svg viewBox="0 0 24 24"><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg>`,
+    collapse: `<svg viewBox="0 0 24 24"><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></svg>`,
+    reset: `<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`
+  };
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  function countNodes(node) {
+    let count = 1;
+    for (const child of node.children) {
+      count += countNodes(child);
+    }
+    return count;
+  }
+  function renderTree(nodes, level = 0) {
+    let html = `<ul${level === 0 ? "" : ""}>`;
+    for (const node of nodes) {
+      const hasChildren = node.children.length > 0;
+      const childCount = hasChildren ? countNodes(node) - 1 : 0;
+      const errorClass = node.error ? " error" : "";
+      const togglerClass = hasChildren ? "md-tree-toggler expanded" : "md-tree-toggler empty";
+      const iconClass = "md-tree-icon page";
+      const icon = ICONS.page;
+      html += `<li data-page-id="${node.id}" data-level="${level}">`;
+      html += `<div class="md-tree-item" data-level="${level}">`;
+      html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
+      html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
+      html += `<span class="${iconClass}">${icon}</span>`;
+      html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}</span>`;
+      if (hasChildren) {
+        html += `<span class="md-child-count">${childCount}</span>`;
+      }
+      if (node.error) {
+        html += `<span class="md-error-badge">Error</span>`;
+      }
+      html += `</div>`;
+      if (hasChildren) {
+        html += renderTree(node.children, level + 1);
+      }
+      html += "</li>";
+    }
+    html += "</ul>";
+    return html;
+  }
+  function renderModal(options) {
+    const { rootNode, rootTitle, theme, settings, obsidianSettings } = options;
+    return `
+    <div id="md-export-modal-content" class="md-modal-content">
+      ${renderHeader(rootTitle, theme)}
+      <div class="md-modal-body">
+        ${renderSourcePanel(rootNode)}
+        ${renderConfigPanel(settings, obsidianSettings)}
+      </div>
+      ${renderProgressSection()}
+      ${renderToast()}
+      ${renderFooter()}
+    </div>
+  `;
+  }
+  function renderHeader(rootTitle, theme) {
+    const locale = getLocale();
+    return `
+    <div class="md-modal-header">
+      <div class="md-header-row">
+        <h3 class="md-header-title">${t("title")}</h3>
+        <div class="md-header-actions">
+          <button class="md-btn-lang" data-action="toggle-locale" title="EN / RU">
+            ${locale.toUpperCase()}
+          </button>
+          <button class="md-btn-icon" data-action="toggle-theme" title="${t("toggleTheme")}">
+            ${theme === "dark" ? ICONS.sun : ICONS.moon}
+          </button>
+          <button class="md-btn-icon" data-action="refresh" title="${t("refreshTree")}">
+            ${ICONS.refresh}
+          </button>
+          <button class="md-btn-icon md-close-btn" data-action="cancel" title="${t("close")} (Esc)">
+            ${ICONS.close}
+          </button>
+        </div>
+      </div>
+      <p class="md-header-subtitle">
+        ${ICONS.folder.replace("<svg", '<svg class="icon"')}
+        <span>${escapeHtml(rootTitle)}</span>
+      </p>
+    </div>
+  `;
+  }
+  function renderSourcePanel(rootNode) {
+    return `
+    <div class="md-source-panel">
+      <!-- Search Bar -->
+      <div class="md-search-bar">
+        <span class="md-search-icon">${ICONS.search}</span>
+        <input type="text" id="md-search-input" placeholder="${t("searchPlaceholder")}" autocomplete="off">
+        <button class="md-search-clear" id="md-search-clear" style="display:none">${ICONS.close}</button>
+      </div>
+      
+      <!-- Filter Tabs + Tree Controls -->
+      <div class="md-source-toolbar">
+        <div class="md-filter-tabs">
+          <button class="md-filter-tab active" data-filter="all">${t("filterAll")}</button>
+          <button class="md-filter-tab" data-filter="selected">${t("filterSelected")}</button>
+          <button class="md-filter-tab" data-filter="errors">${t("filterErrors")}</button>
+        </div>
+        <div class="md-tree-controls">
+          <button class="md-btn-icon-sm" data-action="expand" title="${t("expandAll")}">
+            ${ICONS.expand}
+          </button>
+          <button class="md-btn-icon-sm" data-action="collapse" title="${t("collapseAll")}">
+            ${ICONS.collapse}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Tree Container -->
+      <div class="md-tree-container" id="md-tree-container">
+        <div class="md-tree" id="md-tree-root">${renderTree([rootNode])}</div>
+      </div>
+      
+      <!-- Status Bar -->
+      ${renderStatusBar()}
+    </div>
+  `;
+  }
+  function renderStatusBar() {
+    return `
+    <div class="md-status-bar">
+      <span class="md-status-item">
+        <span id="stat-pages">0</span> ${t("page")}
+      </span>
+      <span class="md-status-divider">•</span>
+      <span class="md-status-item">
+        <span id="stat-images">0</span> ${t("images")}
+      </span>
+      <span class="md-status-divider">•</span>
+      <span class="md-status-item">
+        <span id="stat-diagrams">0</span> ${t("diagrams")}
+      </span>
+      <span class="md-status-divider">•</span>
+      <span class="md-status-item">
+        <span class="md-status-approx">~</span><span id="stat-size">0.0</span> MB
+      </span>
+    </div>
+  `;
+  }
+  function renderConfigPanel(settings, obsidianSettings) {
+    return `
+    <div class="md-config-panel">
+      ${renderPlatformSelect(obsidianSettings)}
+      ${renderDiagramsSection(obsidianSettings)}
+      ${renderContentSettings(settings, obsidianSettings)}
+    </div>
+  `;
+  }
+  function renderPlatformSelect(obsidianSettings) {
+    const platforms = [
+      { value: "obsidian", label: t("presetObsidian"), desc: t("presetObsidianDesc") },
+      { value: "single", label: t("presetSingle"), desc: t("presetSingleDesc") },
+      { value: "github", label: t("presetGithub"), desc: t("presetGithubDesc") }
+    ];
+    const current = obsidianSettings.exportFormat;
+    const currentPlatform = platforms.find((p) => p.value === current) || platforms[0];
+    return `
+    <div class="md-config-section">
+      <label class="md-config-label">${t("exportPreset")}</label>
+      <div class="md-select-wrapper">
+        <select id="setting-platform" class="md-select" data-setting="platform">
+          ${platforms.map((p) => `
+            <option value="${p.value}" ${p.value === current ? "selected" : ""}>
+              ${p.label}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+      <p class="md-config-hint" id="platform-hint">${currentPlatform.desc}</p>
+    </div>
+  `;
+  }
+  function renderDiagramsSection(obsidianSettings) {
+    const exportModes = [
+      { value: "copy-as-is", label: t("diagramCopyAsIs"), icon: "📋", desc: t("diagramCopyAsIsDesc") },
+      { value: "convert", label: t("diagramConvert"), icon: "🔄", desc: t("diagramConvertDesc") },
+      { value: "svg-preview", label: t("diagramSvgSource"), icon: "🖼️", desc: t("diagramSvgSourceDesc") }
+    ];
+    const targetFormats = [
+      { value: "mermaid", label: "Mermaid" },
+      { value: "drawio-xml", label: "Draw.io XML" }
+    ];
+    const mode = obsidianSettings.diagramExportMode;
+    const sourceDisabled = mode === "copy-as-is";
+    const previewDisabled = mode === "copy-as-is";
+    const embedDisabled = mode === "svg-preview";
+    return `
+    <div class="md-config-section">
+      <div class="md-section-header">
+        <span class="md-section-icon">🎨</span>
+        <span class="md-section-title">${t("diagramsTitle")}</span>
+        <label class="md-toggle-switch">
+          <input type="checkbox" id="setting-diagrams" ${obsidianSettings.exportDiagrams ? "checked" : ""}>
+          <span class="md-toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div class="md-diagrams-options ${obsidianSettings.exportDiagrams ? "" : "disabled"}" id="md-diagrams-options">
+        <!-- Export Mode Cards -->
+        <div class="md-card-select" id="diagram-export-mode">
+          ${exportModes.map((m) => `
+            <button class="md-card-option ${obsidianSettings.diagramExportMode === m.value ? "active" : ""}" 
+                    data-value="${m.value}" data-setting="diagram-export-mode" title="${m.desc}">
+              <span class="md-card-icon">${m.icon}</span>
+              <span class="md-card-label">${m.label}</span>
+            </button>
+          `).join("")}
+        </div>
+        
+        <!-- Target Format (shown only for convert mode) -->
+        <div class="md-inline-option" id="convert-format-options" 
+             style="display: ${obsidianSettings.diagramExportMode === "convert" ? "flex" : "none"};">
+          <span class="md-option-label">${t("diagramFormat")}:</span>
+          <div class="md-toggle-group">
+            ${targetFormats.map((fmt) => `
+              <button class="md-toggle-btn ${obsidianSettings.diagramTargetFormat === fmt.value ? "active" : ""}"
+                      data-value="${fmt.value}" data-setting="diagram-format">
+                ${fmt.label}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+        
+        <!-- Diagram Options Grid with conditional disable -->
+        <div class="md-options-grid md-options-2col">
+          <label class="md-checkbox-compact ${sourceDisabled ? "disabled" : ""}">
+            <input type="checkbox" id="setting-diagram-source" 
+                   ${obsidianSettings.includeDiagramSource || sourceDisabled ? "checked" : ""} 
+                   ${sourceDisabled ? "disabled" : ""}>
+            <span>${t("includeSource")}</span>
+          </label>
+          <label class="md-checkbox-compact ${previewDisabled ? "disabled" : ""}">
+            <input type="checkbox" id="setting-diagram-preview" 
+                   ${obsidianSettings.includeDiagramPreview && !previewDisabled ? "checked" : ""} 
+                   ${previewDisabled ? "disabled" : ""}>
+            <span>${t("includePreview")}</span>
+          </label>
+          <label class="md-checkbox-compact ${embedDisabled ? "disabled" : ""}">
+            <input type="checkbox" id="setting-embed-diagrams" 
+                   ${obsidianSettings.embedDiagramsAsCode || embedDisabled ? "checked" : ""} 
+                   ${embedDisabled ? "disabled" : ""}>
+            <span>${t("embedAsCode")}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+  }
+  function renderContentSettings(settings, obsidianSettings) {
+    return `
+    <div class="md-config-section">
+      <div class="md-section-header">
+        <span class="md-section-icon">${ICONS.settings.replace("<svg", '<svg class="icon"')}</span>
+        <span class="md-section-title">${t("contentTitle")}</span>
+      </div>
+      
+      <div class="md-options-grid md-options-2col">
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-images" ${settings.includeImages ? "checked" : ""}>
+          <span>${t("optionImages")}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-attachments" ${obsidianSettings.downloadAttachments ? "checked" : ""}>
+          <span>${t("optionAttachments")}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-metadata" ${settings.includeMetadata ? "checked" : ""}>
+          <span>${t("optionMetadata")}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-comments" ${settings.includeComments ? "checked" : ""}>
+          <span>${t("optionComments")}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-links" ${settings.includeSourceLinks ? "checked" : ""}>
+          <span>${t("optionSourceLinks")}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-frontmatter" ${obsidianSettings.includeFrontmatter ? "checked" : ""}>
+          <span>${t("optionFrontmatter")}</span>
+        </label>
+      </div>
+      
+      <!-- Obsidian-specific options -->
+      <div class="md-obsidian-options" id="md-obsidian-options" 
+           style="display: ${obsidianSettings.exportFormat === "obsidian" ? "block" : "none"};">
+        <div class="md-options-grid md-options-2col">
+          <label class="md-checkbox-compact">
+            <input type="checkbox" id="setting-hierarchical" ${obsidianSettings.folderStructure === "hierarchical" ? "checked" : ""}>
+            <span>${t("optionHierarchical")}</span>
+          </label>
+          <label class="md-checkbox-compact">
+            <input type="checkbox" id="setting-wikilinks" ${obsidianSettings.linkStyle === "wikilink" ? "checked" : ""}>
+            <span>${t("optionWikilinks")}</span>
+          </label>
+          <label class="md-checkbox-compact">
+            <input type="checkbox" id="setting-callouts" ${obsidianSettings.useObsidianCallouts ? "checked" : ""}>
+            <span>${t("optionCallouts")}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+  }
+  function renderProgressSection() {
+    return `
+    <div class="md-progress-section" id="md-progress-section" style="display: none;">
+      <div class="md-progress-label">
+        <span id="md-progress-text">${t("progressPreparing")}</span>
+        <span id="md-progress-count"></span>
+      </div>
+      <div class="md-progress-bar">
+        <div class="md-progress-fill" id="md-progress-fill"></div>
+      </div>
+      <div class="md-progress-current" id="md-progress-current" style="display: none;">
+        <span class="md-progress-page-icon">📄</span>
+        <span class="md-progress-page-name" id="md-progress-page-name"></span>
+      </div>
+    </div>
+  `;
+  }
+  function renderToast() {
+    return `
+    <div class="md-toast" id="md-toast" style="display: none;">
+      ${ICONS.check}
+      <span>${t("copiedToClipboard")}</span>
+    </div>
+  `;
+  }
+  function renderFooter() {
+    return `
+    <div class="md-modal-footer">
+      <div class="md-footer-left">
+        <button class="md-btn-text" data-action="reset-defaults" title="${t("resetDefaults")}">
+          ${ICONS.reset.replace("<svg", '<svg class="icon"')}
+          ${t("resetDefaults")}
+        </button>
+      </div>
+      <div class="md-footer-right">
+        <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="${t("copy")}">
+          ${ICONS.copy}
+          <span>${t("copy")}</span>
+        </button>
+        <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="${t("pdf")}">
+          <span>${t("pdf")}</span>
+        </button>
+        <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="${t("download")}">
+          ${ICONS.download}
+          <span>${t("download")}</span>
+          <span class="md-btn-badge" id="md-download-badge">0</span>
+        </button>
+      </div>
+    </div>
+  `;
+  }
+  function getPhaseLabel(phase) {
+    const labels = {
+      tree: "progressScanning",
+      content: "progressLoading",
+      convert: "progressConverting",
+      vault: "progressCreatingVault",
+      attachments: "progressAttachments",
+      diagrams: "progressDiagrams"
+    };
+    const key = labels[phase];
+    if (key) return t(key);
+    return phase;
+  }
+  function updateModalUI(element, state) {
+    const downloadBtn = element.querySelector("#md-download-btn");
+    const copyBtn = element.querySelector("#md-copy-btn");
+    const pdfBtn = element.querySelector("#md-pdf-btn");
+    const isProcessing = state === "processing";
+    if (downloadBtn) {
+      downloadBtn.disabled = isProcessing;
+      if (isProcessing) {
+        downloadBtn.innerHTML = "<span>Processing...</span>";
+      } else {
+        downloadBtn.innerHTML = `${ICONS.download}<span>Download</span><span class="md-btn-badge" id="md-download-badge">0</span>`;
+      }
+    }
+    if (copyBtn) copyBtn.disabled = isProcessing;
+    if (pdfBtn) pdfBtn.disabled = isProcessing;
+    element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+      cb.disabled = isProcessing;
+    });
+    element.querySelectorAll(".md-tree-controls button").forEach((btn) => {
+      btn.disabled = isProcessing;
+    });
+  }
+  function showProgress(element, phase, current, total, currentPage) {
+    const section = element.querySelector("#md-progress-section");
+    const text = element.querySelector("#md-progress-text");
+    const count = element.querySelector("#md-progress-count");
+    const fill = element.querySelector("#md-progress-fill");
+    const currentEl = element.querySelector("#md-progress-current");
+    element.querySelector("#md-progress-page-name");
+    if (!section || !text || !fill) return;
+    section.style.display = "block";
+    text.textContent = getPhaseLabel(phase);
+    if (total > 0) {
+      count.textContent = `${current}/${total}`;
+      const percent = Math.round(current / total * 100);
+      fill.style.width = `${percent}%`;
+      fill.classList.remove("indeterminate");
+    } else {
+      count.textContent = "";
+      fill.classList.add("indeterminate");
+    }
+    if (currentEl) {
+      currentEl.style.display = "none";
+    }
+  }
+  function hideProgress(element) {
+    const section = element.querySelector("#md-progress-section");
+    if (section) section.style.display = "none";
+  }
+  function showToast(element, message) {
+    const toast = element.querySelector("#md-toast");
+    if (!toast) return;
+    const span = toast.querySelector("span");
+    if (span) span.textContent = message;
+    toast.style.display = "flex";
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 300);
+    }, 2e3);
+  }
+  function updateSelectionCount$1(element) {
+    const checkboxes = element.querySelectorAll(".md-tree-checkbox:checked");
+    let count = 0;
+    checkboxes.forEach((cb) => {
+      var _a2;
+      if (!((_a2 = cb.closest("li")) == null ? void 0 : _a2.classList.contains("hidden"))) count++;
+    });
+    const badge = element.querySelector("#md-download-badge");
+    if (badge) {
+      badge.textContent = String(count);
+      badge.classList.toggle("has-count", count > 0);
+    }
+    const pagesStat = element.querySelector("#stat-pages");
+    if (pagesStat) {
+      pagesStat.textContent = String(count);
+    }
+  }
   const DEFAULT_SETTINGS = {
     includeImages: true,
     includeMetadata: true,
@@ -16021,7 +20556,9 @@ ${converted.output}
     includeDiagramSource: true,
     includeDiagramPreview: true,
     diagramPreviewScale: 2,
-    convertDiagrams: true,
+    convertDiagrams: false,
+    // deprecated
+    diagramExportMode: "copy-as-is",
     diagramTargetFormat: "wikilink",
     embedDiagramsAsCode: true,
     // Attachments
@@ -16042,6 +20579,7 @@ ${converted.output}
       downloadAttachments: false,
       exportDiagrams: false,
       convertDiagrams: false,
+      diagramExportMode: "copy-as-is",
       includeFrontmatter: false,
       linkStyle: "markdown",
       useObsidianCallouts: false
@@ -16053,7 +20591,8 @@ ${converted.output}
       exportDiagrams: true,
       includeDiagramSource: true,
       includeDiagramPreview: true,
-      convertDiagrams: true,
+      convertDiagrams: false,
+      diagramExportMode: "copy-as-is",
       diagramTargetFormat: "wikilink",
       embedDiagramsAsCode: true,
       includeFrontmatter: true,
@@ -16068,7 +20607,8 @@ ${converted.output}
       exportDiagrams: true,
       includeDiagramSource: false,
       includeDiagramPreview: true,
-      convertDiagrams: true,
+      convertDiagrams: false,
+      diagramExportMode: "convert",
       diagramTargetFormat: "mermaid",
       embedDiagramsAsCode: true,
       includeFrontmatter: false,
@@ -16083,6 +20623,7 @@ ${converted.output}
       exportDiagrams: true,
       includeDiagramSource: true,
       convertDiagrams: false,
+      diagramExportMode: "copy-as-is",
       diagramTargetFormat: "wikilink",
       includeFrontmatter: true,
       includeConfluenceMetadata: true,
@@ -16118,7 +20659,22 @@ ${converted.output}
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.OBSIDIAN_SETTINGS);
       if (stored) {
-        return { ...DEFAULT_OBSIDIAN_SETTINGS, ...JSON.parse(stored) };
+        const storedData = JSON.parse(stored);
+        const settings = { ...DEFAULT_OBSIDIAN_SETTINGS, ...storedData };
+        const needsMigration = !storedData.diagramExportMode && storedData.convertDiagrams !== void 0;
+        if (needsMigration) {
+          if (storedData.convertDiagrams === true) {
+            settings.diagramExportMode = "convert";
+            console.log("[Storage] Migrated convertDiagrams=true → diagramExportMode=convert");
+          } else {
+            settings.diagramExportMode = "copy-as-is";
+            console.log("[Storage] Migrated convertDiagrams=false → diagramExportMode=copy-as-is");
+          }
+          settings.convertDiagrams = false;
+          saveObsidianSettings(settings);
+          console.log("[Storage] Migration saved to localStorage");
+        }
+        return settings;
       }
     } catch (e) {
       console.warn("Failed to load Obsidian settings:", e);
@@ -16174,635 +20730,72 @@ ${converted.output}
       console.warn("Failed to clear cache:", e);
     }
   }
-  function calculateTreeStats(rootNode, selectedIds) {
-    const allNodes = flattenTree(rootNode);
-    const selectedNodes = allNodes.filter((n) => selectedIds.has(n.id));
-    const errors = allNodes.filter((n) => n.error).length;
-    return {
-      pages: allNodes.length,
-      selectedPages: selectedNodes.length,
-      errors
-    };
-  }
-  const ICONS = {
-    chevron: `<svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
-    folder: `<svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
-    page: `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
-    download: `<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`,
-    copy: `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`,
-    refresh: `<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`,
-    settings: `<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
-    check: `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
-    search: `<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`,
-    close: `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
-    obsidian: `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
-    sun: `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`,
-    moon: `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>`
-  };
-  let modalElement = null;
   let currentSettings;
   let currentObsidianSettings;
-  let resolveModal = null;
-  let currentRootNode = null;
-  let currentTheme = "light";
-  function getSystemTheme() {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  function initSettings(rootNode) {
+    currentSettings = loadSettings();
+    currentObsidianSettings = loadObsidianSettings();
   }
-  function applyTheme(theme) {
-    currentTheme = theme;
-    if (modalElement) {
-      modalElement.setAttribute("data-theme", theme);
-    }
+  function getSettings() {
+    return { settings: currentSettings, obsidianSettings: currentObsidianSettings };
   }
-  function cancelModal() {
-    if (modalElement && resolveModal) {
-      modalElement.remove();
-      modalElement = null;
-      resolveModal({ selectedIds: [], cancelled: true, action: "cancel", settings: currentSettings, obsidianSettings: currentObsidianSettings });
-      resolveModal = null;
-    }
+  function setRootNode(node) {
   }
-  function showPageSelectorModal(rootNode, rootTitle, options) {
-    return new Promise((resolve) => {
-      resolveModal = resolve;
-      currentSettings = loadSettings();
-      currentObsidianSettings = loadObsidianSettings();
-      currentRootNode = rootNode;
-      const modal = document.createElement("div");
-      modal.id = "md-export-modal";
-      modalElement = modal;
-      const totalPages = countNodes(rootNode);
-      modal.innerHTML = `
-      <div id="md-export-modal-content" class="md-modal-content">
-        <div class="md-modal-header">
-          <div class="md-header-row">
-            <div class="md-header-title">
-              <h3>Export to Markdown</h3>
-              <button class="md-btn-icon" data-action="refresh" title="Refresh page tree (re-scan)">
-                ${ICONS.refresh}
-              </button>
-            </div>
-            <div class="md-header-actions">
-              <button class="md-btn-icon" data-action="toggle-theme" title="Toggle theme">
-                ${currentTheme === "dark" ? ICONS.sun : ICONS.moon}
-              </button>
-              <button class="md-btn-icon md-close-btn" data-action="cancel" title="Close (Esc)">
-                ${ICONS.close}
-              </button>
-            </div>
-          </div>
-          <p class="subtitle">
-            ${ICONS.folder.replace("<svg", '<svg class="icon"')}
-            <span>${escapeHtml(rootTitle)}</span>
-            <span class="md-page-count">${totalPages} pages</span>
-          </p>
-        </div>
-        
-        <!-- Search -->
-        <div class="md-search-bar">
-          <span class="md-search-icon">${ICONS.search}</span>
-          <input type="text" id="md-search-input" placeholder="Search pages..." autocomplete="off">
-          <button class="md-search-clear" id="md-search-clear" style="display:none">${ICONS.close}</button>
-        </div>
-        
-        <div class="md-controls">
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="expand" title="Expand all branches">Expand</button>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="collapse" title="Collapse all branches">Collapse</button>
-          <div class="md-controls-divider"></div>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="select-all" title="Select all pages (Ctrl+A)">All</button>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="deselect-all" title="Deselect all pages">None</button>
-          <button class="md-btn md-btn-secondary md-btn-sm" data-action="invert" title="Invert selection">Invert</button>
-          <div class="md-filter-chips">
-            <button class="md-filter-chip active" data-filter="all" title="Show all pages">All</button>
-            <button class="md-filter-chip" data-filter="errors" title="Show only pages with errors">⚠️ Errors</button>
-          </div>
-          <span class="md-selection-count" id="md-selection-count">0 selected</span>
-        </div>
-        
-        <!-- Statistics Section -->
-        <div class="md-stats-section" id="md-stats-section">
-          <div class="md-stats-grid">
-            <div class="md-stat-item">
-              <span class="md-stat-icon">📄</span>
-              <span class="md-stat-value" id="stat-pages">0</span>
-              <span class="md-stat-label">Pages</span>
-            </div>
-            <div class="md-stat-item">
-              <span class="md-stat-icon">🖼️</span>
-              <span class="md-stat-value" id="stat-images">-</span>
-              <span class="md-stat-label">Images</span>
-            </div>
-            <div class="md-stat-item">
-              <span class="md-stat-icon">📊</span>
-              <span class="md-stat-value" id="stat-diagrams">-</span>
-              <span class="md-stat-label">Diagrams</span>
-            </div>
-            <div class="md-stat-item">
-              <span class="md-stat-icon">📦</span>
-              <span class="md-stat-value" id="stat-size">-</span>
-              <span class="md-stat-label">MB (est.)</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="md-tree-container" id="md-tree-container">
-          <div class="md-tree" id="md-tree-root">${buildTreeHtml([rootNode])}</div>
-        </div>
-        
-        <!-- Export Format Panel -->
-        <div class="md-settings-panel">
-          <button class="md-settings-toggle" data-action="toggle-format">
-            ${ICONS.obsidian}
-            <span>Export Format</span>
-            <span class="md-chevron">${ICONS.chevron}</span>
-          </button>
-          <div class="md-settings-content" id="md-format-content" style="display: none;">
-            <div class="md-preset-buttons">
-              <button class="md-preset-btn ${currentObsidianSettings.exportFormat === "single" ? "active" : ""}" data-preset="single" title="Single markdown file">
-                📄 Single File
-              </button>
-              <button class="md-preset-btn ${currentObsidianSettings.exportFormat === "obsidian" ? "active" : ""}" data-preset="obsidian" title="Obsidian vault (ZIP)">
-                💎 Obsidian Vault
-              </button>
-            </div>
-            
-            <div class="md-obsidian-options" id="md-obsidian-options" style="display: ${currentObsidianSettings.exportFormat === "obsidian" ? "block" : "none"};">
-              <div class="md-option-group">
-                <span class="md-option-label">Quick Presets:</span>
-                <div class="md-preset-mini">
-                  <button class="md-btn md-btn-xs" data-apply-preset="quick" title="Fast export, no attachments">🚀 Quick</button>
-                  <button class="md-btn md-btn-xs" data-apply-preset="full" title="Full vault with all features">📚 Full</button>
-                  <button class="md-btn md-btn-xs" data-apply-preset="documentation" title="Clean docs, no source files">📖 Docs</button>
-                </div>
-              </div>
-              
-              <label class="md-checkbox-label">
-                <input type="checkbox" id="setting-hierarchical" ${currentObsidianSettings.folderStructure === "hierarchical" ? "checked" : ""}>
-                <span>Hierarchical folders</span>
-              </label>
-              <label class="md-checkbox-label">
-                <input type="checkbox" id="setting-wikilinks" ${currentObsidianSettings.linkStyle === "wikilink" ? "checked" : ""}>
-                <span>Use [[wikilinks]]</span>
-              </label>
-              <label class="md-checkbox-label">
-                <input type="checkbox" id="setting-callouts" ${currentObsidianSettings.useObsidianCallouts ? "checked" : ""}>
-                <span>Obsidian callouts</span>
-              </label>
-              <label class="md-checkbox-label">
-                <input type="checkbox" id="setting-frontmatter" ${currentObsidianSettings.includeFrontmatter ? "checked" : ""}>
-                <span>Include frontmatter</span>
-              </label>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Diagrams Panel -->
-        <div class="md-settings-panel">
-          <button class="md-settings-toggle" data-action="toggle-diagrams">
-            🎨
-            <span>Diagrams (Draw.io)</span>
-            <span class="md-chevron">${ICONS.chevron}</span>
-          </button>
-          <div class="md-settings-content" id="md-diagrams-content" style="display: none;">
-            <label class="md-checkbox-label">
-              <input type="checkbox" id="setting-diagrams" ${currentObsidianSettings.exportDiagrams ? "checked" : ""}>
-              <span>Export diagrams</span>
-            </label>
-            <label class="md-checkbox-label md-indent">
-              <input type="checkbox" id="setting-convert-diagrams" ${currentObsidianSettings.convertDiagrams ? "checked" : ""}>
-              <span>Convert diagrams</span>
-            </label>
-            <div class="md-option-group md-indent">
-              <span class="md-option-label">Diagram format:</span>
-              <div class="md-radio-group">
-                <label><input type="radio" name="diagram-format" value="wikilink" ${currentObsidianSettings.diagramTargetFormat === "wikilink" ? "checked" : ""}> Wikilinks (![[name.png]])</label>
-                <label><input type="radio" name="diagram-format" value="mermaid" ${currentObsidianSettings.diagramTargetFormat === "mermaid" ? "checked" : ""}> Mermaid code</label>
-                <label><input type="radio" name="diagram-format" value="drawio-xml" ${currentObsidianSettings.diagramTargetFormat === "drawio-xml" ? "checked" : ""}> Draw.io XML</label>
-              </div>
-            </div>
-            <label class="md-checkbox-label md-indent">
-              <input type="checkbox" id="setting-embed-diagrams" ${currentObsidianSettings.embedDiagramsAsCode ? "checked" : ""}>
-              <span>Embed as code blocks</span>
-            </label>
-            <label class="md-checkbox-label md-indent">
-              <input type="checkbox" id="setting-diagram-source" ${currentObsidianSettings.includeDiagramSource ? "checked" : ""}>
-              <span>Include editable source (.drawio)</span>
-            </label>
-            <label class="md-checkbox-label md-indent">
-              <input type="checkbox" id="setting-diagram-preview" ${currentObsidianSettings.includeDiagramPreview ? "checked" : ""}>
-              <span>Include preview (PNG)</span>
-            </label>
-            <div class="md-option-group md-indent">
-              <span class="md-option-label">Preview quality:</span>
-              <div class="md-radio-group">
-                <label><input type="radio" name="diagram-scale" value="1" ${currentObsidianSettings.diagramPreviewScale === 1 ? "checked" : ""}> 1x</label>
-                <label><input type="radio" name="diagram-scale" value="2" ${currentObsidianSettings.diagramPreviewScale === 2 ? "checked" : ""}> 2x</label>
-                <label><input type="radio" name="diagram-scale" value="3" ${currentObsidianSettings.diagramPreviewScale === 3 ? "checked" : ""}> 3x</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Content Settings Panel -->
-        <div class="md-settings-panel">
-          <button class="md-settings-toggle" data-action="toggle-settings">
-            ${ICONS.settings}
-            <span>Content Settings</span>
-            <span class="md-chevron">${ICONS.chevron}</span>
-          </button>
-          <div class="md-settings-content" id="md-settings-content" style="display: none;">
-            <label class="md-checkbox-label">
-              <input type="checkbox" id="setting-images" ${currentSettings.includeImages ? "checked" : ""}>
-              <span>Include images</span>
-            </label>
-            <label class="md-checkbox-label">
-              <input type="checkbox" id="setting-attachments" ${currentObsidianSettings.downloadAttachments ? "checked" : ""}>
-              <span>Download attachments</span>
-            </label>
-            <label class="md-checkbox-label">
-              <input type="checkbox" id="setting-metadata" ${currentSettings.includeMetadata ? "checked" : ""}>
-              <span>Include metadata (author, date)</span>
-            </label>
-            <label class="md-checkbox-label">
-              <input type="checkbox" id="setting-comments" ${currentSettings.includeComments ? "checked" : ""}>
-              <span>Include user comments</span>
-            </label>
-            <label class="md-checkbox-label">
-              <input type="checkbox" id="setting-links" ${currentSettings.includeSourceLinks ? "checked" : ""}>
-              <span>Include source links</span>
-            </label>
-          </div>
-        </div>
-        
-        <div class="md-progress-section" id="md-progress-section" style="display: none;">
-          <div class="md-progress-label">
-            <span id="md-progress-text">Preparing...</span>
-            <span id="md-progress-count"></span>
-          </div>
-          <div class="md-progress-bar">
-            <div class="md-progress-fill" id="md-progress-fill"></div>
-          </div>
-          <div class="md-progress-current" id="md-progress-current" style="display: none;">
-            <span class="md-progress-page-icon">📄</span>
-            <span class="md-progress-page-name" id="md-progress-page-name"></span>
-          </div>
-        </div>
-        
-        <!-- Toast notification -->
-        <div class="md-toast" id="md-toast" style="display: none;">
-          ${ICONS.check}
-          <span>Copied to clipboard!</span>
-        </div>
-        
-        <div class="md-modal-footer">
-          <div class="md-footer-left">
-            <div class="md-shortcuts-hint">
-              <span class="md-shortcut"><kbd>Esc</kbd> close</span>
-              <span class="md-shortcut"><kbd>Shift</kbd>+click select with children</span>
-              <span class="md-shortcut"><kbd>Ctrl</kbd>+<kbd>A</kbd> select all</span>
-              <span class="md-shortcut"><kbd>Ctrl</kbd>+<kbd>D</kbd> download</span>
-            </div>
-          </div>
-          <div class="md-footer-right">
-            <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="Copy Markdown to clipboard (Ctrl+C)">
-              ${ICONS.copy}
-              <span>Copy</span>
-            </button>
-            <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="Open print preview for PDF">
-              <span>📄 PDF</span>
-            </button>
-            <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="Download as .md file or Obsidian vault (Ctrl+D)">
-              ${ICONS.download}
-              <span>Download</span>
-              <span class="md-btn-badge" id="md-download-badge">0</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-      document.body.appendChild(modal);
-      currentTheme = getSystemTheme();
-      applyTheme(currentTheme);
-      updateSelectionCount(modal);
-      updateStats(modal, rootNode);
-      setTimeout(() => {
-        const searchInput2 = modal.querySelector("#md-search-input");
-        searchInput2 == null ? void 0 : searchInput2.focus();
-      }, 100);
-      const keyHandler = (e) => {
-        if (e.key === "Escape") {
-          cancelModal();
-          document.removeEventListener("keydown", keyHandler);
-          return;
-        }
-        if (e.ctrlKey && e.key === "a" && !isInputFocused()) {
-          e.preventDefault();
-          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-            var _a;
-            if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) cb.checked = true;
-          });
-          updateSelectionCount(modal);
-          updateStats(modal, rootNode);
-          return;
-        }
-        if (e.ctrlKey && e.key === "d") {
-          e.preventDefault();
-          const downloadBtn = modal.querySelector('[data-action="download"]');
-          downloadBtn == null ? void 0 : downloadBtn.click();
-          return;
-        }
-        if (e.ctrlKey && e.key === "c" && !isInputFocused()) {
-          e.preventDefault();
-          const copyBtn = modal.querySelector('[data-action="copy"]');
-          copyBtn == null ? void 0 : copyBtn.click();
-          return;
-        }
-      };
-      document.addEventListener("keydown", keyHandler);
-      function isInputFocused() {
-        const active = document.activeElement;
-        return (active == null ? void 0 : active.tagName) === "INPUT" || (active == null ? void 0 : active.tagName) === "TEXTAREA";
+  function saveCurrentSettings(element) {
+    var _a2, _b2, _c, _d;
+    currentSettings = {
+      includeImages: ((_a2 = element.querySelector("#setting-images")) == null ? void 0 : _a2.checked) ?? true,
+      includeMetadata: ((_b2 = element.querySelector("#setting-metadata")) == null ? void 0 : _b2.checked) ?? true,
+      includeComments: ((_c = element.querySelector("#setting-comments")) == null ? void 0 : _c.checked) ?? false,
+      includeSourceLinks: ((_d = element.querySelector("#setting-links")) == null ? void 0 : _d.checked) ?? true
+    };
+    saveSettings(currentSettings);
+    currentObsidianSettings.includeImages = currentSettings.includeImages;
+    currentObsidianSettings.includeMetadata = currentSettings.includeMetadata;
+    currentObsidianSettings.includeComments = currentSettings.includeComments;
+    currentObsidianSettings.includeSourceLinks = currentSettings.includeSourceLinks;
+    saveObsidianSettings(currentObsidianSettings);
+  }
+  function getSelectedIds(element) {
+    const ids = [];
+    element.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
+      const li = cb.closest("li");
+      if (cb.dataset.pageId && !(li == null ? void 0 : li.classList.contains("hidden"))) {
+        ids.push(cb.dataset.pageId);
       }
-      const escHandler = (e) => {
-        if (e.key === "Escape") {
-          cancelModal();
-          document.removeEventListener("keydown", escHandler);
-        }
-      };
-      document.addEventListener("keydown", escHandler);
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-          cancelModal();
-          document.removeEventListener("keydown", escHandler);
-        }
-      });
-      const searchInput = modal.querySelector("#md-search-input");
-      const searchClear = modal.querySelector("#md-search-clear");
-      searchInput == null ? void 0 : searchInput.addEventListener("input", () => {
-        const query = searchInput.value.toLowerCase().trim();
-        searchClear.style.display = query ? "flex" : "none";
-        filterTree(modal, query);
-      });
-      searchClear == null ? void 0 : searchClear.addEventListener("click", () => {
-        searchInput.value = "";
-        searchClear.style.display = "none";
-        filterTree(modal, "");
-        searchInput.focus();
-      });
-      modal.addEventListener("click", async (e) => {
-        const target = e.target;
-        const btn = target.closest("[data-action]");
-        if (!btn) return;
-        const action = btn.dataset.action;
-        if (action === "cancel") {
-          cancelModal();
-          document.removeEventListener("keydown", escHandler);
-          return;
-        }
-        if (action === "download" || action === "copy" || action === "pdf") {
-          const selectedIds = getSelectedIds(modal);
-          if (selectedIds.length === 0) {
-            shakeElement(modal.querySelector(".md-selection-count"));
-            return;
-          }
-          saveCurrentSettings(modal);
-          disableModalInteraction(modal);
-          document.removeEventListener("keydown", escHandler);
-          const isObsidian = currentObsidianSettings.exportFormat === "obsidian" && action === "download";
-          resolve({
-            selectedIds,
-            cancelled: false,
-            action: isObsidian ? "obsidian" : action,
-            settings: currentSettings,
-            obsidianSettings: currentObsidianSettings
-          });
-          return;
-        }
-        if (action === "refresh") {
-          const refreshBtn = btn;
-          refreshBtn.classList.add("spinning");
-          try {
-            const newTree = await options.onRefresh();
-            currentRootNode = newTree;
-            const treeRoot = modal.querySelector("#md-tree-root");
-            if (treeRoot) {
-              treeRoot.innerHTML = buildTreeHtml([newTree]);
-            }
-            const pageCount = modal.querySelector(".md-page-count");
-            if (pageCount) {
-              pageCount.textContent = `${countNodes(newTree)} pages`;
-            }
-            updateSelectionCount(modal);
-            updateStats(modal);
-          } finally {
-            refreshBtn.classList.remove("spinning");
-          }
-          return;
-        }
-        if (action === "toggle-theme") {
-          const newTheme = currentTheme === "dark" ? "light" : "dark";
-          applyTheme(newTheme);
-          btn.innerHTML = newTheme === "dark" ? ICONS.sun : ICONS.moon;
-          return;
-        }
-        if (action === "toggle-settings") {
-          const content = modal.querySelector("#md-settings-content");
-          const chevron = btn.querySelector(".md-chevron");
-          if (content) {
-            const isHidden = content.style.display === "none";
-            content.style.display = isHidden ? "block" : "none";
-            chevron == null ? void 0 : chevron.classList.toggle("expanded", isHidden);
-          }
-          return;
-        }
-        if (action === "toggle-format") {
-          const content = modal.querySelector("#md-format-content");
-          const chevron = btn.querySelector(".md-chevron");
-          if (content) {
-            const isHidden = content.style.display === "none";
-            content.style.display = isHidden ? "block" : "none";
-            chevron == null ? void 0 : chevron.classList.toggle("expanded", isHidden);
-          }
-          return;
-        }
-        if (action === "toggle-diagrams") {
-          const content = modal.querySelector("#md-diagrams-content");
-          const chevron = btn.querySelector(".md-chevron");
-          if (content) {
-            const isHidden = content.style.display === "none";
-            content.style.display = isHidden ? "block" : "none";
-            chevron == null ? void 0 : chevron.classList.toggle("expanded", isHidden);
-          }
-          return;
-        }
-        if (action === "expand") {
-          modal.querySelectorAll(".md-tree ul").forEach((ul) => ul.classList.remove("collapsed"));
-          modal.querySelectorAll(".md-tree-toggler").forEach((t) => t.classList.add("expanded"));
-          return;
-        }
-        if (action === "collapse") {
-          modal.querySelectorAll(".md-tree ul ul").forEach((ul) => ul.classList.add("collapsed"));
-          modal.querySelectorAll(".md-tree-toggler").forEach((t) => {
-            if (!t.classList.contains("empty")) t.classList.remove("expanded");
-          });
-          return;
-        }
-        if (action === "select-all") {
-          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-            var _a;
-            if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) cb.checked = true;
-          });
-          updateSelectionCount(modal);
-          updateStats(modal);
-          return;
-        }
-        if (action === "deselect-all") {
-          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-            cb.checked = false;
-          });
-          updateSelectionCount(modal);
-          updateStats(modal);
-          return;
-        }
-        if (action === "invert") {
-          modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-            var _a;
-            if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) cb.checked = !cb.checked;
-          });
-          updateSelectionCount(modal);
-          updateStats(modal);
-          return;
-        }
-      });
-      modal.addEventListener("click", (e) => {
-        const target = e.target;
-        if (target.closest(".md-tree-toggler")) {
-          const toggler = target.closest(".md-tree-toggler");
-          if (toggler.classList.contains("empty")) return;
-          const li = toggler.closest("li");
-          const childUl = li == null ? void 0 : li.querySelector(":scope > ul");
-          if (childUl) {
-            childUl.classList.toggle("collapsed");
-            toggler.classList.toggle("expanded");
-          }
-          return;
-        }
-        const treeItem = target.closest(".md-tree-item");
-        if (treeItem && !target.closest(".md-tree-checkbox") && !target.closest(".md-tree-toggler")) {
-          const checkbox = treeItem.querySelector(".md-tree-checkbox");
-          if (checkbox) {
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        }
-      });
-      modal.addEventListener("change", (e) => {
-        const target = e.target;
-        if (!target.classList.contains("md-tree-checkbox")) return;
-        const isChecked = target.checked;
-        const li = target.closest("li");
-        if (e.shiftKey && isChecked) {
-          li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
-            cb.checked = true;
-          });
-        }
-        if (!isChecked) {
-          li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
-            cb.checked = false;
-          });
-        }
-        updateSelectionCount(modal);
-        updateStats(modal);
-      });
-      modal.addEventListener("click", (e) => {
-        const target = e.target;
-        if (target.classList.contains("md-tree-checkbox") && e.shiftKey) {
-          e.shiftKey = true;
-        }
-      }, true);
-      modal.addEventListener("click", (e) => {
-        const target = e.target;
-        const presetBtn = target.closest("[data-preset]");
-        if (presetBtn) {
-          const preset = presetBtn.dataset.preset;
-          currentObsidianSettings.exportFormat = preset;
-          modal.querySelectorAll(".md-preset-btn").forEach((btn) => {
-            btn.classList.toggle("active", btn.getAttribute("data-preset") === preset);
-          });
-          const obsidianOptions = modal.querySelector("#md-obsidian-options");
-          if (obsidianOptions) {
-            obsidianOptions.style.display = preset === "obsidian" ? "block" : "none";
-          }
-          return;
-        }
-        const applyPresetBtn = target.closest("[data-apply-preset]");
-        if (applyPresetBtn) {
-          const presetName = applyPresetBtn.dataset.applyPreset;
-          currentObsidianSettings = applyPreset(presetName);
-          updateObsidianSettingsUI(modal);
-          return;
-        }
-        const filterChip = target.closest("[data-filter]");
-        if (filterChip) {
-          const filter = filterChip.dataset.filter;
-          modal.querySelectorAll(".md-filter-chip").forEach((chip) => {
-            chip.classList.toggle("active", chip === filterChip);
-          });
-          const items = modal.querySelectorAll(".md-tree li");
-          items.forEach((li) => {
-            var _a, _b;
-            const hasError = li.querySelector(".md-error-badge") !== null;
-            if (filter === "all") {
-              li.classList.remove("hidden");
-            } else if (filter === "errors") {
-              li.classList.toggle("hidden", !hasError);
-              if (hasError) {
-                let parent = (_a = li.parentElement) == null ? void 0 : _a.closest("li");
-                while (parent) {
-                  parent.classList.remove("hidden");
-                  parent = (_b = parent.parentElement) == null ? void 0 : _b.closest("li");
-                }
-              }
-            }
-          });
-          updateSelectionCount(modal);
-          updateStats(modal);
-          return;
-        }
-      });
-      modal.addEventListener("change", (e) => {
-        const target = e.target;
-        if (target.id === "setting-hierarchical") {
-          currentObsidianSettings.folderStructure = target.checked ? "hierarchical" : "flat";
-        } else if (target.id === "setting-wikilinks") {
-          currentObsidianSettings.linkStyle = target.checked ? "wikilink" : "markdown";
-        } else if (target.id === "setting-callouts") {
-          currentObsidianSettings.useObsidianCallouts = target.checked;
-        } else if (target.id === "setting-frontmatter") {
-          currentObsidianSettings.includeFrontmatter = target.checked;
-        } else if (target.id === "setting-diagrams") {
-          currentObsidianSettings.exportDiagrams = target.checked;
-        } else if (target.id === "setting-convert-diagrams") {
-          currentObsidianSettings.convertDiagrams = target.checked;
-        } else if (target.id === "setting-embed-diagrams") {
-          currentObsidianSettings.embedDiagramsAsCode = target.checked;
-        } else if (target.id === "setting-diagram-source") {
-          currentObsidianSettings.includeDiagramSource = target.checked;
-        } else if (target.id === "setting-diagram-preview") {
-          currentObsidianSettings.includeDiagramPreview = target.checked;
-        } else if (target.id === "setting-attachments") {
-          currentObsidianSettings.downloadAttachments = target.checked;
-        } else if (target.name === "diagram-scale") {
-          currentObsidianSettings.diagramPreviewScale = parseInt(target.value);
-        } else if (target.name === "diagram-format") {
-          currentObsidianSettings.diagramTargetFormat = target.value;
-        }
-      });
     });
+    return ids;
   }
-  function updateObsidianSettingsUI(modal) {
+  function updateSelectionCount(element) {
+    const checkboxes = element.querySelectorAll(".md-tree-checkbox:checked");
+    let count = 0;
+    checkboxes.forEach((cb) => {
+      var _a2;
+      if (!((_a2 = cb.closest("li")) == null ? void 0 : _a2.classList.contains("hidden"))) count++;
+    });
+    const counter = element.querySelector("#md-selection-count");
+    if (counter) {
+      counter.textContent = `${count} selected`;
+    }
+    const badge = element.querySelector("#md-download-badge");
+    if (badge) {
+      badge.textContent = String(count);
+      badge.classList.toggle("has-count", count > 0);
+    }
+    updateCopyButtonState(element);
+  }
+  function shakeElement(el) {
+    if (!el) return;
+    el.classList.add("shake");
+    setTimeout(() => el.classList.remove("shake"), 500);
+  }
+  function isInputFocused() {
+    const active = document.activeElement;
+    return (active == null ? void 0 : active.tagName) === "INPUT" || (active == null ? void 0 : active.tagName) === "TEXTAREA";
+  }
+  function updateObsidianSettingsUI(element) {
     const setChecked = (id, checked) => {
-      const el = modal.querySelector(`#${id}`);
+      const el = element.querySelector(`#${id}`);
       if (el) el.checked = checked;
     };
     setChecked("setting-hierarchical", currentObsidianSettings.folderStructure === "hierarchical");
@@ -16810,27 +20803,125 @@ ${converted.output}
     setChecked("setting-callouts", currentObsidianSettings.useObsidianCallouts);
     setChecked("setting-frontmatter", currentObsidianSettings.includeFrontmatter);
     setChecked("setting-diagrams", currentObsidianSettings.exportDiagrams);
-    setChecked("setting-convert-diagrams", currentObsidianSettings.convertDiagrams);
     setChecked("setting-embed-diagrams", currentObsidianSettings.embedDiagramsAsCode);
     setChecked("setting-diagram-source", currentObsidianSettings.includeDiagramSource);
     setChecked("setting-diagram-preview", currentObsidianSettings.includeDiagramPreview);
     setChecked("setting-attachments", currentObsidianSettings.downloadAttachments);
     setChecked("setting-images", currentObsidianSettings.includeImages);
     setChecked("setting-links", currentObsidianSettings.includeSourceLinks);
-    const scaleRadio = modal.querySelector(`input[name="diagram-scale"][value="${currentObsidianSettings.diagramPreviewScale}"]`);
+    setChecked("setting-metadata", currentObsidianSettings.includeMetadata);
+    setChecked("setting-comments", currentObsidianSettings.includeComments);
+    const scaleRadio = element.querySelector(
+      `input[name="diagram-scale"][value="${currentObsidianSettings.diagramPreviewScale}"]`
+    );
     if (scaleRadio) scaleRadio.checked = true;
-    const formatRadio = modal.querySelector(`input[name="diagram-format"][value="${currentObsidianSettings.diagramTargetFormat}"]`);
+    const formatRadio = element.querySelector(
+      `input[name="diagram-format"][value="${currentObsidianSettings.diagramTargetFormat}"]`
+    );
     if (formatRadio) formatRadio.checked = true;
-    modal.querySelectorAll(".md-preset-btn").forEach((btn) => {
+    const exportModeRadio = element.querySelector(
+      `input[name="diagram-export-mode"][value="${currentObsidianSettings.diagramExportMode}"]`
+    );
+    if (exportModeRadio) exportModeRadio.checked = true;
+    element.querySelectorAll('.md-card-option[data-setting="diagram-export-mode"]').forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-value") === currentObsidianSettings.diagramExportMode);
+    });
+    element.querySelectorAll('.md-toggle-btn[data-setting="diagram-format"]').forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-value") === currentObsidianSettings.diagramTargetFormat);
+    });
+    updateDiagramOptionsVisibility(element);
+    element.querySelectorAll(".md-preset-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.getAttribute("data-preset") === currentObsidianSettings.exportFormat);
     });
-    const obsidianOptions = modal.querySelector("#md-obsidian-options");
+    const platformSelect = element.querySelector("#setting-platform");
+    if (platformSelect) {
+      platformSelect.value = currentObsidianSettings.exportFormat;
+    }
+    const obsidianOptions = element.querySelector("#md-obsidian-options");
     if (obsidianOptions) {
       obsidianOptions.style.display = currentObsidianSettings.exportFormat === "obsidian" ? "block" : "none";
     }
   }
-  function filterTree(modal, query) {
-    const items = modal.querySelectorAll(".md-tree li");
+  function updateDiagramOptionsVisibility(element) {
+    const mode = currentObsidianSettings.diagramExportMode;
+    const isDiagramsEnabled = currentObsidianSettings.exportDiagrams;
+    const diagramsOptions = element.querySelector("#md-diagrams-options");
+    if (diagramsOptions) {
+      diagramsOptions.classList.toggle("disabled", !isDiagramsEnabled);
+    }
+    const isConvertMode = mode === "convert";
+    const convertOptions = element.querySelector("#convert-format-options");
+    const embedOption = element.querySelector("#embed-diagrams-option");
+    const convertWarning = element.querySelector("#md-convert-warning");
+    if (convertOptions) convertOptions.style.display = isConvertMode ? "flex" : "none";
+    if (embedOption) embedOption.style.display = isConvertMode ? "block" : "none";
+    if (convertWarning) convertWarning.style.display = isConvertMode ? "block" : "none";
+    updateDiagramCheckboxStates(element, mode);
+  }
+  function updateDiagramCheckboxStates(element, mode) {
+    const sourceCheckbox = element.querySelector("#setting-diagram-source");
+    const previewCheckbox = element.querySelector("#setting-diagram-preview");
+    const embedCheckbox = element.querySelector("#setting-embed-diagrams");
+    const sourceLabel = sourceCheckbox == null ? void 0 : sourceCheckbox.closest(".md-checkbox-compact");
+    const previewLabel = previewCheckbox == null ? void 0 : previewCheckbox.closest(".md-checkbox-compact");
+    const embedLabel = embedCheckbox == null ? void 0 : embedCheckbox.closest(".md-checkbox-compact");
+    if (mode === "copy-as-is") {
+      if (sourceCheckbox) {
+        sourceCheckbox.checked = true;
+        sourceCheckbox.disabled = true;
+      }
+      if (previewCheckbox) {
+        previewCheckbox.checked = false;
+        previewCheckbox.disabled = true;
+      }
+      if (embedCheckbox) {
+        embedCheckbox.disabled = false;
+      }
+      sourceLabel == null ? void 0 : sourceLabel.classList.add("disabled");
+      previewLabel == null ? void 0 : previewLabel.classList.add("disabled");
+      embedLabel == null ? void 0 : embedLabel.classList.remove("disabled");
+    } else if (mode === "svg-preview") {
+      if (sourceCheckbox) {
+        sourceCheckbox.disabled = false;
+      }
+      if (previewCheckbox) {
+        previewCheckbox.disabled = false;
+      }
+      if (embedCheckbox) {
+        embedCheckbox.checked = true;
+        embedCheckbox.disabled = true;
+      }
+      sourceLabel == null ? void 0 : sourceLabel.classList.remove("disabled");
+      previewLabel == null ? void 0 : previewLabel.classList.remove("disabled");
+      embedLabel == null ? void 0 : embedLabel.classList.add("disabled");
+    } else {
+      if (sourceCheckbox) sourceCheckbox.disabled = false;
+      if (previewCheckbox) previewCheckbox.disabled = false;
+      if (embedCheckbox) embedCheckbox.disabled = false;
+      sourceLabel == null ? void 0 : sourceLabel.classList.remove("disabled");
+      previewLabel == null ? void 0 : previewLabel.classList.remove("disabled");
+      embedLabel == null ? void 0 : embedLabel.classList.remove("disabled");
+    }
+  }
+  function updateCopyButtonState(element) {
+    const copyBtn = element.querySelector("#md-copy-btn");
+    if (!copyBtn) return;
+    const selectedCount = getSelectedIds(element).length;
+    const format = currentObsidianSettings.exportFormat;
+    const canCopy = format === "single" && selectedCount === 1;
+    copyBtn.disabled = !canCopy;
+    if (!canCopy && selectedCount > 0) {
+      if (format !== "single") {
+        copyBtn.title = t("copyDisabledFormat");
+      } else if (selectedCount > 1) {
+        copyBtn.title = t("copyDisabledMultiple");
+      }
+    } else {
+      copyBtn.title = t("copy");
+    }
+  }
+  function filterTree(element, query) {
+    const items = element.querySelectorAll(".md-tree li");
     if (!query) {
       items.forEach((li) => {
         li.classList.remove("hidden", "highlight");
@@ -16838,8 +20929,8 @@ ${converted.output}
       return;
     }
     items.forEach((li) => {
-      var _a, _b, _c, _d, _e;
-      const label = ((_b = (_a = li.querySelector(".md-tree-label")) == null ? void 0 : _a.textContent) == null ? void 0 : _b.toLowerCase()) || "";
+      var _a2, _b2, _c, _d, _e;
+      const label = ((_b2 = (_a2 = li.querySelector(".md-tree-label")) == null ? void 0 : _a2.textContent) == null ? void 0 : _b2.toLowerCase()) || "";
       const matches = label.includes(query);
       if (matches) {
         li.classList.remove("hidden");
@@ -16866,178 +20957,634 @@ ${converted.output}
       }
     });
   }
-  function shakeElement(el) {
-    if (!el) return;
-    el.classList.add("shake");
-    setTimeout(() => el.classList.remove("shake"), 500);
-  }
-  function countNodes(node) {
-    let count = 1;
-    for (const child of node.children) {
-      count += countNodes(child);
-    }
-    return count;
-  }
-  function updateStats(modal, rootNode) {
-    const node = rootNode ?? currentRootNode;
-    if (!node) return;
-    const selectedIds = getSelectedIds(modal);
-    const stats = calculateTreeStats(node, new Set(selectedIds));
-    const pagesEl = modal.querySelector("#stat-pages");
-    if (pagesEl) pagesEl.textContent = String(stats.selectedPages ?? 0);
-    const estimatedMB = (stats.selectedPages ?? 0) * 50 / 1024;
-    const sizeEl = modal.querySelector("#stat-size");
-    if (sizeEl) sizeEl.textContent = estimatedMB.toFixed(1);
-  }
-  function updateModalProgress(completed, total, phase, currentPage) {
-    if (!modalElement) return;
-    const section = modalElement.querySelector("#md-progress-section");
-    const text = modalElement.querySelector("#md-progress-text");
-    const count = modalElement.querySelector("#md-progress-count");
-    const fill = modalElement.querySelector("#md-progress-fill");
-    const currentEl = modalElement.querySelector("#md-progress-current");
-    modalElement.querySelector("#md-progress-page-name");
-    if (!section || !text || !fill) return;
-    section.style.display = "block";
-    const phaseLabels = {
-      tree: "Scanning page tree...",
-      content: "Loading page content...",
-      convert: "Converting to Markdown...",
-      vault: "Creating Obsidian vault...",
-      attachments: "Downloading attachments...",
-      diagrams: "Processing diagrams..."
-    };
-    text.textContent = phaseLabels[phase] || phase;
-    if (total > 0) {
-      count.textContent = `${completed}/${total}`;
-      const percent = Math.round(completed / total * 100);
-      fill.style.width = `${percent}%`;
-      fill.classList.remove("indeterminate");
-    } else {
-      count.textContent = "";
-      fill.classList.add("indeterminate");
-    }
-    if (currentEl) {
-      currentEl.style.display = "none";
-    }
-  }
-  function showToast(message) {
-    if (!modalElement) return;
-    const toast = modalElement.querySelector("#md-toast");
-    if (!toast) return;
-    {
-      const span = toast.querySelector("span");
-      if (span) span.textContent = message;
-    }
-    toast.style.display = "flex";
-    toast.classList.add("show");
-    setTimeout(() => {
-      toast.classList.remove("show");
-      setTimeout(() => {
-        toast.style.display = "none";
-      }, 300);
-    }, 2e3);
-  }
-  function closeModal() {
-    if (modalElement) {
-      modalElement.remove();
-      modalElement = null;
-      resolveModal = null;
-    }
-  }
-  function enableModal() {
-    if (!modalElement) return;
-    const downloadBtn = modalElement.querySelector("#md-download-btn");
-    const copyBtn = modalElement.querySelector("#md-copy-btn");
-    const pdfBtn = modalElement.querySelector("#md-pdf-btn");
-    if (downloadBtn) {
-      downloadBtn.disabled = false;
-      downloadBtn.innerHTML = `${ICONS.download}<span>Download</span><span class="md-btn-badge" id="md-download-badge">0</span>`;
-    }
-    if (copyBtn) {
-      copyBtn.disabled = false;
-      copyBtn.innerHTML = `${ICONS.copy}<span>Copy</span>`;
-    }
-    if (pdfBtn) {
-      pdfBtn.disabled = false;
-    }
-    modalElement.querySelectorAll(".md-controls button").forEach((btn) => {
-      btn.disabled = false;
-    });
-    modalElement.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-      cb.disabled = false;
-    });
-    const progressSection = modalElement.querySelector("#md-progress-section");
-    if (progressSection) {
-      progressSection.style.display = "none";
-    }
-    updateSelectionCount(modalElement);
-  }
-  function saveCurrentSettings(modal) {
-    var _a, _b, _c, _d;
-    currentSettings = {
-      includeImages: ((_a = modal.querySelector("#setting-images")) == null ? void 0 : _a.checked) ?? true,
-      includeMetadata: ((_b = modal.querySelector("#setting-metadata")) == null ? void 0 : _b.checked) ?? true,
-      includeComments: ((_c = modal.querySelector("#setting-comments")) == null ? void 0 : _c.checked) ?? false,
-      includeSourceLinks: ((_d = modal.querySelector("#setting-links")) == null ? void 0 : _d.checked) ?? true
-    };
-    saveSettings(currentSettings);
-    currentObsidianSettings.includeImages = currentSettings.includeImages;
-    currentObsidianSettings.includeMetadata = currentSettings.includeMetadata;
-    currentObsidianSettings.includeComments = currentSettings.includeComments;
-    currentObsidianSettings.includeSourceLinks = currentSettings.includeSourceLinks;
-    saveObsidianSettings(currentObsidianSettings);
-  }
-  function disableModalInteraction(modal) {
-    const downloadBtn = modal.querySelector("#md-download-btn");
-    const copyBtn = modal.querySelector("#md-copy-btn");
-    const pdfBtn = modal.querySelector("#md-pdf-btn");
+  function disableModalInteraction(element) {
+    const downloadBtn = element.querySelector("#md-download-btn");
+    const copyBtn = element.querySelector("#md-copy-btn");
+    const pdfBtn = element.querySelector("#md-pdf-btn");
     if (downloadBtn) {
       downloadBtn.disabled = true;
       downloadBtn.innerHTML = `<span>Processing...</span>`;
     }
     if (copyBtn) copyBtn.disabled = true;
     if (pdfBtn) pdfBtn.disabled = true;
-    modal.querySelectorAll(".md-controls button").forEach((btn) => {
+    element.querySelectorAll(".md-controls button").forEach((btn) => {
       btn.disabled = true;
     });
-    modal.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+    element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
       cb.disabled = true;
     });
   }
-  function buildTreeHtml(nodes, level = 0) {
-    let html = `<ul${level === 0 ? "" : ""}>`;
-    for (const node of nodes) {
-      const hasChildren = node.children.length > 0;
-      const childCount = hasChildren ? countNodes(node) - 1 : 0;
-      const errorClass = node.error ? " error" : "";
-      const togglerClass = hasChildren ? "md-tree-toggler expanded" : "md-tree-toggler empty";
-      const iconClass = "md-tree-icon page";
-      const icon = ICONS.page;
-      html += `<li data-page-id="${node.id}" data-level="${level}">`;
-      html += `<div class="md-tree-item" data-level="${level}">`;
-      html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
-      html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
-      html += `<span class="${iconClass}">${icon}</span>`;
-      html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}</span>`;
-      if (hasChildren) {
-        html += `<span class="md-child-count">${childCount}</span>`;
-      }
-      if (node.error) {
-        html += `<span class="md-error-badge">Error</span>`;
-      }
-      html += `</div>`;
-      if (hasChildren) {
-        html += buildTreeHtml(node.children, level + 1);
-      }
-      html += "</li>";
+  function enableModalInteraction(element, icons) {
+    const downloadBtn = element.querySelector("#md-download-btn");
+    const copyBtn = element.querySelector("#md-copy-btn");
+    const pdfBtn = element.querySelector("#md-pdf-btn");
+    if (downloadBtn) {
+      downloadBtn.disabled = false;
+      downloadBtn.innerHTML = `${icons.download}<span>Download</span><span class="md-btn-badge" id="md-download-badge">0</span>`;
     }
-    html += "</ul>";
-    return html;
+    if (copyBtn) {
+      copyBtn.disabled = false;
+      copyBtn.innerHTML = `${icons.copy}<span>Copy</span>`;
+    }
+    if (pdfBtn) {
+      pdfBtn.disabled = false;
+    }
+    element.querySelectorAll(".md-controls button").forEach((btn) => {
+      btn.disabled = false;
+    });
+    element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+      cb.disabled = false;
+    });
+    const progressSection = element.querySelector("#md-progress-section");
+    if (progressSection) {
+      progressSection.style.display = "none";
+    }
+    updateSelectionCount(element);
   }
-  function getSelectedIds(modal) {
+  function setupEventListeners(deps) {
+    const { element, callbacks, getState, setState, close, updateTree, updateStats: updateStats2 } = deps;
+    const cleanups = [];
+    const handleActionClick = async (e) => {
+      const target = e.target;
+      const btn = target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (getState() === "processing") {
+        console.log("[Modal] Ignoring click - processing in progress");
+        return;
+      }
+      if (action === "cancel") {
+        close();
+        return;
+      }
+      if (action === "download" || action === "copy" || action === "pdf") {
+        const selectedIds = getSelectedIds(element);
+        if (selectedIds.length === 0) {
+          shakeElement(element.querySelector(".md-selection-count"));
+          return;
+        }
+        saveCurrentSettings(element);
+        setState("processing");
+        disableModalInteraction(element);
+        const isObsidian = currentObsidianSettings.exportFormat === "obsidian" && action === "download";
+        const modalAction = isObsidian ? "obsidian" : action;
+        const ctx = {
+          selectedIds,
+          settings: currentSettings,
+          obsidianSettings: currentObsidianSettings
+        };
+        await callbacks.onAction(modalAction, ctx);
+        return;
+      }
+      if (action === "refresh") {
+        const refreshBtn = btn;
+        refreshBtn.classList.add("spinning");
+        try {
+          const newTree = await callbacks.onRefresh();
+          setRootNode(newTree);
+          updateTree(newTree);
+          updateSelectionCount(element);
+          updateStats2();
+        } finally {
+          refreshBtn.classList.remove("spinning");
+        }
+        return;
+      }
+      if (action === "toggle-theme") {
+        handleToggleTheme(element, btn);
+        return;
+      }
+      if (action === "toggle-locale") {
+        const newLocale = toggleLocale();
+        btn.textContent = newLocale.toUpperCase();
+        updateLocalizedText(element);
+        return;
+      }
+      if (action === "toggle-settings") {
+        togglePanel(element, "#md-settings-content", btn);
+        return;
+      }
+      if (action === "toggle-format") {
+        togglePanel(element, "#md-format-content", btn);
+        return;
+      }
+      if (action === "toggle-diagrams") {
+        togglePanel(element, "#md-diagrams-content", btn);
+        return;
+      }
+      if (action === "expand") {
+        element.querySelectorAll(".md-tree ul").forEach((ul) => ul.classList.remove("collapsed"));
+        element.querySelectorAll(".md-tree-toggler").forEach((t2) => t2.classList.add("expanded"));
+        return;
+      }
+      if (action === "collapse") {
+        element.querySelectorAll(".md-tree ul ul").forEach((ul) => ul.classList.add("collapsed"));
+        element.querySelectorAll(".md-tree-toggler").forEach((t2) => {
+          if (!t2.classList.contains("empty")) t2.classList.remove("expanded");
+        });
+        return;
+      }
+      if (action === "select-all") {
+        element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+          var _a2;
+          if (!((_a2 = cb.closest("li")) == null ? void 0 : _a2.classList.contains("hidden"))) cb.checked = true;
+        });
+        updateSelectionCount(element);
+        updateStats2();
+        return;
+      }
+      if (action === "deselect-all") {
+        element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+          cb.checked = false;
+        });
+        updateSelectionCount(element);
+        updateStats2();
+        return;
+      }
+      if (action === "invert") {
+        element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+          var _a2;
+          if (!((_a2 = cb.closest("li")) == null ? void 0 : _a2.classList.contains("hidden"))) cb.checked = !cb.checked;
+        });
+        updateSelectionCount(element);
+        updateStats2();
+        return;
+      }
+      if (action === "reset-defaults") {
+        currentSettings = loadSettings();
+        currentObsidianSettings = loadObsidianSettings();
+        updateObsidianSettingsUI(element);
+        return;
+      }
+    };
+    element.addEventListener("click", handleActionClick);
+    cleanups.push(() => element.removeEventListener("click", handleActionClick));
+    const handleKeydown = (e) => {
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.ctrlKey && e.key === "a" && !isInputFocused()) {
+        e.preventDefault();
+        element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
+          var _a2;
+          if (!((_a2 = cb.closest("li")) == null ? void 0 : _a2.classList.contains("hidden"))) cb.checked = true;
+        });
+        updateSelectionCount(element);
+        updateStats2();
+        return;
+      }
+      if (e.ctrlKey && e.key === "d") {
+        e.preventDefault();
+        const downloadBtn = element.querySelector('[data-action="download"]');
+        downloadBtn == null ? void 0 : downloadBtn.click();
+        return;
+      }
+      if (e.ctrlKey && e.key === "c" && !isInputFocused()) {
+        e.preventDefault();
+        const copyBtn = element.querySelector('[data-action="copy"]');
+        copyBtn == null ? void 0 : copyBtn.click();
+        return;
+      }
+    };
+    document.addEventListener("keydown", handleKeydown);
+    cleanups.push(() => document.removeEventListener("keydown", handleKeydown));
+    const handleBackdropClick = (e) => {
+      if (e.target === element) {
+        close();
+      }
+    };
+    element.addEventListener("click", handleBackdropClick);
+    cleanups.push(() => element.removeEventListener("click", handleBackdropClick));
+    const searchInput = element.querySelector("#md-search-input");
+    const searchClear = element.querySelector("#md-search-clear");
+    const handleSearchInput = () => {
+      const query = searchInput.value.toLowerCase().trim();
+      searchClear.style.display = query ? "flex" : "none";
+      filterTree(element, query);
+    };
+    const handleSearchClear = () => {
+      searchInput.value = "";
+      searchClear.style.display = "none";
+      filterTree(element, "");
+      searchInput.focus();
+    };
+    if (searchInput) {
+      searchInput.addEventListener("input", handleSearchInput);
+      cleanups.push(() => searchInput.removeEventListener("input", handleSearchInput));
+    }
+    if (searchClear) {
+      searchClear.addEventListener("click", handleSearchClear);
+      cleanups.push(() => searchClear.removeEventListener("click", handleSearchClear));
+    }
+    const handleTreeItemClick = (e) => {
+      const target = e.target;
+      if (target.closest(".md-tree-toggler")) {
+        const toggler = target.closest(".md-tree-toggler");
+        if (toggler.classList.contains("empty")) return;
+        const li = toggler.closest("li");
+        const childUl = li == null ? void 0 : li.querySelector(":scope > ul");
+        if (childUl) {
+          childUl.classList.toggle("collapsed");
+          toggler.classList.toggle("expanded");
+        }
+        return;
+      }
+      const treeItem = target.closest(".md-tree-item");
+      if (treeItem && !target.closest(".md-tree-checkbox") && !target.closest(".md-tree-toggler")) {
+        const checkbox = treeItem.querySelector(".md-tree-checkbox");
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+    };
+    element.addEventListener("click", handleTreeItemClick);
+    cleanups.push(() => element.removeEventListener("click", handleTreeItemClick));
+    const handleCheckboxChange = (e) => {
+      const target = e.target;
+      if (!target.classList.contains("md-tree-checkbox")) return;
+      const isChecked = target.checked;
+      const li = target.closest("li");
+      if (e.shiftKey && isChecked) {
+        li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
+          cb.checked = true;
+        });
+      }
+      if (!isChecked) {
+        li == null ? void 0 : li.querySelectorAll(":scope > ul .md-tree-checkbox").forEach((cb) => {
+          cb.checked = false;
+        });
+      }
+      updateSelectionCount(element);
+      updateStats2();
+    };
+    element.addEventListener("change", handleCheckboxChange);
+    cleanups.push(() => element.removeEventListener("change", handleCheckboxChange));
+    const handleShiftClick = (e) => {
+      const target = e.target;
+      if (target.classList.contains("md-tree-checkbox") && e.shiftKey) {
+        e.shiftKey = true;
+      }
+    };
+    element.addEventListener("click", handleShiftClick, true);
+    cleanups.push(() => element.removeEventListener("click", handleShiftClick, true));
+    const handlePresetClick = (e) => {
+      const target = e.target;
+      const presetBtn = target.closest("[data-preset]");
+      if (presetBtn) {
+        const preset = presetBtn.dataset.preset;
+        currentObsidianSettings.exportFormat = preset;
+        element.querySelectorAll(".md-preset-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-preset") === preset);
+        });
+        const obsidianOptions = element.querySelector("#md-obsidian-options");
+        if (obsidianOptions) {
+          obsidianOptions.style.display = preset === "obsidian" ? "block" : "none";
+        }
+        saveObsidianSettings(currentObsidianSettings);
+        return;
+      }
+      const applyPresetBtn = target.closest("[data-apply-preset]");
+      if (applyPresetBtn) {
+        const presetName = applyPresetBtn.dataset.applyPreset;
+        currentObsidianSettings = applyPreset(presetName);
+        updateObsidianSettingsUI(element);
+        saveObsidianSettings(currentObsidianSettings);
+        return;
+      }
+      const filterChip = target.closest("[data-filter].md-filter-chip");
+      if (filterChip) {
+        const filter = filterChip.dataset.filter;
+        element.querySelectorAll(".md-filter-chip").forEach((chip) => {
+          chip.classList.toggle("active", chip === filterChip);
+        });
+        applyFilter(element, filter || "all");
+        updateSelectionCount(element);
+        updateStats2();
+        return;
+      }
+      const filterTab = target.closest("[data-filter].md-filter-tab");
+      if (filterTab) {
+        const filter = filterTab.dataset.filter;
+        element.querySelectorAll(".md-filter-tab").forEach((tab) => {
+          tab.classList.toggle("active", tab === filterTab);
+        });
+        applyFilter(element, filter || "all");
+        updateSelectionCount(element);
+        updateStats2();
+        return;
+      }
+      const cardOption = target.closest('.md-card-option[data-setting="diagram-export-mode"]');
+      if (cardOption) {
+        const value = cardOption.dataset.value;
+        currentObsidianSettings.diagramExportMode = value;
+        element.querySelectorAll('.md-card-option[data-setting="diagram-export-mode"]').forEach((btn) => {
+          btn.classList.toggle("active", btn === cardOption);
+        });
+        updateDiagramOptionsVisibility(element);
+        saveObsidianSettings(currentObsidianSettings);
+        return;
+      }
+      const toggleBtn = target.closest('.md-toggle-btn[data-setting="diagram-format"]');
+      if (toggleBtn) {
+        const value = toggleBtn.dataset.value;
+        currentObsidianSettings.diagramTargetFormat = value;
+        element.querySelectorAll('.md-toggle-btn[data-setting="diagram-format"]').forEach((btn) => {
+          btn.classList.toggle("active", btn === toggleBtn);
+        });
+        saveObsidianSettings(currentObsidianSettings);
+        return;
+      }
+      const platformSelect2 = target.closest("#setting-platform");
+      if (platformSelect2) {
+        const value = platformSelect2.value;
+        currentObsidianSettings.exportFormat = value === "github" ? "single" : value;
+        const obsidianOptions = element.querySelector("#md-obsidian-options");
+        if (obsidianOptions) {
+          obsidianOptions.style.display = value === "obsidian" ? "block" : "none";
+        }
+        const hintEl = element.querySelector("#platform-hint");
+        if (hintEl) {
+          const hints = {
+            obsidian: t("presetObsidianDesc"),
+            single: t("presetSingleDesc"),
+            github: t("presetGithubDesc")
+          };
+          hintEl.textContent = hints[value] || "";
+        }
+        updateCopyButtonState(element);
+        saveObsidianSettings(currentObsidianSettings);
+        return;
+      }
+    };
+    element.addEventListener("click", handlePresetClick);
+    cleanups.push(() => element.removeEventListener("click", handlePresetClick));
+    const platformSelect = element.querySelector("#setting-platform");
+    if (platformSelect) {
+      const handlePlatformChange = () => {
+        const value = platformSelect.value;
+        currentObsidianSettings.exportFormat = value === "github" ? "single" : value;
+        const obsidianOptions = element.querySelector("#md-obsidian-options");
+        if (obsidianOptions) {
+          obsidianOptions.style.display = value === "obsidian" ? "block" : "none";
+        }
+        const hintEl = element.querySelector("#platform-hint");
+        if (hintEl) {
+          const hints = {
+            obsidian: t("presetObsidianDesc"),
+            single: t("presetSingleDesc"),
+            github: t("presetGithubDesc")
+          };
+          hintEl.textContent = hints[value] || "";
+        }
+        updateCopyButtonState(element);
+        saveObsidianSettings(currentObsidianSettings);
+      };
+      platformSelect.addEventListener("change", handlePlatformChange);
+      cleanups.push(() => platformSelect.removeEventListener("change", handlePlatformChange));
+    }
+    const handleSettingsChange = (e) => {
+      const target = e.target;
+      let settingsChanged = false;
+      if (target.id === "setting-images") {
+        currentSettings.includeImages = target.checked;
+        currentObsidianSettings.includeImages = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-metadata") {
+        currentSettings.includeMetadata = target.checked;
+        currentObsidianSettings.includeMetadata = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-comments") {
+        currentSettings.includeComments = target.checked;
+        currentObsidianSettings.includeComments = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-links") {
+        currentSettings.includeSourceLinks = target.checked;
+        currentObsidianSettings.includeSourceLinks = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-hierarchical") {
+        currentObsidianSettings.folderStructure = target.checked ? "hierarchical" : "flat";
+        settingsChanged = true;
+      } else if (target.id === "setting-wikilinks") {
+        currentObsidianSettings.linkStyle = target.checked ? "wikilink" : "markdown";
+        settingsChanged = true;
+      } else if (target.id === "setting-callouts") {
+        currentObsidianSettings.useObsidianCallouts = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-frontmatter") {
+        currentObsidianSettings.includeFrontmatter = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-diagrams") {
+        currentObsidianSettings.exportDiagrams = target.checked;
+        updateDiagramOptionsVisibility(element);
+        settingsChanged = true;
+      } else if (target.id === "setting-embed-diagrams") {
+        currentObsidianSettings.embedDiagramsAsCode = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-diagram-source") {
+        currentObsidianSettings.includeDiagramSource = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-diagram-preview") {
+        currentObsidianSettings.includeDiagramPreview = target.checked;
+        settingsChanged = true;
+      } else if (target.id === "setting-attachments") {
+        currentObsidianSettings.downloadAttachments = target.checked;
+        settingsChanged = true;
+      } else if (target.name === "diagram-scale") {
+        currentObsidianSettings.diagramPreviewScale = parseInt(target.value);
+        settingsChanged = true;
+      } else if (target.name === "diagram-format") {
+        currentObsidianSettings.diagramTargetFormat = target.value;
+        settingsChanged = true;
+      } else if (target.name === "diagram-export-mode") {
+        currentObsidianSettings.diagramExportMode = target.value;
+        updateDiagramOptionsVisibility(element);
+        settingsChanged = true;
+      }
+      if (settingsChanged) {
+        saveSettings(currentSettings);
+        saveObsidianSettings(currentObsidianSettings);
+      }
+    };
+    element.addEventListener("change", handleSettingsChange);
+    cleanups.push(() => element.removeEventListener("change", handleSettingsChange));
+    return () => {
+      cleanups.forEach((fn) => fn());
+    };
+  }
+  function togglePanel(element, contentSelector, btn) {
+    const content = element.querySelector(contentSelector);
+    const chevron = btn.querySelector(".md-chevron");
+    if (content) {
+      const isHidden = content.style.display === "none";
+      content.style.display = isHidden ? "block" : "none";
+      chevron == null ? void 0 : chevron.classList.toggle("expanded", isHidden);
+    }
+  }
+  function handleToggleTheme(element, btn) {
+    const currentTheme2 = element.getAttribute("data-theme") || "light";
+    const newTheme = currentTheme2 === "dark" ? "light" : "dark";
+    element.setAttribute("data-theme", newTheme);
+    const sunIcon = `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`;
+    const moonIcon = `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>`;
+    btn.innerHTML = newTheme === "dark" ? sunIcon : moonIcon;
+  }
+  function updateLocalizedText(element) {
+    var _a2;
+    const title = element.querySelector(".md-header-title");
+    if (title) title.textContent = t("title");
+    const searchInput = element.querySelector("#md-search-input");
+    if (searchInput) searchInput.placeholder = t("searchPlaceholder");
+    const filterTabs = element.querySelectorAll(".md-filter-tab");
+    filterTabs.forEach((tab) => {
+      const filter = tab.getAttribute("data-filter");
+      if (filter === "all") tab.textContent = t("filterAll");
+      else if (filter === "selected") tab.textContent = t("filterSelected");
+      else if (filter === "errors") tab.textContent = t("filterErrors");
+    });
+    const expandBtn = element.querySelector('[data-action="expand"]');
+    const collapseBtn = element.querySelector('[data-action="collapse"]');
+    if (expandBtn) expandBtn.setAttribute("title", t("expandAll"));
+    if (collapseBtn) collapseBtn.setAttribute("title", t("collapseAll"));
+    const exportPresetLabel = element.querySelector(".md-config-label");
+    if (exportPresetLabel) exportPresetLabel.textContent = t("exportPreset");
+    const platformSelect = element.querySelector("#setting-platform");
+    if (platformSelect) {
+      const options = platformSelect.querySelectorAll("option");
+      options.forEach((opt) => {
+        if (opt.value === "obsidian") opt.textContent = t("presetObsidian");
+        else if (opt.value === "single") opt.textContent = t("presetSingle");
+        else if (opt.value === "github") opt.textContent = t("presetGithub");
+      });
+    }
+    const diagramsTitle = element.querySelector(".md-section-title");
+    if (diagramsTitle) diagramsTitle.textContent = t("diagramsTitle");
+    const cardOptions = element.querySelectorAll('.md-card-option[data-setting="diagram-export-mode"]');
+    cardOptions.forEach((card) => {
+      const value = card.getAttribute("data-value");
+      const label = card.querySelector(".md-card-label");
+      if (label) {
+        if (value === "copy-as-is") label.textContent = t("diagramCopyAsIs");
+        else if (value === "convert") label.textContent = t("diagramConvert");
+        else if (value === "svg-preview") label.textContent = t("diagramSvgSource");
+      }
+    });
+    const checkboxLabels = {
+      "setting-images": "optionImages",
+      "setting-attachments": "optionAttachments",
+      "setting-metadata": "optionMetadata",
+      "setting-comments": "optionComments",
+      "setting-links": "optionSourceLinks",
+      "setting-frontmatter": "optionFrontmatter",
+      "setting-hierarchical": "optionHierarchical",
+      "setting-wikilinks": "optionWikilinks",
+      "setting-callouts": "optionCallouts",
+      "setting-diagram-source": "includeSource",
+      "setting-diagram-preview": "includePreview",
+      "setting-embed-diagrams": "embedAsCode"
+    };
+    Object.entries(checkboxLabels).forEach(([id, key]) => {
+      var _a3;
+      const checkbox = element.querySelector(`#${id}`);
+      const label = (_a3 = checkbox == null ? void 0 : checkbox.closest(".md-checkbox-compact")) == null ? void 0 : _a3.querySelector("span");
+      if (label) label.textContent = t(key);
+    });
+    const resetBtn = element.querySelector('[data-action="reset-defaults"]');
+    if (resetBtn) {
+      resetBtn.querySelector("span") || resetBtn;
+      if ((_a2 = resetBtn.textContent) == null ? void 0 : _a2.includes("Reset")) {
+        resetBtn.innerHTML = resetBtn.innerHTML.replace(/Reset to defaults|Сбросить настройки/, t("resetDefaults"));
+      }
+    }
+    const copyBtn = element.querySelector("#md-copy-btn span");
+    if (copyBtn) copyBtn.textContent = t("copy");
+    const pdfBtn = element.querySelector("#md-pdf-btn span");
+    if (pdfBtn) pdfBtn.textContent = t("pdf");
+    const downloadBtn = element.querySelector("#md-download-btn span:not(.md-btn-badge)");
+    if (downloadBtn) downloadBtn.textContent = t("download");
+    const themeBtn = element.querySelector('[data-action="toggle-theme"]');
+    const refreshBtn = element.querySelector('[data-action="refresh"]');
+    const closeBtn = element.querySelector('[data-action="cancel"]');
+    if (themeBtn) themeBtn.setAttribute("title", t("toggleTheme"));
+    if (refreshBtn) refreshBtn.setAttribute("title", t("refreshTree"));
+    if (closeBtn) closeBtn.setAttribute("title", `${t("close")} (Esc)`);
+    updateCopyButtonState(element);
+  }
+  function applyFilter(element, filter) {
+    const items = element.querySelectorAll(".md-tree li");
+    items.forEach((li) => {
+      var _a2, _b2, _c, _d;
+      const hasError = li.querySelector(".md-error-badge") !== null;
+      const checkbox = li.querySelector(".md-tree-checkbox");
+      const isSelected = (checkbox == null ? void 0 : checkbox.checked) ?? false;
+      if (filter === "all") {
+        li.classList.remove("hidden");
+      } else if (filter === "errors") {
+        li.classList.toggle("hidden", !hasError);
+        if (hasError) {
+          let parent = (_a2 = li.parentElement) == null ? void 0 : _a2.closest("li");
+          while (parent) {
+            parent.classList.remove("hidden");
+            parent = (_b2 = parent.parentElement) == null ? void 0 : _b2.closest("li");
+          }
+        }
+      } else if (filter === "selected") {
+        li.classList.toggle("hidden", !isSelected);
+        if (isSelected) {
+          let parent = (_c = li.parentElement) == null ? void 0 : _c.closest("li");
+          while (parent) {
+            parent.classList.remove("hidden");
+            parent = (_d = parent.parentElement) == null ? void 0 : _d.closest("li");
+          }
+        }
+      }
+    });
+  }
+  function calculateTreeStats(rootNode, selectedIds) {
+    const allNodes = flattenTree(rootNode);
+    const selectedNodes = allNodes.filter((n) => selectedIds.has(n.id));
+    const errors = allNodes.filter((n) => n.error).length;
+    return {
+      pages: allNodes.length,
+      selectedPages: selectedNodes.length,
+      errors
+    };
+  }
+  let modalElement = null;
+  let stateMachine = null;
+  let cleanupListeners = null;
+  let currentTheme = "light";
+  let currentRootNode = null;
+  function getSystemTheme() {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  function updateStats(element, rootNode) {
+    const selectedIds = getSelectedIdsFromElement(element);
+    const stats = calculateTreeStats(rootNode, new Set(selectedIds));
+    const selectedCount = stats.selectedPages ?? 0;
+    const pagesEl = element.querySelector("#stat-pages");
+    if (pagesEl) pagesEl.textContent = String(selectedCount);
+    const estimatedImages = Math.round(selectedCount * 2);
+    const estimatedDiagrams = Math.round(selectedCount * 0.5);
+    const imagesEl = element.querySelector("#stat-images");
+    if (imagesEl) {
+      imagesEl.textContent = String(estimatedImages);
+    }
+    const diagramsEl = element.querySelector("#stat-diagrams");
+    if (diagramsEl) {
+      diagramsEl.textContent = String(estimatedDiagrams);
+    }
+    const estimatedSizeKB = selectedCount * 50 + estimatedImages * 200 + estimatedDiagrams * 100;
+    const estimatedMB = estimatedSizeKB / 1024;
+    const sizeEl = element.querySelector("#stat-size");
+    if (sizeEl) {
+      sizeEl.textContent = estimatedMB.toFixed(1);
+    }
+  }
+  function getSelectedIdsFromElement(element) {
     const ids = [];
-    modal.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
+    element.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
       const li = cb.closest("li");
       if (cb.dataset.pageId && !(li == null ? void 0 : li.classList.contains("hidden"))) {
         ids.push(cb.dataset.pageId);
@@ -17045,27 +21592,129 @@ ${converted.output}
     });
     return ids;
   }
-  function updateSelectionCount(modal) {
-    const checkboxes = modal.querySelectorAll(".md-tree-checkbox:checked");
-    let count = 0;
-    checkboxes.forEach((cb) => {
-      var _a;
-      if (!((_a = cb.closest("li")) == null ? void 0 : _a.classList.contains("hidden"))) count++;
+  function createExportModal(options) {
+    const { rootNode, rootTitle, callbacks } = options;
+    if (modalElement) {
+      cleanupListeners == null ? void 0 : cleanupListeners();
+      modalElement.remove();
+    }
+    stateMachine = new ModalStateMachine();
+    currentRootNode = rootNode;
+    currentTheme = getSystemTheme();
+    initSettings();
+    const { settings, obsidianSettings } = getSettings();
+    const modal = document.createElement("div");
+    modal.id = "md-export-modal";
+    modal.setAttribute("data-theme", currentTheme);
+    const renderOptions = {
+      rootNode,
+      rootTitle,
+      theme: currentTheme,
+      settings,
+      obsidianSettings: {
+        ...obsidianSettings,
+        // Ensure diagramTargetFormat is compatible with view types
+        diagramTargetFormat: obsidianSettings.diagramTargetFormat === "wikilink" ? "mermaid" : obsidianSettings.diagramTargetFormat
+      }
+    };
+    modal.innerHTML = renderModal(renderOptions);
+    modalElement = modal;
+    const controller = {
+      show: () => {
+        if (modalElement && !document.body.contains(modalElement)) {
+          document.body.appendChild(modalElement);
+          stateMachine == null ? void 0 : stateMachine.setState("ready");
+          setTimeout(() => {
+            const searchInput = modalElement == null ? void 0 : modalElement.querySelector("#md-search-input");
+            searchInput == null ? void 0 : searchInput.focus();
+          }, 100);
+        }
+      },
+      close: () => {
+        var _a2;
+        cleanupListeners == null ? void 0 : cleanupListeners();
+        cleanupListeners = null;
+        if (modalElement) {
+          modalElement.remove();
+          modalElement = null;
+        }
+        stateMachine == null ? void 0 : stateMachine.reset();
+        stateMachine = null;
+        currentRootNode = null;
+        (_a2 = callbacks.onClose) == null ? void 0 : _a2.call(callbacks);
+      },
+      setState: (state) => {
+        if (!stateMachine || !modalElement) return;
+        const success = stateMachine.setState(state);
+        if (success) {
+          updateModalUI(modalElement, state);
+          if (state === "ready") {
+            enableModalInteraction(modalElement, { download: ICONS.download, copy: ICONS.copy });
+          }
+        }
+      },
+      getState: () => {
+        return (stateMachine == null ? void 0 : stateMachine.getState()) ?? "idle";
+      },
+      showProgress: (phase, current, total) => {
+        if (modalElement) {
+          showProgress(modalElement, phase, current, total);
+        }
+      },
+      hideProgress: () => {
+        if (modalElement) {
+          hideProgress(modalElement);
+        }
+      },
+      showToast: (message) => {
+        if (modalElement) {
+          showToast(modalElement, message);
+        }
+      },
+      updateTree: (node) => {
+        if (!modalElement) return;
+        currentRootNode = node;
+        const treeRoot = modalElement.querySelector("#md-tree-root");
+        if (treeRoot) {
+          treeRoot.innerHTML = renderTree([node]);
+        }
+        const pageCount = modalElement.querySelector(".md-page-count");
+        if (pageCount) {
+          pageCount.textContent = `${countNodes(node)} pages`;
+        }
+        updateSelectionCount$1(modalElement);
+        updateStats(modalElement, node);
+      }
+    };
+    cleanupListeners = setupEventListeners({
+      element: modal,
+      callbacks,
+      getState: () => (stateMachine == null ? void 0 : stateMachine.getState()) ?? "idle",
+      setState: (state) => controller.setState(state),
+      close: () => controller.close(),
+      updateTree: (node) => controller.updateTree(node),
+      updateStats: () => {
+        if (modalElement && currentRootNode) {
+          updateStats(modalElement, currentRootNode);
+        }
+      }
     });
-    const counter = modal.querySelector("#md-selection-count");
-    if (counter) {
-      counter.textContent = `${count} selected`;
-    }
-    const badge = modal.querySelector("#md-download-badge");
-    if (badge) {
-      badge.textContent = String(count);
-      badge.classList.toggle("has-count", count > 0);
-    }
+    stateMachine.subscribe((event) => {
+      console.log(`[Modal] State: ${event.from} -> ${event.to}`);
+    });
+    controller.show();
+    updateSelectionCount$1(modal);
+    updateStats(modal, rootNode);
+    return controller;
   }
-  function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+  function closeModal() {
+    if (modalElement) {
+      cleanupListeners == null ? void 0 : cleanupListeners();
+      modalElement.remove();
+      modalElement = null;
+      stateMachine == null ? void 0 : stateMachine.reset();
+      stateMachine = null;
+    }
   }
   function createButton(text, className, onClick) {
     const btn = document.createElement("button");
@@ -17097,6 +21746,92 @@ ${converted.output}
     return "Unknown error";
   }
   let exportButton = null;
+  async function handleCopy(controller, ctx, rootTree, rootTitle) {
+    try {
+      console.log("[Main] Copy action started");
+      controller.showProgress("content", 0, ctx.selectedIds.length);
+      const pagesContent = await fetchPagesContent(
+        ctx.selectedIds,
+        ctx.settings,
+        (completed, total, phase) => controller.showProgress(phase, completed, total)
+      );
+      controller.showProgress("convert", 0, 0);
+      let diagramFormat = "wikilink";
+      if (ctx.obsidianSettings.diagramExportMode === "convert") {
+        diagramFormat = ctx.obsidianSettings.diagramTargetFormat;
+      }
+      const result = await buildMarkdownDocument(
+        pagesContent,
+        rootTree,
+        rootTitle,
+        ctx.settings,
+        diagramFormat,
+        ctx.obsidianSettings.diagramExportMode
+      );
+      const success = await copyToClipboard(result);
+      if (success) {
+        controller.showToast("Copied to clipboard!");
+        updateStatus(`Copied ${result.pageCount} pages`);
+      } else {
+        throw new Error("Failed to copy to clipboard");
+      }
+    } catch (error) {
+      console.error("[Main] Copy failed:", error);
+      controller.showToast("Copy failed!");
+      throw error;
+    }
+  }
+  async function handleDownload(controller, ctx, rootTree, rootTitle) {
+    controller.showProgress("content", 0, ctx.selectedIds.length);
+    const pagesContent = await fetchPagesContent(
+      ctx.selectedIds,
+      ctx.settings,
+      (completed, total, phase) => controller.showProgress(phase, completed, total)
+    );
+    controller.showProgress("convert", 0, 0);
+    let diagramFormat = "wikilink";
+    if (ctx.obsidianSettings.diagramExportMode === "convert") {
+      diagramFormat = ctx.obsidianSettings.diagramTargetFormat;
+    }
+    const result = await buildMarkdownDocument(
+      pagesContent,
+      rootTree,
+      rootTitle,
+      ctx.settings,
+      diagramFormat,
+      ctx.obsidianSettings.diagramExportMode
+    );
+    downloadMarkdown(result);
+    updateStatus(`Downloaded ${result.pageCount} pages`);
+  }
+  async function handleObsidian(controller, ctx, rootTree, rootTitle) {
+    controller.showProgress("content", 0, ctx.selectedIds.length);
+    const pagesContent = await fetchPagesContent(
+      ctx.selectedIds,
+      ctx.settings,
+      (completed, total, phase) => controller.showProgress(phase, completed, total)
+    );
+    controller.showProgress("vault", 0, 0);
+    const vaultResult = await createObsidianVault(
+      pagesContent,
+      rootTree,
+      rootTitle,
+      ctx.obsidianSettings,
+      (phase, current, total) => controller.showProgress(phase, current, total)
+    );
+    downloadVaultZip(vaultResult);
+    updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
+  }
+  async function handlePdf(controller, ctx, rootTree, rootTitle) {
+    controller.showProgress("content", 0, ctx.selectedIds.length);
+    const pagesContent = await fetchPagesContent(
+      ctx.selectedIds,
+      ctx.settings,
+      (completed, total, phase) => controller.showProgress(phase, completed, total)
+    );
+    exportToPdf(pagesContent, rootTree, rootTitle, ctx.settings);
+    updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
+  }
   async function startExport() {
     if (!exportButton || exportButton.disabled) return;
     const pageId = getCurrentPageId();
@@ -17125,10 +21860,37 @@ ${converted.output}
         setCachedTree(pageId, rootTitle, rootTree);
         updateStatus("Tree cached");
       }
-      const { selectedIds, cancelled, action, settings, obsidianSettings } = await showPageSelectorModal(
-        rootTree,
+      let controller;
+      controller = createExportModal({
+        rootNode: rootTree,
         rootTitle,
-        {
+        callbacks: {
+          onAction: async (action, ctx) => {
+            try {
+              switch (action) {
+                case "copy":
+                  await handleCopy(controller, ctx, rootTree, rootTitle);
+                  controller.setState("ready");
+                  break;
+                case "download":
+                  await handleDownload(controller, ctx, rootTree, rootTitle);
+                  controller.close();
+                  break;
+                case "obsidian":
+                  await handleObsidian(controller, ctx, rootTree, rootTitle);
+                  controller.close();
+                  break;
+                case "pdf":
+                  await handlePdf(controller, ctx, rootTree, rootTitle);
+                  controller.close();
+                  break;
+              }
+            } catch (error) {
+              console.error(`[Main] ${action} failed:`, error);
+              alert(`Export failed: ${getErrorMessage(error)}`);
+              controller.setState("ready");
+            }
+          },
           onRefresh: async () => {
             updateStatus("Refreshing tree...");
             clearCachedTree(pageId);
@@ -17140,71 +21902,12 @@ ${converted.output}
             }
             updateStatus("Tree refreshed");
             return newTree;
+          },
+          onClose: () => {
+            updateStatus("Closed");
           }
         }
-      );
-      if (cancelled) {
-        updateStatus("Cancelled");
-        return;
-      }
-      if (selectedIds.length === 0) {
-        closeModal();
-        updateStatus("No pages selected");
-        return;
-      }
-      updateModalProgress(0, selectedIds.length, "content");
-      const pagesContent = await fetchPagesContent(selectedIds, settings, (completed, total, phase) => {
-        updateModalProgress(completed, total, phase);
       });
-      if (action === "obsidian") {
-        updateModalProgress(0, 0, "Creating Obsidian vault...");
-        const vaultResult = await createObsidianVault(
-          pagesContent,
-          rootTree,
-          rootTitle,
-          obsidianSettings,
-          (phase, current, total) => {
-            updateModalProgress(current, total, phase);
-          }
-        );
-        downloadVaultZip(vaultResult);
-        closeModal();
-        updateStatus(`Downloaded vault: ${vaultResult.pageCount} pages, ${vaultResult.diagramCount} diagrams`);
-      } else if (action === "copy") {
-        updateModalProgress(0, 0, "convert");
-        const result = await buildMarkdownDocument(
-          pagesContent,
-          rootTree,
-          rootTitle,
-          settings,
-          obsidianSettings.diagramTargetFormat
-        );
-        const success = await copyToClipboard(result);
-        if (success) {
-          showToast("Copied to clipboard!");
-          enableModal();
-          updateStatus(`Copied ${result.pageCount} pages`);
-        } else {
-          alert("Failed to copy to clipboard");
-          enableModal();
-        }
-      } else if (action === "pdf") {
-        exportToPdf(pagesContent, rootTree, rootTitle, settings);
-        closeModal();
-        updateStatus(`PDF preview opened for ${pagesContent.length} pages`);
-      } else {
-        updateModalProgress(0, 0, "convert");
-        const result = await buildMarkdownDocument(
-          pagesContent,
-          rootTree,
-          rootTitle,
-          settings,
-          obsidianSettings.diagramTargetFormat
-        );
-        downloadMarkdown(result);
-        closeModal();
-        updateStatus(`Downloaded ${result.pageCount} pages`);
-      }
     } catch (error) {
       console.error("Export error:", error);
       closeModal();
