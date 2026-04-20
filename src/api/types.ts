@@ -169,3 +169,45 @@ export interface ObsidianExportResult {
     totalSize: number;
     title: string;
 }
+
+/** Hub page data for push */
+export interface HubPageData {
+    id: string;
+    title: string;
+    htmlContent: string;
+    ancestors: ConfluenceAncestor[];
+    version?: ConfluenceVersion;
+    labels: string[];
+    space: string;
+}
+
+/** Hub catalog page (metadata only) */
+export interface HubCatalogPage {
+    id: string;
+    title: string;
+    space: string;
+    ancestors: Array<{ id: string; title: string }>;
+    labels: string[];
+    last_modified: string;
+}
+
+/** Hub content page (with HTML) */
+export interface HubContentPage extends HubCatalogPage {
+    html_content: string;
+    content_format: 'storage';
+    has_attachments: boolean;
+}
+
+/** Hub attachment data */
+export interface HubAttachmentData {
+    pageId: string;
+    filename: string;
+    blob: Blob;
+}
+
+/** Hub ingest response */
+export interface HubIngestResponse {
+    cataloged?: number;
+    indexed?: number;
+    errors: string[];
+}

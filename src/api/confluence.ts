@@ -5,6 +5,8 @@ import type {
     ConfluencePage,
     ConfluencePageWithContent,
     ConfluencePaginatedResponse,
+    HubPageData,
+    HubCatalogPage,
 } from './types';
 
 /** Get base URL from current page */
@@ -82,7 +84,7 @@ async function browserFetch<T>(url: string): Promise<T> {
 }
 
 /** Universal fetch with retry */
-function fetchJson<T>(url: string): Promise<T> {
+export function fetchJson<T>(url: string): Promise<T> {
     return withRetry(async () => {
         if (IS_TAMPERMONKEY) {
             return gmFetch<T>(url);
@@ -167,4 +169,98 @@ export async function fetchAllDescendants(rootPageId: string): Promise<PageWithA
     }
 
     return descendants;
+}
+
+interface ConfluenceLabelResponse {
+    results: Array<{ name: string }>;
+}
+
+interface ConfluencePageWithStorage {
+    id: string;
+    title: string;
+    type: string;
+    status: string;
+    space?: { key: string };
+    body?: {
+        storage?: { value: string; representation: string };
+    };
+    ancestors?: Array<{ id: string; title: string; type: string }>;
+    version?: { number: number; when: string };
+    metadata?: { labels?: ConfluenceLabelResponse };
+}
+
+export async function fetchPageForHub(pageId: string): Promise<HubPageData | null> {
+    const url = `${getBaseUrl()}/rest/api/content/${pageId}?expand=body.storage,ancestors,version,metadata.labels,space`;
+    try {
+        const page = await fetchJson<ConfluencePageWithStorage>(url);
+
+        const labels = page.metadata?.labels?.results?.map(l => l.name) || [];
+
+        return {
+            id: page.id,
+            title: page.title,
+            htmlContent: page.body?.storage?.value || '',
+            ancestors: (page.ancestors || []).map(a => ({ id: a.id, title: a.title, type: a.type || 'page' })),
+            version: page.version ? { number: page.version.number, when: page.version.when } : undefined,
+            labels,
+            space: page.space?.key || '',
+        };
+    } catch (error) {
+        console.error('[API] fetchPageForHub failed:', error);
+        return null;
+    }
+}
+
+interface CqlCatalogResponse {
+    results: Array<{
+        id: string;
+        title: string;
+        space?: { key: string };
+        ancestors?: Array<{ id: string; title: string }>;
+        version?: { when: string };
+        metadata?: { labels?: ConfluenceLabelResponse };
+    }>;
+    start: number;
+    limit: number;
+    size: number;
+    _links?: { next?: string };
+}
+
+export async function fetchSpaceCatalog(spaceKey: string): Promise<HubCatalogPage[]> {
+    const baseUrl = getBaseUrl();
+    const pages: HubCatalogPage[] = [];
+    let start = 0;
+    const limit = 200;
+    let hasMore = true;
+
+    while (hasMore) {
+        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page AND status=current`);
+        const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,version,metadata.labels,space&limit=${limit}&start=${start}`;
+
+        try {
+            const response = await fetchJson<CqlCatalogResponse>(url);
+
+            if (response.results?.length) {
+                for (const r of response.results) {
+                    const labels = r.metadata?.labels?.results?.map(l => l.name) || [];
+                    pages.push({
+                        id: r.id,
+                        title: r.title,
+                        space: r.space?.key || spaceKey,
+                        ancestors: (r.ancestors || []).map(a => ({ id: a.id, title: a.title })),
+                        labels,
+                        last_modified: r.version?.when || new Date().toISOString(),
+                    });
+                }
+            }
+
+            hasMore = response.results?.length === limit;
+            start += limit;
+        } catch (error) {
+            console.error('[API] fetchSpaceCatalog failed:', error);
+            throw error;
+        }
+    }
+
+    return pages;
 }
