@@ -6,11 +6,11 @@
     "permissions": [
         "activeTab",
         "storage",
+        "tabs",
         "clipboardWrite"
     ],
     "host_permissions": [
-        "https://*.atlassian.net/*",
-        "https://*/rest/api/content/*"
+        "<all_urls>"
     ],
     "background": {
         "service_worker": "background.js"

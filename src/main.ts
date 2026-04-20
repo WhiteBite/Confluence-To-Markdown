@@ -13,6 +13,9 @@ import { createButton, createStatus, updateStatus, setButtonLoading } from '@/ui
 import { getCurrentPageId, getErrorMessage } from '@/utils/helpers';
 import { getCachedTree, setCachedTree, clearCachedTree } from '@/storage/storage';
 import type { PageTreeNode } from '@/api/types';
+import { isHubConfigured } from '@/storage/hub-settings';
+import { showHubModal } from '@/ui/hub-modal';
+import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
 
 let exportButton: HTMLButtonElement | null = null;
 
@@ -273,6 +276,69 @@ async function startExport(): Promise<void> {
 }
 
 // ============================================================================
+// Hub Link Process
+// ============================================================================
+
+async function startHubLink(): Promise<void> {
+    const pageId = getCurrentPageId();
+    if (!pageId) {
+        alert('Не удалось определить текущую страницу!');
+        return;
+    }
+
+    const spaceKey = getSpaceKey();
+    const spaceName = getSpaceName();
+
+    let pageTree: PageTreeNode | null = null;
+    const cached = getCachedTree(pageId);
+    if (cached) {
+        pageTree = cached.tree;
+    } else {
+        try {
+            updateStatus('Загрузка дерева...');
+            pageTree = await buildPageTree(pageId, updateStatus);
+            if (pageTree && !pageTree.error) {
+                setCachedTree(pageId, pageTree.title, pageTree);
+            }
+        } catch {
+            pageTree = null;
+        }
+    }
+
+    showHubModal({
+        pageId,
+        spaceKey,
+        spaceName,
+        pageTree,
+    });
+    updateStatus('');
+}
+
+function getSpaceKey(): string {
+    const meta = document.querySelector('meta[name="confluence-space-key"]');
+    if (meta) return meta.getAttribute('content') || '';
+
+    const spaceUrl = window.location.pathname.match(/\/display\/([^/]+)/);
+    if (spaceUrl) return spaceUrl[1];
+
+    const spaceParam = new URLSearchParams(window.location.search).get('spaceKey');
+    if (spaceParam) return spaceParam;
+
+    return '';
+}
+
+function getSpaceName(): string {
+    const breadcrumb = document.querySelector('#breadcrumb-section a[data-space-key]');
+    if (breadcrumb) return breadcrumb.textContent?.trim() || '';
+
+    const spaceLink = document.querySelector('.space-name a, #space-name-link');
+    if (spaceLink) return spaceLink.textContent?.trim() || '';
+
+    const spaceKey = getSpaceKey();
+    return spaceKey || 'Unknown';
+}
+
+// ============================================================================
 // UI Setup
 // ============================================================================
 
@@ -291,11 +357,34 @@ function addExportButton(): void {
 
     actionMenu.parentElement.insertBefore(exportButton, actionMenu.nextSibling);
     actionMenu.parentElement.insertBefore(status, exportButton.nextSibling);
+
+    if (isHubConfigured() && !document.getElementById('md-hub-trigger')) {
+        const hubButton = createButton('📡 Привязать к Hub', 'aui-button hub-button', startHubLink);
+        hubButton.id = 'md-hub-trigger';
+        actionMenu.parentElement.insertBefore(hubButton, status.nextSibling);
+    }
+
+    if (!document.getElementById('md-hub-settings-trigger')) {
+        const settingsBtn = document.createElement('button');
+        settingsBtn.id = 'md-hub-settings-trigger';
+        settingsBtn.className = 'aui-button md-hub-settings-btn-inline';
+        settingsBtn.title = 'Hub Settings';
+        settingsBtn.textContent = '⚙️';
+        settingsBtn.style.cssText = 'margin-left:4px;padding:0 6px;min-width:auto;font-size:0.85em;';
+        settingsBtn.addEventListener('click', showHubSettingsPanel);
+        actionMenu.parentElement.insertBefore(settingsBtn, (document.getElementById('md-hub-trigger') || status).nextSibling);
+    }
 }
 
 /** Initialize script */
 function init(): void {
     addExportButton();
+
+    if (isHubConfigured()) {
+        import('@/hub/sync-checker').then(({ checkForUpdates, updateBadge }) => {
+            checkForUpdates().then(updateBadge);
+        });
+    }
 
     // Watch for SPA navigation
     let lastHref = location.href;
@@ -303,9 +392,20 @@ function init(): void {
         if (location.href !== lastHref) {
             lastHref = location.href;
             setTimeout(addExportButton, 500);
+            if (isHubConfigured()) {
+                import('@/hub/sync-checker').then(({ checkForUpdates, updateBadge }) => {
+                    setTimeout(() => checkForUpdates().then(updateBadge), 1000);
+                });
+            }
         } else if (
             !document.getElementById('md-export-trigger') &&
             document.getElementById('action-menu-link')
+        ) {
+            setTimeout(addExportButton, 200);
+        } else if (
+            isHubConfigured() &&
+            !document.getElementById('md-hub-trigger') &&
+            document.getElementById('md-export-trigger')
         ) {
             setTimeout(addExportButton, 200);
         }
