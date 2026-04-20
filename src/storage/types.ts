@@ -128,7 +128,38 @@ export const STORAGE_KEYS = {
     SETTINGS: 'md_export_settings',
     OBSIDIAN_SETTINGS: 'md_obsidian_settings',
     TREE_PREFIX: 'md_tree_cache_',
+    HUB_SETTINGS: 'md_hub_settings',
 } as const;
 
 /** Cache TTL - 24 hours */
 export const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+/** Linked space configuration */
+export interface LinkedSpace {
+    spaceKey: string;
+    spaceName: string;
+    lastSyncTimestamp: string;
+    filterMode: 'all' | 'labels' | 'sections';
+    filterLabels?: string[];
+    filterSectionIds?: string[];
+}
+
+/** Hub connection settings */
+export interface HubSettings {
+    url: string;
+    apiToken: string;
+    alias: string;
+    connected: boolean;
+    linkedSpaces: LinkedSpace[];
+    autoUpdateBadge: boolean;
+}
+
+/** Default Hub settings */
+export const DEFAULT_HUB_SETTINGS: HubSettings = {
+    url: '',
+    apiToken: '',
+    alias: '',
+    connected: false,
+    linkedSpaces: [],
+    autoUpdateBadge: true,
+};
