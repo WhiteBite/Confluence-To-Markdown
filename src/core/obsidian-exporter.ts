@@ -224,7 +224,6 @@ export async function createObsidianVault(
     settings: ObsidianExportSettings,
     onProgress?: ProgressCallback
 ): Promise<ObsidianExportResult> {
-    // Using fflate instead of JSZip for better Tampermonkey compatibility
     const zipFiles: Record<string, Uint8Array> = {};
     const flatTree = flattenTree(rootNode);
     const nodeMap = new Map(flatTree.map((n) => [n.id, n]));

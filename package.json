@@ -15,7 +15,6 @@
     "dependencies": {
         "@whitebite/diagram-converter": "^0.2.0",
         "fflate": "^0.8.2",
-        "jszip": "^3.10.1",
         "turndown": "^7.2.0",
         "turndown-plugin-gfm": "^1.0.2"
     },
