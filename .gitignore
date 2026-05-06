@@ -30,3 +30,6 @@ confluence-to-markdown-extension.zip
 
 # Examples (test data, not for repo)
 example/
+
+# Generated files (single source of truth: package.json + manifest.template.json)
+src/manifest.json
