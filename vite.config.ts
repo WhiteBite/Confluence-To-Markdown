@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
+import pkg from './package.json' assert { type: 'json' };
 
 const REPO_URL = 'https://github.com/WhiteBite/Confluence-To-Markdown';
 const RAW_URL = 'https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js';
@@ -11,7 +12,7 @@ export default defineConfig({
             userscript: {
                 name: 'Confluence to Markdown Exporter',
                 namespace: 'https://github.com/WhiteBite/confluence-to-markdown',
-                version: '2.6.1',
+                version: pkg.version,
                 description: 'Export Confluence pages to clean Markdown for LLM consumption',
                 author: 'WhiteBite',
                 homepage: REPO_URL,
