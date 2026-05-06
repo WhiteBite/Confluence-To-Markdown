@@ -1,6 +1,6 @@
 {
     "name": "confluence-to-markdown",
-    "version": "2.6.2",
+    "version": "2.6.3",
     "description": "Confluence pages to Markdown exporter with diagram conversion",
     "type": "module",
     "scripts": {
@@ -24,6 +24,7 @@
         "@types/turndown": "^5.0.5",
         "jsdom": "^24.0.0",
         "playwright": "^1.57.0",
+        "terser": "^5.46.2",
         "typescript": "^5.3.3",
         "vite": "^5.4.11",
         "vite-plugin-monkey": "^4.0.6",
