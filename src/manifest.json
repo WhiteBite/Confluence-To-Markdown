@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Confluence to Markdown",
-    "version": "2.0.0",
+    "version": "2.6.6",
     "description": "Export Confluence pages to clean Markdown for LLM consumption",
     "permissions": [
         "activeTab",
