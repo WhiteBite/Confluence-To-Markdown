@@ -27,22 +27,22 @@ let exportButton: HTMLButtonElement | null = null;
  * Handle copy action
  */
 async function handleCopy(
-    controller: ModalController,
+    controller: ModalController | undefined,
     ctx: ModalContext,
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
     try {
         console.log('[Main] Copy action started');
-        controller.showProgress('content', 0, ctx.selectedIds.length);
+        controller?.showProgress('content', 0, ctx.selectedIds.length);
 
         const pagesContent = await fetchPagesContent(
             ctx.selectedIds,
             ctx.settings,
-            (completed, total, phase) => controller.showProgress(phase, completed, total)
+            (completed, total, phase) => controller?.showProgress(phase, completed, total)
         );
 
-        controller.showProgress('convert', 0, 0);
+        controller?.showProgress('convert', 0, 0);
 
         let diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink';
         if (ctx.obsidianSettings.diagramExportMode === 'convert') {
@@ -61,14 +61,14 @@ async function handleCopy(
         const success = await copyToClipboard(result);
 
         if (success) {
-            controller.showToast('Copied to clipboard!');
+            controller?.showToast('Copied to clipboard!');
             updateStatus(`Copied ${result.pageCount} pages`);
         } else {
             throw new Error('Failed to copy to clipboard');
         }
     } catch (error) {
         console.error('[Main] Copy failed:', error);
-        controller.showToast('Copy failed!');
+        controller?.showToast('Copy failed!');
         throw error;
     }
 }
@@ -77,20 +77,20 @@ async function handleCopy(
  * Handle download action
  */
 async function handleDownload(
-    controller: ModalController,
+    controller: ModalController | undefined,
     ctx: ModalContext,
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
-    controller.showProgress('content', 0, ctx.selectedIds.length);
+    controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
         ctx.selectedIds,
         ctx.settings,
-        (completed, total, phase) => controller.showProgress(phase, completed, total)
+        (completed, total, phase) => controller?.showProgress(phase, completed, total)
     );
 
-    controller.showProgress('convert', 0, 0);
+    controller?.showProgress('convert', 0, 0);
 
     let diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink';
     if (ctx.obsidianSettings.diagramExportMode === 'convert') {
@@ -114,27 +114,27 @@ async function handleDownload(
  * Handle Obsidian vault export
  */
 async function handleObsidian(
-    controller: ModalController,
+    controller: ModalController | undefined,
     ctx: ModalContext,
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
-    controller.showProgress('content', 0, ctx.selectedIds.length);
+    controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
         ctx.selectedIds,
         ctx.settings,
-        (completed, total, phase) => controller.showProgress(phase, completed, total)
+        (completed, total, phase) => controller?.showProgress(phase, completed, total)
     );
 
-    controller.showProgress('vault', 0, 0);
+    controller?.showProgress('vault', 0, 0);
 
     const vaultResult = await createObsidianVault(
         pagesContent,
         rootTree,
         rootTitle,
         ctx.obsidianSettings,
-        (phase, current, total) => controller.showProgress(phase, current, total)
+        (phase, current, total) => controller?.showProgress(phase, current, total)
     );
 
     downloadVaultZip(vaultResult);
@@ -145,17 +145,17 @@ async function handleObsidian(
  * Handle PDF export
  */
 async function handlePdf(
-    controller: ModalController,
+    controller: ModalController | undefined,
     ctx: ModalContext,
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
-    controller.showProgress('content', 0, ctx.selectedIds.length);
+    controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
         ctx.selectedIds,
         ctx.settings,
-        (completed, total, phase) => controller.showProgress(phase, completed, total)
+        (completed, total, phase) => controller?.showProgress(phase, completed, total)
     );
 
     exportToPdf(pagesContent, rootTree, rootTitle, ctx.settings);
@@ -310,19 +310,19 @@ async function startSpaceExport(): Promise<void> {
                     try {
                         switch (action) {
                             case 'copy':
-                                await handleCopy(undefined as any, ctx, rootTree, spaceName);
+                                await handleCopy(undefined, ctx, rootTree, spaceName);
                                 break;
 
                             case 'download':
-                                await handleDownload(undefined as any, ctx, rootTree, spaceName);
+                                await handleDownload(undefined, ctx, rootTree, spaceName);
                                 break;
 
                             case 'obsidian':
-                                await handleObsidian(undefined as any, ctx, rootTree, spaceName);
+                                await handleObsidian(undefined, ctx, rootTree, spaceName);
                                 break;
 
                             case 'pdf':
-                                await handlePdf(undefined as any, ctx, rootTree, spaceName);
+                                await handlePdf(undefined, ctx, rootTree, spaceName);
                                 break;
                         }
                     } catch (error) {
