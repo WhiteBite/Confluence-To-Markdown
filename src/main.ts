@@ -20,6 +20,41 @@ import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
 let exportButton: HTMLButtonElement | null = null;
 
 // ============================================================================
+// Debug Logging
+// ============================================================================
+
+/** Log structured error with context for debugging */
+function logError(error: unknown, context: string, extra?: Record<string, unknown>): void {
+    const version = (typeof GM_info !== 'undefined' ? GM_info?.script?.version : 'dev') ?? 'unknown';
+    const timestamp = new Date().toISOString();
+    const err = error instanceof Error ? error : new Error(String(error));
+
+    const payload = {
+        timestamp,
+        version,
+        context,
+        message: err.message,
+        stack: err.stack,
+        ...(extra || {}),
+    };
+
+    // Always log to console
+    console.error(`[ConfluenceExport ${version}] ERROR in ${context}:`, payload);
+
+    // On Tampermonkey, also store last errors for troubleshooting
+    if (typeof GM_setValue !== 'undefined') {
+        try {
+            const history = JSON.parse(GM_getValue?.('export_error_history', '[]') ?? '[]');
+            history.unshift(payload);
+            if (history.length > 10) history.pop();
+            GM_setValue?.('export_error_history', JSON.stringify(history));
+        } catch {
+            // ignore storage errors
+        }
+    }
+}
+
+// ============================================================================
 // Action Handlers
 // ============================================================================
 
@@ -33,8 +68,11 @@ async function handleCopy(
     rootTitle: string
 ): Promise<void> {
     try {
-        console.log('[Main] Copy action started');
-        controller?.showProgress('content', 0, ctx.selectedIds.length);
+        if (!controller) {
+            console.log('[Main] Copy action started (no modal — space export)');
+        } else {
+            controller.showProgress('content', 0, ctx.selectedIds.length);
+        }
 
         const pagesContent = await fetchPagesContent(
             ctx.selectedIds,
@@ -67,7 +105,7 @@ async function handleCopy(
             throw new Error('Failed to copy to clipboard');
         }
     } catch (error) {
-        console.error('[Main] Copy failed:', error);
+        logError(error, 'handleCopy', { pageCount: ctx.selectedIds.length, hasController: !!controller });
         controller?.showToast('Copy failed!');
         throw error;
     }
@@ -82,6 +120,9 @@ async function handleDownload(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
+    if (!controller) {
+        console.log('[Main] Download action started (no modal — space export)');
+    }
     controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
@@ -119,6 +160,9 @@ async function handleObsidian(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
+    if (!controller) {
+        console.log('[Main] Obsidian action started (no modal — space export)');
+    }
     controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
@@ -150,6 +194,9 @@ async function handlePdf(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
+    if (!controller) {
+        console.log('[Main] PDF action started (no modal — space export)');
+    }
     controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
@@ -236,7 +283,7 @@ async function startExport(): Promise<void> {
                                 break;
                         }
                     } catch (error) {
-                        console.error(`[Main] ${action} failed:`, error);
+                        logError(error, `pageExport:${action}`, { pageId });
                         alert(`Export failed: ${getErrorMessage(error)}`);
                         controller.setState('ready');
                     }
@@ -262,7 +309,7 @@ async function startExport(): Promise<void> {
         });
 
     } catch (error) {
-        console.error('Export error:', error);
+        logError(error, 'startExport', { pageId });
         closeModal();
         alert(`Export failed: ${getErrorMessage(error)}`);
         updateStatus(`Error: ${getErrorMessage(error)}`);
@@ -324,7 +371,7 @@ async function startSpaceExport(): Promise<void> {
                                 break;
                         }
                     } catch (error) {
-                        console.error(`[Space Export] ${action} failed:`, error);
+                        logError(error, `spaceExport:${action}`, { spaceKey, spaceName });
                         alert(`Export failed: ${getErrorMessage(error)}`);
                     }
                 },
@@ -346,7 +393,7 @@ async function startSpaceExport(): Promise<void> {
         });
 
     } catch (error) {
-        console.error('Space export error:', error);
+        logError(error, 'startSpaceExport', { spaceKey, spaceName });
         alert(`Space export failed: ${getErrorMessage(error)}`);
         updateStatus(`Error: ${getErrorMessage(error)}`);
     } finally {
