@@ -10,7 +10,9 @@
         "preview": "vite preview",
         "serve": "http-server dist -p 8765 --cors -c-1",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "lint": "eslint src/ --ext .ts",
+        "lint:fix": "eslint src/ --ext .ts --fix"
     },
     "dependencies": {
         "@whitebite/diagram-converter": "^0.2.0",
@@ -19,12 +21,15 @@
         "turndown-plugin-gfm": "^1.0.2"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/chrome": "^0.0.268",
         "@types/turndown": "^5.0.5",
+        "eslint-plugin-userscripts": "^0.5.6",
         "jsdom": "^24.0.0",
         "playwright": "^1.57.0",
         "terser": "^5.46.2",
         "typescript": "^5.3.3",
+        "typescript-eslint": "^8.59.2",
         "vite": "^5.4.11",
         "vite-plugin-monkey": "^4.0.6",
         "vitest": "^1.6.0"

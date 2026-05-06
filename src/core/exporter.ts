@@ -318,7 +318,7 @@ export async function copyToClipboard(result: ExportResult): Promise<boolean> {
     try {
         await navigator.clipboard.writeText(result.markdown);
         return true;
-    } catch (error) {
+    } catch {
         // Fallback for older browsers
         const textarea = document.createElement('textarea');
         textarea.value = result.markdown;

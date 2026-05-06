@@ -3,7 +3,7 @@ import type { PageTreeNode } from '@/api/types';
 import { DEBUG } from '@/config';
 import { runWithConcurrency } from '@/utils/queue';
 
-export type StatusCallback = (message: string) => void;
+export type StatusCallback = (_message: string) => void;
 
 /** Concurrency for tree building */
 const TREE_CONCURRENCY = 8;

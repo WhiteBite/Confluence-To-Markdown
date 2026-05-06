@@ -23,7 +23,9 @@ export async function checkForUpdates(): Promise<SyncUpdate[]> {
     try {
       const cql = `space="${space.spaceKey}" AND type=page AND lastmodified > "${space.lastSyncTimestamp}"`;
       const url = `/rest/api/content/search?cql=${encodeURIComponent(cql)}&limit=50`;
-      const data = await fetchJson<{ results: Array<{ content: { id: string } } }>(url);
+      type SearchResultItem = { content: { id: string } };
+      type SearchResponse = { results: Array<SearchResultItem> };
+      const data = await fetchJson<SearchResponse>(url);
 
       if (data.results && data.results.length > 0) {
         updates.push({

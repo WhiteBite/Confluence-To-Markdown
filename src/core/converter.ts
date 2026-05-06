@@ -8,6 +8,9 @@ import {
     type TargetFormat,
 } from './diagram-processor';
 import type { DiagramInfo } from './sanitizer';
+import type { ExportStats } from './export-stats';
+
+type ExportSummary = Partial<ExportStats>;
 
 // Re-export sanitizer functions for backward compatibility
 export {
@@ -538,7 +541,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                 const alt = img.getAttribute('alt') || '';
 
                 // Extract filename from URL
-                let filename = '';
+                let filename: string;
                 try {
                     const url = new URL(src, 'https://example.com');
                     // Get filename from path

@@ -21,12 +21,7 @@ export async function runWithConcurrency<T, R>(
             const index = currentIndex++;
             const item = items[index];
 
-            try {
-                results[index] = await fn(item, index);
-            } catch (error) {
-                // Re-throw to be handled by caller
-                throw error;
-            }
+            results[index] = await fn(item, index);
 
             completed++;
             onProgress?.(completed, items.length);

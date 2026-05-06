@@ -7,7 +7,7 @@ import type { PageTreeNode, ObsidianExportSettings, ExportPreset } from '@/api/t
 import type { ExportSettings } from '@/storage/types';
 import type { ModalCallbacks, ModalAction, ModalContext, ModalState } from './types';
 import { loadSettings, saveSettings, loadObsidianSettings, saveObsidianSettings, applyPreset } from '@/storage/storage';
-import { t, toggleLocale, getLocale } from '../i18n';
+import { t, toggleLocale } from '../i18n';
 
 // ============================================================================
 // Types
@@ -1148,7 +1148,6 @@ function updateLocalizedText(element: HTMLElement): void {
     // Footer buttons
     const resetBtn = element.querySelector('[data-action="reset-defaults"]');
     if (resetBtn) {
-        const span = resetBtn.querySelector('span') || resetBtn;
         if (resetBtn.textContent?.includes('Reset')) {
             resetBtn.innerHTML = resetBtn.innerHTML.replace(/Reset to defaults|Сбросить настройки/, t('resetDefaults'));
         }

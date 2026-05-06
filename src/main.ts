@@ -204,9 +204,7 @@ async function startExport(): Promise<void> {
         }
 
         // Create modal with callback-based API
-        let controller: ModalController;
-
-        controller = createExportModal({
+        const controller = createExportModal({
             rootNode: rootTree,
             rootTitle,
             callbacks: {
@@ -372,7 +370,7 @@ async function startHubLink(): Promise<void> {
     const spaceKey = getSpaceKey();
     const spaceName = getSpaceName();
 
-    let pageTree: PageTreeNode | null = null;
+    let pageTree: PageTreeNode | null;
     const cached = getCachedTree(pageId);
     if (cached) {
         pageTree = cached.tree;
@@ -424,12 +422,14 @@ function addExportButton(): void {
     const actionMenu = document.getElementById('action-menu-link');
     if (!actionMenu?.parentElement) return;
 
+    let status: HTMLElement | null = null;
+
     // Page export button - needs pageId
     if (pageId) {
         exportButton = createButton('Export to Markdown', 'aui-button', startExport);
         exportButton.id = 'md-export-trigger';
 
-        const status = createStatus();
+        status = createStatus();
         actionMenu.parentElement.insertBefore(exportButton, actionMenu.nextSibling);
         actionMenu.parentElement.insertBefore(status, exportButton.nextSibling);
     }

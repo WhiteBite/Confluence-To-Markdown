@@ -92,7 +92,7 @@ async function handleFetch(url: string, options?: RequestInit): Promise<FetchRes
 
 async function handleHubPush(request: HubPushRequest): Promise<HubPushResponse> {
     try {
-        let fetchOptions: RequestInit = {
+        const fetchOptions: RequestInit = {
             method: request.method || 'POST',
         };
 

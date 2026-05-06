@@ -40,6 +40,7 @@ export default defineConfig({
             compress: {
                 drop_console: true,
                 drop_debugger: true,
+                sequences: false, // disable comma operators for cleaner bundle
             },
             mangle: true,
         },
