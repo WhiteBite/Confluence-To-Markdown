@@ -142,6 +142,25 @@ export async function exportImageAttachment(attachment: AttachmentInfo): Promise
     }
 }
 
+/** Download any attachment (not just images) */
+export async function exportAnyAttachment(attachment: AttachmentInfo): Promise<ExportedAttachment | null> {
+    if (!attachment.downloadUrl) return null;
+
+    try {
+        const blob = await downloadAttachment(attachment.downloadUrl);
+        const isImage = isImageAttachment(attachment);
+        return {
+            filename: attachment.filename,
+            pageId: attachment.pageId,
+            blob,
+            type: isImage ? 'image' : 'file',
+        };
+    } catch (error) {
+        if (DEBUG) console.error(`Error downloading attachment ${attachment.filename}:`, error);
+        return null;
+    }
+}
+
 /** Extract image URLs from HTML content */
 export function extractImageUrls(html: string): string[] {
     const urls: string[] = [];

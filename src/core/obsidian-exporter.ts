@@ -17,6 +17,7 @@ import {
     fetchPageAttachments,
     isImageAttachment,
     exportImageAttachment,
+    exportAnyAttachment,
 } from './attachment-handler';
 
 export type ProgressCallback = (phase: string, current: number, total: number) => void;
@@ -340,6 +341,18 @@ export async function createObsidianVault(
                             attachmentCount++;
                             console.log(`[Export] Downloaded image: ${att.filename}`);
                         }
+                    }
+                } else if (settings.exportAllAttachments) {
+                    // Non-image attachment (PDF, DOC, etc.) - download all if exportAllAttachments is true
+                    console.log(`[Export] Downloading non-image attachment: ${att.filename} (${att.mediaType})`);
+                    const exported = await exportAnyAttachment(att);
+                    if (exported) {
+                        attachmentFiles.push({
+                            path: `_attachments/${exported.filename}`,
+                            blob: exported.blob,
+                        });
+                        attachmentCount++;
+                        console.log(`[Export] Downloaded attachment: ${att.filename} (${att.fileSize} bytes)`);
                     }
                 }
             }

@@ -6,6 +6,7 @@ export interface ExportSettings {
     includeMetadata: boolean;
     includeComments: boolean;
     includeSourceLinks: boolean;
+    exportAllAttachments: boolean;
 }
 
 /** Default settings */
@@ -14,6 +15,7 @@ export const DEFAULT_SETTINGS: ExportSettings = {
     includeMetadata: true,
     includeComments: false,
     includeSourceLinks: true,
+    exportAllAttachments: false,
 };
 
 /** Default Obsidian export settings */
@@ -42,6 +44,7 @@ export const DEFAULT_OBSIDIAN_SETTINGS: ObsidianExportSettings = {
 
     // Attachments
     downloadAttachments: true,
+    exportAllAttachments: false,
     maxAttachmentSizeMB: 50,
 
     // Content

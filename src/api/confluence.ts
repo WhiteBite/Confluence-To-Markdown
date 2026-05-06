@@ -264,3 +264,69 @@ export async function fetchSpaceCatalog(spaceKey: string): Promise<HubCatalogPag
 
     return pages;
 }
+
+/** Fetch space info including homepage */
+interface SpaceResponse {
+    id: string;
+    key: string;
+    name: string;
+    type: string;
+    status: string;
+    homepage?: { id: string; title: string };
+    description?: { plain?: { value: string } };
+}
+
+export async function fetchSpace(spaceKey: string): Promise<{ id: string; key: string; name: string; homepageId?: string }> {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/rest/api/space/${spaceKey}?expand=homepage`;
+    const space = await fetchJson<SpaceResponse>(url);
+    return {
+        id: space.id,
+        key: space.key,
+        name: space.name,
+        homepageId: space.homepage?.id,
+    };
+}
+
+/** Fetch all pages in a space with ancestors for tree building */
+interface SpacePagesResponse {
+    results: Array<{
+        id: string;
+        title: string;
+        space?: { key: string };
+        ancestors?: Array<{ id: string; title: string }>;
+    }>;
+    start: number;
+    limit: number;
+    size: number;
+    _links?: { next?: string };
+}
+
+export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAncestors[]> {
+    const baseUrl = getBaseUrl();
+    const pages: PageWithAncestors[] = [];
+    let start = 0;
+    const limit = 200;
+    let hasMore = true;
+
+    while (hasMore) {
+        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page AND status=current`);
+        const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,space&limit=${limit}&start=${start}`;
+
+        try {
+            const response = await fetchJson<SpacePagesResponse>(url);
+
+            if (response.results?.length) {
+                pages.push(...response.results);
+            }
+
+            hasMore = response.results?.length === limit;
+            start += limit;
+        } catch (error) {
+            console.error('[API] fetchAllPagesInSpace failed:', error);
+            throw error;
+        }
+    }
+
+    return pages;
+}

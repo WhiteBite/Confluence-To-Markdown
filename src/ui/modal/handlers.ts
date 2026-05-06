@@ -89,6 +89,7 @@ export function saveCurrentSettings(element: HTMLElement): void {
         includeMetadata: (element.querySelector('#setting-metadata') as HTMLInputElement)?.checked ?? true,
         includeComments: (element.querySelector('#setting-comments') as HTMLInputElement)?.checked ?? false,
         includeSourceLinks: (element.querySelector('#setting-links') as HTMLInputElement)?.checked ?? true,
+        exportAllAttachments: (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false,
     };
     saveSettings(currentSettings);
 
@@ -999,6 +1000,9 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             settingsChanged = true;
         } else if (target.id === 'setting-attachments') {
             currentObsidianSettings.downloadAttachments = target.checked;
+            settingsChanged = true;
+        } else if (target.id === 'setting-all-attachments') {
+            currentObsidianSettings.exportAllAttachments = target.checked;
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;

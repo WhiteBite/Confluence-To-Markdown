@@ -60,6 +60,7 @@ export interface Translations {
     optionHierarchical: string;
     optionWikilinks: string;
     optionCallouts: string;
+    optionAllAttachments: string;
 
     // Footer
     resetDefaults: string;
@@ -136,6 +137,7 @@ const en: Translations = {
     optionSourceLinks: 'Source links',
     optionFrontmatter: 'Frontmatter',
     optionHierarchical: 'Hierarchical folders',
+    optionAllAttachments: 'All attachments',
     optionWikilinks: '[[Wikilinks]]',
     optionCallouts: 'Callouts',
 
@@ -214,6 +216,7 @@ const ru: Translations = {
     optionSourceLinks: 'Ссылки на источник',
     optionFrontmatter: 'Frontmatter',
     optionHierarchical: 'Иерархия папок',
+    optionAllAttachments: 'Все вложения',
     optionWikilinks: '[[Wikilinks]]',
     optionCallouts: 'Callouts',
 

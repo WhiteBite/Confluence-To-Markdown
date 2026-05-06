@@ -418,6 +418,10 @@ function renderContentSettings(
           <span>${t('optionSourceLinks')}</span>
         </label>
         <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-attachments-all" ${settings.exportAllAttachments ? 'checked' : ''}>
+          <span>${t('optionAllAttachments')}</span>
+        </label>
+        <label class="md-checkbox-compact">
           <input type="checkbox" id="setting-frontmatter" ${obsidianSettings.includeFrontmatter ? 'checked' : ''}>
           <span>${t('optionFrontmatter')}</span>
         </label>
@@ -438,6 +442,10 @@ function renderContentSettings(
           <label class="md-checkbox-compact">
             <input type="checkbox" id="setting-callouts" ${obsidianSettings.useObsidianCallouts ? 'checked' : ''}>
             <span>${t('optionCallouts')}</span>
+          </label>
+          <label class="md-checkbox-compact">
+            <input type="checkbox" id="setting-all-attachments" ${obsidianSettings.exportAllAttachments ? 'checked' : ''}>
+            <span>${t('optionAllAttachments')}</span>
           </label>
         </div>
       </div>

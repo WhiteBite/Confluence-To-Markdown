@@ -1,4 +1,4 @@
-import { fetchPage, fetchChildren, fetchAllDescendants, type PageWithAncestors } from '@/api/confluence';
+import { fetchPage, fetchChildren, fetchAllDescendants, fetchSpace, fetchAllPagesInSpace, type PageWithAncestors } from '@/api/confluence';
 import type { PageTreeNode } from '@/api/types';
 import { DEBUG } from '@/config';
 import { runWithConcurrency } from '@/utils/queue';
@@ -176,4 +176,52 @@ export function findInTree(node: PageTreeNode, pageId: string): PageTreeNode | n
         if (found) return found;
     }
     return null;
+}
+
+/** Build tree for entire space */
+export async function buildSpaceTree(
+    spaceKey: string,
+    onStatus?: StatusCallback
+): Promise<PageTreeNode> {
+    onStatus?.('Loading space...');
+
+    try {
+        // Get space info to find homepage
+        const space = await fetchSpace(spaceKey);
+
+        if (!space.homepageId) {
+            throw new Error(`Space ${spaceKey} has no homepage`);
+        }
+
+        onStatus?.(`Found space: ${space.name}`);
+
+        // Get all pages in space
+        const allPages = await fetchAllPagesInSpace(spaceKey);
+
+        onStatus?.(`Found ${allPages.length} pages in space`);
+
+        if (DEBUG) {
+            console.log(`[Tree] Space "${space.name}" has ${allPages.length} pages`);
+        }
+
+        // Find homepage
+        const homepage = allPages.find(p => p.id === space.homepageId);
+        if (!homepage) {
+            throw new Error(`Homepage ${space.homepageId} not found in space pages`);
+        }
+
+        // Filter to descendants of homepage (pages under homepage in hierarchy)
+        const descendants = allPages.filter(p => {
+            const ancestors = p.ancestors || [];
+            return ancestors.some(a => a.id === space.homepageId);
+        });
+
+        return buildTreeFromDescendants(
+            { id: homepage.id, title: homepage.title },
+            descendants
+        );
+    } catch (error) {
+        console.error('[Tree] buildSpaceTree failed:', error);
+        throw error;
+    }
 }

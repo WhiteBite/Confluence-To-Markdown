@@ -145,6 +145,7 @@ export interface ObsidianExportSettings {
 
     // Attachments
     downloadAttachments: boolean;
+    exportAllAttachments: boolean;
     maxAttachmentSizeMB: number;
 
     // Content

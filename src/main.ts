@@ -1,5 +1,5 @@
 import './ui/styles.css';
-import { buildPageTree } from '@/core/tree-processor';
+import { buildPageTree, buildSpaceTree } from '@/core/tree-processor';
 import { fetchPagesContent } from '@/core/content-loader';
 import { buildMarkdownDocument, downloadMarkdown, copyToClipboard } from '@/core/exporter';
 import { exportToPdf } from '@/core/pdf-exporter';
@@ -10,7 +10,7 @@ import {
 } from '@/ui/modal';
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import { createButton, createStatus, updateStatus, setButtonLoading } from '@/ui/components';
-import { getCurrentPageId, getErrorMessage } from '@/utils/helpers';
+import { getCurrentPageId, getErrorMessage, getSpaceKey } from '@/utils/helpers';
 import { getCachedTree, setCachedTree, clearCachedTree } from '@/storage/storage';
 import type { PageTreeNode } from '@/api/types';
 import { isHubConfigured } from '@/storage/hub-settings';
@@ -275,6 +275,89 @@ async function startExport(): Promise<void> {
     }
 }
 
+/** Export entire space */
+async function startSpaceExport(): Promise<void> {
+    if (!spaceExportButton || spaceExportButton.disabled) return;
+
+    const spaceKey = getSpaceKey();
+    if (!spaceKey) {
+        alert('Could not find space key!');
+        return;
+    }
+
+    const spaceName = getSpaceName();
+    setButtonLoading(spaceExportButton, true, 'Export Space');
+
+    try {
+        updateStatus('Loading space...');
+        const rootTree = await buildSpaceTree(spaceKey, updateStatus);
+
+        if (!rootTree || rootTree.error) {
+            alert('Failed to load space hierarchy.');
+            updateStatus('Error: Could not load space');
+            return;
+        }
+
+        // Cache by space key
+        setCachedTree(spaceKey, spaceName, rootTree);
+
+        // Create modal for space export
+        createExportModal({
+            rootNode: rootTree,
+            rootTitle: spaceName,
+            callbacks: {
+                onAction: async (action: ModalAction, ctx: ModalContext) => {
+                    try {
+                        switch (action) {
+                            case 'copy':
+                                await handleCopy(undefined as any, ctx, rootTree, spaceName);
+                                break;
+
+                            case 'download':
+                                await handleDownload(undefined as any, ctx, rootTree, spaceName);
+                                break;
+
+                            case 'obsidian':
+                                await handleObsidian(undefined as any, ctx, rootTree, spaceName);
+                                break;
+
+                            case 'pdf':
+                                await handlePdf(undefined as any, ctx, rootTree, spaceName);
+                                break;
+                        }
+                    } catch (error) {
+                        console.error(`[Space Export] ${action} failed:`, error);
+                        alert(`Export failed: ${getErrorMessage(error)}`);
+                    }
+                },
+
+                onRefresh: async () => {
+                    updateStatus('Refreshing space...');
+                    const newTree = await buildSpaceTree(spaceKey, updateStatus);
+                    if (newTree && !newTree.error) {
+                        setCachedTree(spaceKey, spaceName, newTree);
+                    }
+                    updateStatus('Space refreshed');
+                    return newTree;
+                },
+
+                onClose: () => {
+                    updateStatus('Closed');
+                },
+            },
+        });
+
+    } catch (error) {
+        console.error('Space export error:', error);
+        alert(`Space export failed: ${getErrorMessage(error)}`);
+        updateStatus(`Error: ${getErrorMessage(error)}`);
+    } finally {
+        if (spaceExportButton) {
+            setButtonLoading(spaceExportButton, false, 'Export Space');
+        }
+    }
+}
+
 // ============================================================================
 // Hub Link Process
 // ============================================================================
@@ -314,19 +397,6 @@ async function startHubLink(): Promise<void> {
     updateStatus('');
 }
 
-function getSpaceKey(): string {
-    const meta = document.querySelector('meta[name="confluence-space-key"]');
-    if (meta) return meta.getAttribute('content') || '';
-
-    const spaceUrl = window.location.pathname.match(/\/display\/([^/]+)/);
-    if (spaceUrl) return spaceUrl[1];
-
-    const spaceParam = new URLSearchParams(window.location.search).get('spaceKey');
-    if (spaceParam) return spaceParam;
-
-    return '';
-}
-
 function getSpaceName(): string {
     const breadcrumb = document.querySelector('#breadcrumb-section a[data-space-key]');
     if (breadcrumb) return breadcrumb.textContent?.trim() || '';
@@ -334,29 +404,49 @@ function getSpaceName(): string {
     const spaceLink = document.querySelector('.space-name a, #space-name-link');
     if (spaceLink) return spaceLink.textContent?.trim() || '';
 
-    const spaceKey = getSpaceKey();
-    return spaceKey || 'Unknown';
+    const spaceKeyValue = getSpaceKey();
+    return spaceKeyValue || 'Unknown';
 }
 
 // ============================================================================
 // UI Setup
 // ============================================================================
 
+let spaceExportButton: HTMLButtonElement | null = null;
+
 /** Add export button to page */
 function addExportButton(): void {
     if (document.getElementById('md-export-trigger')) return;
-    if (!getCurrentPageId()) return;
+
+    const pageId = getCurrentPageId();
+    const spaceKey = getSpaceKey();
 
     const actionMenu = document.getElementById('action-menu-link');
     if (!actionMenu?.parentElement) return;
 
-    exportButton = createButton('Export to Markdown', 'aui-button', startExport);
-    exportButton.id = 'md-export-trigger';
+    // Page export button - needs pageId
+    if (pageId) {
+        exportButton = createButton('Export to Markdown', 'aui-button', startExport);
+        exportButton.id = 'md-export-trigger';
 
-    const status = createStatus();
+        const status = createStatus();
+        actionMenu.parentElement.insertBefore(exportButton, actionMenu.nextSibling);
+        actionMenu.parentElement.insertBefore(status, exportButton.nextSibling);
+    }
 
-    actionMenu.parentElement.insertBefore(exportButton, actionMenu.nextSibling);
-    actionMenu.parentElement.insertBefore(status, exportButton.nextSibling);
+    // Space export button - needs spaceKey
+    if (spaceKey && !document.getElementById('md-space-export-trigger')) {
+        spaceExportButton = createButton('Export Space', 'aui-button aui-button-secondary', startSpaceExport);
+        spaceExportButton.id = 'md-space-export-trigger';
+        spaceExportButton.style.marginLeft = '8px';
+
+        const exportBtn = document.getElementById('md-export-trigger');
+        if (exportBtn) {
+            exportBtn.parentElement?.insertBefore(spaceExportButton, exportBtn.nextSibling);
+        } else {
+            actionMenu.parentElement.insertBefore(spaceExportButton, actionMenu.nextSibling);
+        }
+    }
 
     if (isHubConfigured() && !document.getElementById('md-hub-trigger')) {
         const hubButton = createButton('📡 Привязать к Hub', 'aui-button hub-button', startHubLink);
