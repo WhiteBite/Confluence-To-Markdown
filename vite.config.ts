@@ -33,6 +33,13 @@ export default defineConfig({
             },
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                format: 'iife',
+            },
+        },
+    },
     resolve: {
         alias: {
             '@': '/src',
