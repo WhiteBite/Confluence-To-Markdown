@@ -1,5 +1,6 @@
 import TurndownService from 'turndown';
 import { gfm } from 'turndown-plugin-gfm';
+import { ctmLog } from '@/utils/logger';
 import {
     extractDiagramFromMacro,
     processDiagram,
@@ -54,7 +55,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
     const exportMode = options?.diagramExportMode ?? options?.exportMode ?? 'copy-as-is';
     const summary = options?.summary;
 
-    console.log('[Converter] getTurndown called with options:', {
+    ctmLog('[Converter] getTurndown called with options:', {
         useObsidian,
         useWikilinks,
         convertDiagrams,
@@ -250,7 +251,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
         replacement: (_content, node) => {
             const el = node as HTMLElement;
 
-            console.log('[Draw.io] replacement called with useWikilinks:', useWikilinks);
+            ctmLog('[Draw.io] replacement called with useWikilinks:', useWikilinks);
 
             // Get diagram name - prefer extracted name (set before script removal)
             let diagramName =
@@ -268,7 +269,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
             // Get original image URL from data attribute (set during sanitization)
             const originalImageUrl = el.getAttribute('data-original-image-url') || '';
 
-            console.log('[Draw.io] Processing diagram:', {
+            ctmLog('[Draw.io] Processing diagram:', {
                 name: diagramName,
                 exportMode,
                 useWikilinks,
@@ -290,15 +291,15 @@ function getTurndown(options?: ConvertOptions): TurndownService {
 
             // Mode 1: Copy as-is (default)
             if (exportMode === 'copy-as-is') {
-                console.log('[Draw.io] Mode: copy-as-is');
+                ctmLog('[Draw.io] Mode: copy-as-is');
                 return formatDiagramImage(diagramName, originalImageUrl);
             }
 
             // Mode 2: SVG preview + source
             if (exportMode === 'svg-preview') {
-                console.log('[Draw.io] Mode: svg-preview');
+                ctmLog('[Draw.io] Mode: svg-preview');
                 const diagramInfo = extractDiagramFromMacro(el);
-                console.log('[Draw.io] Extracted info:', {
+                ctmLog('[Draw.io] Extracted info:', {
                     hasInfo: !!diagramInfo,
                     hasSvg: !!diagramInfo?.renderedSvg,
                     svgLength: diagramInfo?.renderedSvg?.length,
@@ -314,7 +315,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                     });
 
                     if (processed.svgPreview) {
-                        console.log('[Draw.io] Returning SVG preview');
+                        ctmLog('[Draw.io] Returning SVG preview');
                         return `\n${generateDiagramWithSvgPreview(processed, {
                             inlineSvg: true,
                             includeSourceLink: true,
@@ -323,15 +324,15 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                 }
 
                 // Fallback
-                console.log('[Draw.io] SVG preview failed, returning fallback');
+                ctmLog('[Draw.io] SVG preview failed, returning fallback');
                 return formatDiagramImage(diagramName, originalImageUrl);
             }
 
             // Mode 3: Convert to target format
             if (exportMode === 'convert') {
-                console.log('[Draw.io] Mode: convert to', diagramTarget);
+                ctmLog('[Draw.io] Mode: convert to', diagramTarget);
                 const diagramInfo = extractDiagramFromMacro(el);
-                console.log('[Draw.io] Extracted info:', {
+                ctmLog('[Draw.io] Extracted info:', {
                     hasInfo: !!diagramInfo,
                     hasContent: !!diagramInfo?.content,
                     contentLength: diagramInfo?.content?.length,
@@ -346,20 +347,20 @@ function getTurndown(options?: ConvertOptions): TurndownService {
                         exportMode: 'convert',
                     });
 
-                    console.log('[Draw.io] Processed:', {
+                    ctmLog('[Draw.io] Processed:', {
                         hasCode: !!processed.code,
                         codeLength: processed.code?.length,
                         error: processed.error,
                     });
 
                     if (processed.code && embedAsCode) {
-                        console.log('[Draw.io] Returning mermaid code block');
+                        ctmLog('[Draw.io] Returning mermaid code block');
                         return `\n${generateMermaidCodeBlock(processed.code, diagramName)}\n\n`;
                     }
                 }
 
                 // Fallback (conversion requires downloading .drawio file from server)
-                console.log('[Draw.io] Convert failed, returning fallback');
+                ctmLog('[Draw.io] Convert failed, returning fallback');
                 if (useWikilinks) {
                     return `\n![[_attachments/${diagramName}.png]]\n\n%% Editable source: ${diagramName}.drawio %%\n%% Note: Conversion requires Download (Obsidian vault) mode to fetch diagram source %%\n\n`;
                 } else {
@@ -369,7 +370,7 @@ function getTurndown(options?: ConvertOptions): TurndownService {
             }
 
             // Default fallback
-            console.log('[Draw.io] No mode matched, returning fallback');
+            ctmLog('[Draw.io] No mode matched, returning fallback');
             return formatDiagramImage(diagramName, originalImageUrl);
         },
     });

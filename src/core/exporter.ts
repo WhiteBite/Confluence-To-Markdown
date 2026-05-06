@@ -6,6 +6,7 @@ import { flattenTree } from './tree-processor';
 import { fetchPageAttachments, downloadAttachment } from './attachment-handler';
 import { convertDrawioToMermaid } from './diagrams';
 import { convert } from '@whitebite/diagram-converter';
+import { ctmLog, ctmWarn } from '@/utils/logger';
 
 /**
  * Check if mermaid output is empty (just header, no content)
@@ -96,18 +97,18 @@ async function convertDiagramsInMarkdown(
     while ((match = diagramPattern.exec(markdown)) !== null) {
         const [fullMatch, diagramName] = match;
 
-        console.log(`[Exporter] Found diagram: ${diagramName}, converting to ${format}`);
+        ctmLog(`[Exporter] Found diagram: ${diagramName}, converting to ${format}`);
 
         if (format === 'mermaid') {
             // Try to convert Draw.io to Mermaid
             const mermaidCode = await convertDrawioToMermaid(pageId, diagramName);
 
             if (mermaidCode) {
-                console.log(`[Exporter] Successfully converted ${diagramName} to Mermaid`);
+                ctmLog(`[Exporter] Successfully converted ${diagramName} to Mermaid`);
                 const replacement = `\`\`\`mermaid\n${mermaidCode}\n\`\`\``;
                 conversions.push({ original: fullMatch, replacement });
             } else {
-                console.log(`[Exporter] Failed to convert ${diagramName}, keeping wikilink`);
+                ctmLog(`[Exporter] Failed to convert ${diagramName}, keeping wikilink`);
             }
         } else if (format === 'drawio-xml') {
             // Try to get Draw.io XML source
@@ -122,13 +123,13 @@ async function convertDiagramsInMarkdown(
                 if (drawioAttachment?.downloadUrl) {
                     const xmlBlob = await downloadAttachment(drawioAttachment.downloadUrl);
                     const xmlText = await xmlBlob.text();
-                    console.log(`[Exporter] Successfully downloaded ${diagramName} XML`);
+                    ctmLog(`[Exporter] Successfully downloaded ${diagramName} XML`);
                     const replacement = `\`\`\`xml\n${xmlText}\n\`\`\``;
                     conversions.push({ original: fullMatch, replacement });
                 }
             } catch (error) {
                 // Keep as wikilink if can't download
-                console.warn(`Failed to download Draw.io XML for ${diagramName}:`, error);
+                ctmWarn(`Failed to download Draw.io XML for ${diagramName}:`, error);
             }
         }
     }
@@ -147,7 +148,7 @@ async function convertDiagramsInMarkdown(
 
             // Skip invalid/placeholder PlantUML code
             if (!isValidPlantUmlCode(code)) {
-                console.warn('[Exporter] Invalid PlantUML code (placeholder or garbage), keeping original');
+                ctmWarn('[Exporter] Invalid PlantUML code (placeholder or garbage), keeping original');
                 return fullMatch;
             }
 
@@ -164,13 +165,13 @@ async function convertDiagramsInMarkdown(
 
                 // Check if conversion produced valid (non-empty) mermaid
                 if (converted.output && !isEmptyMermaidOutput(converted.output)) {
-                    console.log('[Exporter] Successfully converted PlantUML to Mermaid');
+                    ctmLog('[Exporter] Successfully converted PlantUML to Mermaid');
                     return `\`\`\`mermaid\n${converted.output}\n\`\`\``;
                 } else {
-                    console.warn('[Exporter] PlantUML conversion produced empty diagram, keeping original');
+                    ctmWarn('[Exporter] PlantUML conversion produced empty diagram, keeping original');
                 }
             } catch (error) {
-                console.warn('Failed to convert PlantUML to Mermaid:', error);
+                ctmWarn('Failed to convert PlantUML to Mermaid:', error);
             }
 
             // Keep original if conversion failed or produced empty result

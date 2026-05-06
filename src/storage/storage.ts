@@ -8,6 +8,7 @@ import {
     STORAGE_KEYS,
     CACHE_TTL,
 } from './types';
+import { ctmLog, ctmWarn } from '@/utils/logger';
 
 /** Load export settings */
 export function loadSettings(): ExportSettings {
@@ -17,7 +18,7 @@ export function loadSettings(): ExportSettings {
             return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
         }
     } catch (e) {
-        console.warn('Failed to load settings:', e);
+        ctmWarn('Failed to load settings:', e);
     }
     return { ...DEFAULT_SETTINGS };
 }
@@ -27,7 +28,7 @@ export function saveSettings(settings: ExportSettings): void {
     try {
         localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
     } catch (e) {
-        console.warn('Failed to save settings:', e);
+        ctmWarn('Failed to save settings:', e);
     }
 }
 
@@ -46,10 +47,10 @@ export function loadObsidianSettings(): ObsidianExportSettings {
                 // Migrate old convertDiagrams setting to diagramExportMode
                 if (storedData.convertDiagrams === true) {
                     settings.diagramExportMode = 'convert';
-                    console.log('[Storage] Migrated convertDiagrams=true → diagramExportMode=convert');
+                    ctmLog('[Storage] Migrated convertDiagrams=true → diagramExportMode=convert');
                 } else {
                     settings.diagramExportMode = 'copy-as-is';
-                    console.log('[Storage] Migrated convertDiagrams=false → diagramExportMode=copy-as-is');
+                    ctmLog('[Storage] Migrated convertDiagrams=false → diagramExportMode=copy-as-is');
                 }
 
                 // Reset convertDiagrams to false (deprecated)
@@ -57,13 +58,13 @@ export function loadObsidianSettings(): ObsidianExportSettings {
 
                 // Save migrated settings back to localStorage
                 saveObsidianSettings(settings);
-                console.log('[Storage] Migration saved to localStorage');
+                ctmLog('[Storage] Migration saved to localStorage');
             }
 
             return settings;
         }
     } catch (e) {
-        console.warn('Failed to load Obsidian settings:', e);
+        ctmWarn('Failed to load Obsidian settings:', e);
     }
     return { ...DEFAULT_OBSIDIAN_SETTINGS };
 }
@@ -73,7 +74,7 @@ export function saveObsidianSettings(settings: ObsidianExportSettings): void {
     try {
         localStorage.setItem(STORAGE_KEYS.OBSIDIAN_SETTINGS, JSON.stringify(settings));
     } catch (e) {
-        console.warn('Failed to save Obsidian settings:', e);
+        ctmWarn('Failed to save Obsidian settings:', e);
     }
 }
 
@@ -100,7 +101,7 @@ export function getCachedTree(rootId: string): CachedTree | null {
 
         return cached;
     } catch (e) {
-        console.warn('Failed to load cached tree:', e);
+        ctmWarn('Failed to load cached tree:', e);
         return null;
     }
 }
@@ -117,7 +118,7 @@ export function setCachedTree(rootId: string, rootTitle: string, tree: PageTreeN
         };
         localStorage.setItem(key, JSON.stringify(cached));
     } catch (e) {
-        console.warn('Failed to cache tree:', e);
+        ctmWarn('Failed to cache tree:', e);
     }
 }
 
@@ -127,7 +128,7 @@ export function clearCachedTree(rootId: string): void {
         const key = STORAGE_KEYS.TREE_PREFIX + rootId;
         localStorage.removeItem(key);
     } catch (e) {
-        console.warn('Failed to clear cache:', e);
+        ctmWarn('Failed to clear cache:', e);
     }
 }
 
@@ -143,6 +144,6 @@ export function clearAllCache(): void {
         }
         keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (e) {
-        console.warn('Failed to clear cache:', e);
+        ctmWarn('Failed to clear cache:', e);
     }
 }

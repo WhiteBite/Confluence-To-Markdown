@@ -4,6 +4,7 @@ import type { ExportSettings } from '@/storage/types';
 import { MAX_CONCURRENCY, DEBUG } from '@/config';
 import { runWithConcurrency } from '@/utils/queue';
 import { sanitizeHtml } from './converter';
+import { ctmError } from '@/utils/logger';
 
 export type ProgressCallback = (completed: number, total: number, phase: string) => void;
 
@@ -31,7 +32,7 @@ export async function fetchPagesContent(
                 error: false,
             };
         } catch (error) {
-            if (DEBUG) console.error(`Error fetching content for ${pageId}:`, error);
+            if (DEBUG) ctmError(`Error fetching content for ${pageId}:`, error);
 
             return {
                 id: pageId,

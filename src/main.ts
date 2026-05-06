@@ -11,6 +11,7 @@ import {
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import { createButton, createStatus, updateStatus, setButtonLoading } from '@/ui/components';
 import { getCurrentPageId, getErrorMessage, getSpaceKey } from '@/utils/helpers';
+import { ctmLog, ctmError } from '@/utils/logger';
 import { getCachedTree, setCachedTree, clearCachedTree } from '@/storage/storage';
 import type { PageTreeNode } from '@/api/types';
 import { isHubConfigured } from '@/storage/hub-settings';
@@ -39,7 +40,7 @@ function logError(error: unknown, context: string, extra?: Record<string, unknow
     };
 
     // Always log to console
-    console.error(`[ConfluenceExport ${version}] ERROR in ${context}:`, payload);
+    ctmError(`[CTM] ERROR in ${context}:`, payload);
 
     // On Tampermonkey, also store last errors for troubleshooting
     if (typeof GM_setValue !== 'undefined') {
@@ -69,7 +70,7 @@ async function handleCopy(
 ): Promise<void> {
     try {
         if (!controller) {
-            console.log('[Main] Copy action started (no modal — space export)');
+            ctmLog('[CTM] Copy action started (no modal — space export)');
         } else {
             controller.showProgress('content', 0, ctx.selectedIds.length);
         }
@@ -121,7 +122,7 @@ async function handleDownload(
     rootTitle: string
 ): Promise<void> {
     if (!controller) {
-        console.log('[Main] Download action started (no modal — space export)');
+        ctmLog('[CTM] Download action started (no modal — space export)');
     }
     controller?.showProgress('content', 0, ctx.selectedIds.length);
 
@@ -161,7 +162,7 @@ async function handleObsidian(
     rootTitle: string
 ): Promise<void> {
     if (!controller) {
-        console.log('[Main] Obsidian action started (no modal — space export)');
+        ctmLog('[CTM] Obsidian action started (no modal — space export)');
     }
     controller?.showProgress('content', 0, ctx.selectedIds.length);
 
@@ -195,7 +196,7 @@ async function handlePdf(
     rootTitle: string
 ): Promise<void> {
     if (!controller) {
-        console.log('[Main] PDF action started (no modal — space export)');
+        ctmLog('[CTM] PDF action started (no modal — space export)');
     }
     controller?.showProgress('content', 0, ctx.selectedIds.length);
 
@@ -257,8 +258,8 @@ async function startExport(): Promise<void> {
             callbacks: {
                 onAction: async (action: ModalAction, ctx: ModalContext) => {
                     try {
-                        console.log('[Main] Received action:', action);
-                        console.log('[Main] ctx.obsidianSettings.exportFormat:', ctx.obsidianSettings.exportFormat);
+                        ctmLog('[CTM] Received action:', action);
+                        ctmLog('[CTM] ctx.obsidianSettings.exportFormat:', ctx.obsidianSettings.exportFormat);
 
                         switch (action) {
                             case 'copy':

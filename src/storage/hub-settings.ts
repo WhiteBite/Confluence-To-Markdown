@@ -4,6 +4,7 @@ import {
     DEFAULT_HUB_SETTINGS,
     STORAGE_KEYS,
 } from './types';
+import { ctmWarn } from '@/utils/logger';
 
 export type { HubSettings, LinkedSpace };
 
@@ -14,7 +15,7 @@ export function getHubSettings(): HubSettings | null {
             return { ...DEFAULT_HUB_SETTINGS, ...JSON.parse(stored) };
         }
     } catch (e) {
-        console.warn('[HubSettings] Failed to load:', e);
+        ctmWarn('[HubSettings] Failed to load:', e);
     }
     return null;
 }
@@ -23,7 +24,7 @@ export function saveHubSettings(settings: HubSettings): void {
     try {
         localStorage.setItem(STORAGE_KEYS.HUB_SETTINGS, JSON.stringify(settings));
     } catch (e) {
-        console.warn('[HubSettings] Failed to save:', e);
+        ctmWarn('[HubSettings] Failed to save:', e);
     }
 }
 

@@ -1,4 +1,5 @@
 import { DEBUG } from '@/config';
+import { ctmLog, ctmWarn } from '@/utils/logger';
 
 /** Base selectors to always remove */
 const BASE_SELECTORS_TO_REMOVE = [
@@ -123,7 +124,7 @@ export function extractDiagramInfoFromHtml(html: string): DiagramInfo[] {
     });
 
     if (DEBUG && diagrams.length > 0) {
-        console.log('Extracted diagram info:', diagrams);
+        ctmLog('Extracted diagram info:', diagrams);
     }
 
     return diagrams;
@@ -136,7 +137,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
 
-    if (DEBUG) console.group(`Sanitize HTML for Page ID: ${pageId || 'N/A'}`);
+    if (DEBUG) ctmLog(`Sanitize HTML for Page ID: ${pageId || 'N/A'}`);
 
     // Extract only main content, ignore Confluence UI
     const contentSelectors = [
@@ -150,14 +151,14 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
     for (const selector of contentSelectors) {
         contentElement = doc.querySelector(selector);
         if (contentElement) {
-            if (DEBUG) console.log(`Found content using selector: ${selector}`);
+            if (DEBUG) ctmLog(`Found content using selector: ${selector}`);
             break;
         }
     }
 
     // If no content container found, work with body but remove UI elements
     if (!contentElement) {
-        if (DEBUG) console.warn('No content container found, using body with cleanup');
+        if (DEBUG) ctmWarn('No content container found, using body with cleanup');
         contentElement = doc.body;
 
         // Remove Confluence UI elements
@@ -254,7 +255,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
         });
     }
 
-    if (DEBUG) console.groupEnd();
+    if (DEBUG) ctmLog();
 
     return cleanDoc.body.innerHTML;
 }

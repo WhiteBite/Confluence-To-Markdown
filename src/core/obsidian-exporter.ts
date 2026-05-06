@@ -1,5 +1,6 @@
 import { zipSync, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
+import { ctmLog, ctmError } from '@/utils/logger';
 import type {
     PageContentData,
     PageTreeNode,
@@ -282,9 +283,9 @@ export async function createObsidianVault(
             onProgress?.('Downloading attachments...', processedPages, totalPages);
 
             // Fetch all attachments for this page
-            console.log(`[Export] Fetching attachments for page ${page.id}`);
+            ctmLog(`[Export] Fetching attachments for page ${page.id}`);
             const attachments = await fetchPageAttachments(page.id);
-            console.log(`[Export] Found ${attachments.length} attachments`);
+            ctmLog(`[Export] Found ${attachments.length} attachments`);
 
             // Build a set of diagram source filenames (without extension)
             // Draw.io diagrams have mediaType 'application/vnd.jgraph.mxfile'
@@ -292,14 +293,14 @@ export async function createObsidianVault(
             for (const att of attachments) {
                 if (att.mediaType === 'application/vnd.jgraph.mxfile') {
                     diagramSourceNames.add(att.filename);
-                    console.log(`[Export] Found diagram source: ${att.filename}`);
+                    ctmLog(`[Export] Found diagram source: ${att.filename}`);
                 }
             }
 
             for (const att of attachments) {
                 // Check size limit
                 if (settings.maxAttachmentSizeMB > 0 && att.fileSize > settings.maxAttachmentSizeMB * 1024 * 1024) {
-                    console.log(`[Export] Skipping ${att.filename} - too large`);
+                    ctmLog(`[Export] Skipping ${att.filename} - too large`);
                     continue;
                 }
 
@@ -315,7 +316,7 @@ export async function createObsidianVault(
                 if (isDiagramPng) {
                     // This is a Draw.io diagram PNG preview
                     if (settings.exportDiagrams) {
-                        console.log(`[Export] Downloading diagram PNG: ${att.filename}`);
+                        ctmLog(`[Export] Downloading diagram PNG: ${att.filename}`);
                         const exported = await exportImageAttachment(att);
                         if (exported) {
                             attachmentFiles.push({
@@ -324,13 +325,13 @@ export async function createObsidianVault(
                             });
                             diagramCount++;
                             attachmentCount++;
-                            console.log(`[Export] Downloaded diagram: ${att.filename}`);
+                            ctmLog(`[Export] Downloaded diagram: ${att.filename}`);
                         }
                     }
                 } else if (isImageAttachment(att)) {
                     // Regular image attachment
                     if (settings.downloadAttachments && settings.includeImages) {
-                        console.log(`[Export] Downloading image: ${att.filename}`);
+                        ctmLog(`[Export] Downloading image: ${att.filename}`);
                         const exported = await exportImageAttachment(att);
                         if (exported) {
                             attachmentFiles.push({
@@ -338,12 +339,12 @@ export async function createObsidianVault(
                                 blob: exported.blob,
                             });
                             attachmentCount++;
-                            console.log(`[Export] Downloaded image: ${att.filename}`);
+                            ctmLog(`[Export] Downloaded image: ${att.filename}`);
                         }
                     }
                 } else if (settings.exportAllAttachments) {
                     // Non-image attachment (PDF, DOC, etc.) - download all if exportAllAttachments is true
-                    console.log(`[Export] Downloading non-image attachment: ${att.filename} (${att.mediaType})`);
+                    ctmLog(`[Export] Downloading non-image attachment: ${att.filename} (${att.mediaType})`);
                     const exported = await exportAnyAttachment(att);
                     if (exported) {
                         attachmentFiles.push({
@@ -351,7 +352,7 @@ export async function createObsidianVault(
                             blob: exported.blob,
                         });
                         attachmentCount++;
-                        console.log(`[Export] Downloaded attachment: ${att.filename} (${att.fileSize} bytes)`);
+                        ctmLog(`[Export] Downloaded attachment: ${att.filename} (${att.fileSize} bytes)`);
                     }
                 }
             }
@@ -361,29 +362,29 @@ export async function createObsidianVault(
     }
 
     // Phase 3: Build ZIP using fflate (synchronous, works in Tampermonkey)
-    console.log(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentFiles.length} attachments`);
+    ctmLog(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentFiles.length} attachments`);
     onProgress?.('Creating ZIP archive...', 0, 1);
 
     // Add page files (convert string to Uint8Array)
     for (const file of pageFiles) {
-        console.log(`[Export] Adding page: ${file.path}`);
+        ctmLog(`[Export] Adding page: ${file.path}`);
         zipFiles[file.path] = strToU8(file.content);
     }
 
     // Add attachment files - convert blob to Uint8Array
     for (const file of attachmentFiles) {
-        console.log(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
+        ctmLog(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
         try {
             const arrayBuffer = await file.blob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
-            console.log(`[Export] Converted to Uint8Array: ${uint8Array.length} bytes`);
+            ctmLog(`[Export] Converted to Uint8Array: ${uint8Array.length} bytes`);
             zipFiles[file.path] = uint8Array;
         } catch (err) {
-            console.error(`[Export] Failed to convert blob for ${file.path}:`, err);
+            ctmError(`[Export] Failed to convert blob for ${file.path}:`, err);
             throw err;
         }
     }
-    console.log(`[Export] All ${attachmentFiles.length} attachments added to ZIP object`);
+    ctmLog(`[Export] All ${attachmentFiles.length} attachments added to ZIP object`);
 
     // Add index file
     const indexContent = generateIndexFile(rootNode, pages, {
@@ -393,20 +394,20 @@ export async function createObsidianVault(
     zipFiles['_Index.md'] = strToU8(indexContent);
 
     // Generate ZIP blob using fflate (synchronous!)
-    console.log('[Export] Starting ZIP generation with fflate...');
-    console.log(`[Export] Total files in ZIP:`, Object.keys(zipFiles).length);
+    ctmLog('[Export] Starting ZIP generation with fflate...');
+    ctmLog(`[Export] Total files in ZIP:`, Object.keys(zipFiles).length);
 
     let zipBlob: Blob;
     try {
-        console.log('[Export] Calling zipSync...');
+        ctmLog('[Export] Calling zipSync...');
         const zipData = zipSync(zipFiles, { level: 0 }); // level 0 = no compression (STORE)
-        console.log(`[Export] zipSync completed! Length: ${zipData.length}`);
+        ctmLog(`[Export] zipSync completed! Length: ${zipData.length}`);
         zipBlob = new Blob([zipData], { type: 'application/zip' });
     } catch (error) {
-        console.error('[Export] ZIP generation failed:', error);
+        ctmError('[Export] ZIP generation failed:', error);
         throw error;
     }
-    console.log(`[Export] ZIP generated, size: ${zipBlob.size} bytes`);
+    ctmLog(`[Export] ZIP generated, size: ${zipBlob.size} bytes`);
 
     onProgress?.('Done!', 1, 1);
 

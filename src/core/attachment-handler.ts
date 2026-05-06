@@ -1,6 +1,7 @@
 import { getBaseUrl } from '@/api/confluence';
 import { fetchJson, fetchBlob } from '@/utils/fetch-helper';
 import { DEBUG } from '@/config';
+import { ctmError } from '@/utils/logger';
 import type { AttachmentInfo, DiagramAttachment, ExportedAttachment, ExportedDiagram } from '@/api/types';
 
 interface ConfluenceAttachmentResponse {
@@ -40,7 +41,7 @@ export async function fetchPageAttachments(pageId: string): Promise<AttachmentIn
             pageId,
         }));
     } catch (error) {
-        if (DEBUG) console.error(`Error fetching attachments for page ${pageId}:`, error);
+        if (DEBUG) ctmError(`Error fetching attachments for page ${pageId}:`, error);
         return [];
     }
 }
@@ -118,7 +119,7 @@ export async function exportDiagram(
             result.preview = await downloadAttachment(renderUrl);
         }
     } catch (error) {
-        if (DEBUG) console.error(`Error exporting diagram ${diagram.diagramName}:`, error);
+        if (DEBUG) ctmError(`Error exporting diagram ${diagram.diagramName}:`, error);
     }
 
     return result;
@@ -137,7 +138,7 @@ export async function exportImageAttachment(attachment: AttachmentInfo): Promise
             type: 'image',
         };
     } catch (error) {
-        if (DEBUG) console.error(`Error downloading image ${attachment.filename}:`, error);
+        if (DEBUG) ctmError(`Error downloading image ${attachment.filename}:`, error);
         return null;
     }
 }
@@ -156,7 +157,7 @@ export async function exportAnyAttachment(attachment: AttachmentInfo): Promise<E
             type: isImage ? 'image' : 'file',
         };
     } catch (error) {
-        if (DEBUG) console.error(`Error downloading attachment ${attachment.filename}:`, error);
+        if (DEBUG) ctmError(`Error downloading attachment ${attachment.filename}:`, error);
         return null;
     }
 }

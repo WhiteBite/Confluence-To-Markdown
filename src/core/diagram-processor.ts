@@ -5,6 +5,7 @@
 import { convert, parseDrawio } from '@whitebite/diagram-converter';
 import type { Diagram, ConvertResult } from '@whitebite/diagram-converter';
 import { DEBUG } from '@/config';
+import { ctmError } from '@/utils/logger';
 
 export type DiagramFormat = 'drawio' | 'mermaid' | 'plantuml' | 'gliffy' | 'unknown';
 export type TargetFormat = 'mermaid' | 'drawio' | 'excalidraw' | 'original';
@@ -238,7 +239,7 @@ export function convertDiagram(
             },
         });
     } catch (error) {
-        if (DEBUG) console.error(`Diagram conversion failed:`, error);
+        if (DEBUG) ctmError(`Diagram conversion failed:`, error);
         return null;
     }
 }
@@ -389,7 +390,7 @@ export function parseDrawioDiagram(xmlContent: string): Diagram | null {
     try {
         return parseDrawio(xmlContent);
     } catch (error) {
-        if (DEBUG) console.error('Failed to parse Draw.io:', error);
+        if (DEBUG) ctmError('Failed to parse Draw.io:', error);
         return null;
     }
 }

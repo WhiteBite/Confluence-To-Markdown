@@ -1,6 +1,7 @@
 import { PAGE_LIMIT, EXPAND_CONTENT } from '@/config';
 import { withRetry } from '@/utils/queue';
 import { IS_TAMPERMONKEY } from '@/utils/env';
+import { ctmError, ctmWarn } from '@/utils/logger';
 import type {
     ConfluencePage,
     ConfluencePageWithContent,
@@ -163,7 +164,7 @@ export async function fetchAllDescendants(rootPageId: string): Promise<PageWithA
             hasMore = response.results?.length === limit;
             start += limit;
         } catch (error) {
-            console.error('[API] CQL search failed:', error);
+            ctmError('[API] CQL search failed:', error);
             throw error;
         }
     }
@@ -206,7 +207,7 @@ export async function fetchPageForHub(pageId: string): Promise<HubPageData | nul
             space: page.space?.key || '',
         };
     } catch (error) {
-        console.error('[API] fetchPageForHub failed:', error);
+        ctmError('[API] fetchPageForHub failed:', error);
         return null;
     }
 }
@@ -257,7 +258,7 @@ export async function fetchSpaceCatalog(spaceKey: string): Promise<HubCatalogPag
             hasMore = response.results?.length === limit;
             start += limit;
         } catch (error) {
-            console.error('[API] fetchSpaceCatalog failed:', error);
+            ctmError('[API] fetchSpaceCatalog failed:', error);
             throw error;
         }
     }
@@ -333,12 +334,12 @@ export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAn
             start += limit;
         } catch (error) {
             if (!useFallback && (error as Error).message?.includes('400')) {
-                console.warn('[API] CQL search failed with 400, trying fallback endpoint');
+                ctmWarn('[API] CQL search failed with 400, trying fallback endpoint');
                 useFallback = true;
                 // Retry with fallback (don't advance start, try same page)
                 continue;
             }
-            console.error('[API] fetchAllPagesInSpace failed:', error);
+            ctmError('[API] fetchAllPagesInSpace failed:', error);
             throw error;
         }
     }

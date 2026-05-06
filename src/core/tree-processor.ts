@@ -2,6 +2,7 @@ import { fetchPage, fetchChildren, fetchAllDescendants, fetchSpace, fetchAllPage
 import type { PageTreeNode } from '@/api/types';
 import { DEBUG } from '@/config';
 import { runWithConcurrency } from '@/utils/queue';
+import { ctmLog, ctmError, ctmWarn } from '@/utils/logger';
 
 export type StatusCallback = (_message: string) => void;
 
@@ -86,7 +87,7 @@ export async function buildPageTree(
         onStatus?.(`Found ${descendants.length + 1} pages`);
 
         if (DEBUG) {
-            console.log(`[Tree] CQL found ${descendants.length} descendants`);
+            ctmLog(`[Tree] CQL found ${descendants.length} descendants`);
         }
 
         return buildTreeFromDescendants(
@@ -95,7 +96,7 @@ export async function buildPageTree(
         );
     } catch (error) {
         // Fallback to recursive approach if CQL fails
-        console.warn('[Tree] CQL search failed, falling back to recursive:', error);
+        ctmWarn('[Tree] CQL search failed, falling back to recursive:', error);
         onStatus?.('Scanning pages (slow mode)...');
         return buildPageTreeRecursive(rootPageId, onStatus);
     }
@@ -144,7 +145,7 @@ async function buildPageTreeRecursive(
                 error: false,
             };
         } catch (error) {
-            if (DEBUG) console.error(`Error fetching page ${pageId}:`, error);
+            if (DEBUG) ctmError(`Error fetching page ${pageId}:`, error);
             return {
                 id: pageId,
                 title: `Error loading (${pageId})`,
@@ -201,7 +202,7 @@ export async function buildSpaceTree(
         onStatus?.(`Found ${allPages.length} pages in space`);
 
         if (DEBUG) {
-            console.log(`[Tree] Space "${space.name}" has ${allPages.length} pages`);
+            ctmLog(`[Tree] Space "${space.name}" has ${allPages.length} pages`);
         }
 
         // Find homepage
@@ -221,7 +222,7 @@ export async function buildSpaceTree(
             descendants
         );
     } catch (error) {
-        console.error('[Tree] buildSpaceTree failed:', error);
+        ctmError('[Tree] buildSpaceTree failed:', error);
         throw error;
     }
 }

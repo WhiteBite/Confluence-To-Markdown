@@ -5,6 +5,7 @@
 
 import { getHubSettings } from '@/storage/hub-settings';
 import { fetchJson } from '@/api/confluence';
+import { ctmWarn } from '@/utils/logger';
 
 export interface SyncUpdate {
   spaceKey: string;
@@ -35,7 +36,7 @@ export async function checkForUpdates(): Promise<SyncUpdate[]> {
         });
       }
     } catch (e) {
-      console.warn(`[SyncChecker] Failed to check space ${space.spaceKey}:`, e);
+      ctmWarn(`[SyncChecker] Failed to check space ${space.spaceKey}:`, e);
     }
   }
 
