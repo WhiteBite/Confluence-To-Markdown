@@ -308,10 +308,19 @@ export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAn
     let start = 0;
     const limit = 200;
     let hasMore = true;
+    let useFallback = false;
 
     while (hasMore) {
-        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page AND status=current`);
-        const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,space&limit=${limit}&start=${start}`;
+        let url: string;
+        
+        if (!useFallback) {
+            // Try CQL search first (Confluence Cloud and newer Server)
+            const cql = encodeURIComponent(`space="${spaceKey}" AND type=page`);
+            url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,space&limit=${limit}&start=${start}`;
+        } else {
+            // Fallback: use space content endpoint (older Confluence Server)
+            url = `${baseUrl}/rest/api/space/${spaceKey}/content?type=page&expand=ancestors,space&limit=${limit}&start=${start}`;
+        }
 
         try {
             const response = await fetchJson<SpacePagesResponse>(url);
@@ -323,6 +332,12 @@ export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAn
             hasMore = response.results?.length === limit;
             start += limit;
         } catch (error) {
+            if (!useFallback && (error as Error).message?.includes('400')) {
+                console.warn('[API] CQL search failed with 400, trying fallback endpoint');
+                useFallback = true;
+                // Retry with fallback (don't advance start, try same page)
+                continue;
+            }
             console.error('[API] fetchAllPagesInSpace failed:', error);
             throw error;
         }
