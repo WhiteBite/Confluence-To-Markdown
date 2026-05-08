@@ -259,7 +259,12 @@ async function startExport(): Promise<void> {
             callbacks: {
                 onAction: async (action: ModalAction, ctx: ModalContext) => {
                     try {
-                        ctmLog('[CTM] Controller has showProgress:', !!controller?.showProgress);
+                        if (!controller) {
+                            ctmError('[CTM] CRITICAL: controller is undefined in onAction!');
+                            alert('Internal error: controller not initialized');
+                            return;
+                        }
+                        ctmLog('[CTM] Controller has showProgress:', !!controller.showProgress);
                         ctmLog('[CTM] Received action:', action);
                         ctmLog('[CTM] ctx.obsidianSettings.exportFormat:', ctx.obsidianSettings.exportFormat);
 
@@ -288,7 +293,7 @@ async function startExport(): Promise<void> {
                     } catch (error) {
                         logError(error, `pageExport:${action}`, { pageId });
                         alert(`Export failed: ${getErrorMessage(error)}`);
-                        controller.setState('ready');
+                        controller?.setState('ready');
                     }
                 },
 
