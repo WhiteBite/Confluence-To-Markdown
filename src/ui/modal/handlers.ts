@@ -530,6 +530,12 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             try {
                 // Let the callback handle the action
                 await callbacks.onAction(modalAction, ctx);
+
+                // Brief success flash on the button
+                if (document.body.contains(element) && document.body.contains(btn)) {
+                    btn.innerHTML = `<span style="color:var(--md-success)">✅ ${action === 'copy' ? 'Copied!' : 'Done!'}</span>`;
+                    await new Promise((r) => setTimeout(r, 800));
+                }
             } catch (error) {
                 console.error('[Modal] Action failed:', error);
                 // Briefly show error on the button

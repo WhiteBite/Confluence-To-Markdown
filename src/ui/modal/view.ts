@@ -535,6 +535,24 @@ function getPhaseLabel(phase: string): string {
   return phase;
 }
 
+/** Short label for button display */
+function getPhaseLabelShort(phase: string): string {
+  const shortLabels: Record<string, string> = {
+    tree: '🌲 Scanning',
+    content: '📄 Content',
+    convert: '📝 Convert',
+    vault: '📦 ZIP',
+    attachments: '📎 Attachments',
+    diagrams: '📊 Diagrams',
+    'Fetching attachment lists...': '📎 Attachments',
+    'Downloading attachments...': '📎 Downloading',
+    'Creating ZIP archive...': '📦 Creating ZIP',
+    'Converting pages...': '📝 Converting',
+    'Done!': '✅ Done',
+  };
+  return shortLabels[phase] || getPhaseLabel(phase);
+}
+
 /** Update UI based on state */
 export function updateModalUI(element: HTMLElement, state: ModalState): void {
   const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
@@ -585,7 +603,8 @@ export function showProgress(
   if (!section || !text || !fill) return;
 
   section.style.display = 'block';
-  text.textContent = getPhaseLabel(phase);
+  const label = getPhaseLabel(phase);
+  text.textContent = label;
 
   if (total > 0) {
     count.textContent = `${current}/${total}`;
@@ -603,6 +622,15 @@ export function showProgress(
     pageNameEl.textContent = currentPage;
   } else if (currentEl) {
     currentEl.style.display = 'none';
+  }
+
+  // Update the active button text so user sees progress on the button itself
+  const activeBtn = element.querySelector('[data-processing]') as HTMLButtonElement;
+  if (activeBtn) {
+    const shortLabel = getPhaseLabelShort(phase);
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+    const countStr = total > 0 ? ` ${current}/${total}` : '';
+    activeBtn.innerHTML = `<span style="opacity:0.8">⏳ ${shortLabel}${countStr} (${pct}%)</span>`;
   }
 }
 
