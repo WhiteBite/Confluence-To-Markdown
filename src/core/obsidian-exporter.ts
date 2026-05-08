@@ -244,7 +244,9 @@ export async function createObsidianVault(
     settings: ObsidianExportSettings,
     onProgress?: ProgressCallback
 ): Promise<ObsidianExportResult> {
-    const zipFiles: Record<string, Uint8Array> = {};
+    // fflate zipSync input: each entry can be Uint8Array, string, or { data, mtime, level }
+    // We use { data, mtime } so Windows Explorer can open the ZIP (it requires valid timestamps)
+    const zipFiles: Record<string, Uint8Array | { data: Uint8Array; mtime: Date; level?: number }> = {};
     const flatTree = flattenTree(rootNode);
     const nodeMap = new Map(flatTree.map((n) => [n.id, n]));
     const pageMap = new Map(pages.map((p) => [p.id, p.title]));
@@ -403,13 +405,14 @@ export async function createObsidianVault(
     ctmLog(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentFiles.length} attachments`);
     onProgress?.('Creating ZIP archive...', 0, 1);
 
-    // Add page files (convert string to Uint8Array)
+    // Add page files (convert string to Uint8Array + mtime for Windows Explorer compatibility)
+    const now = new Date();
     for (const file of pageFiles) {
         ctmLog(`[Export] Adding page: ${file.path}`);
-        zipFiles[file.path] = strToU8(file.content);
+        zipFiles[file.path] = { data: strToU8(file.content), mtime: now };
     }
 
-    // Add attachment files - convert blob to Uint8Array
+    // Add attachment files - convert blob to Uint8Array + mtime
     for (const file of attachmentFiles) {
         ctmLog(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
         try {
@@ -418,7 +421,7 @@ export async function createObsidianVault(
             if (uint8Array.length === 0) {
                 ctmError(`[Export] WARNING: attachment ${file.path} has 0 bytes after conversion!`);
             }
-            zipFiles[file.path] = uint8Array;
+            zipFiles[file.path] = { data: uint8Array, mtime: now };
         } catch (err) {
             ctmError(`[Export] Failed to convert blob for ${file.path}:`, err);
             throw err;
@@ -431,7 +434,7 @@ export async function createObsidianVault(
         attachments: attachmentCount,
         diagrams: diagramCount,
     });
-    zipFiles['_Index.md'] = strToU8(indexContent);
+    zipFiles['_Index.md'] = { data: strToU8(indexContent), mtime: now };
 
     // Generate ZIP blob using fflate (synchronous!)
     ctmLog('[Export] Starting ZIP generation with fflate...');
