@@ -1,6 +1,6 @@
 {
     "name": "confluence-to-markdown",
-    "version": "2.7.0",
+    "version": "2.7.1",
     "description": "Confluence pages to Markdown exporter with diagram conversion",
     "type": "module",
     "scripts": {
