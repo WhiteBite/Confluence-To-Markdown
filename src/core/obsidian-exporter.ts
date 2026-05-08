@@ -440,9 +440,15 @@ export async function createObsidianVault(
     let zipBlob: Blob;
     try {
         ctmLog('[Export] Calling zipSync...');
-        const zipData = zipSync(zipFiles, { level: 0 }); // level 0 = no compression (STORE)
+        // Use default compression (deflate) — STORE (level:0) causes issues with some unzippers
+        const zipData = zipSync(zipFiles);
         ctmLog(`[Export] zipSync completed! Length: ${zipData.length}`);
-        zipBlob = new Blob([zipData], { type: 'application/zip' });
+        // Ensure we pass a plain ArrayBuffer to Blob for maximum compatibility
+        const zipBuffer = zipData.buffer.slice(
+            zipData.byteOffset,
+            zipData.byteOffset + zipData.byteLength
+        );
+        zipBlob = new Blob([zipBuffer], { type: 'application/zip' });
     } catch (error) {
         ctmError('[Export] ZIP generation failed:', error);
         throw error;
@@ -484,7 +490,7 @@ export function downloadVaultZip(result: ObsidianExportResult): void {
                 onerror(error) {
                     ctmError('[Export] GM_download failed:', error);
                     URL.revokeObjectURL(blobUrl);
-                    fallbackDownload(result.zipBlob, filename);
+                    downloadWithDataUrl(result.zipBlob, filename);
                 },
                 onload() {
                     URL.revokeObjectURL(blobUrl);
@@ -497,11 +503,11 @@ export function downloadVaultZip(result: ObsidianExportResult): void {
         }
     }
 
-    fallbackDownload(result.zipBlob, filename);
+    downloadWithObjectUrl(result.zipBlob, filename);
 }
 
-/** Fallback download using anchor element */
-function fallbackDownload(blob: Blob, filename: string): void {
+/** Download via Object URL (anchor click) */
+function downloadWithObjectUrl(blob: Blob, filename: string): void {
     try {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -512,9 +518,34 @@ function fallbackDownload(blob: Blob, filename: string): void {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        ctmLog('[Export] Fallback download triggered');
+        ctmLog('[Export] ObjectURL download triggered');
     } catch (err) {
-        ctmError('[Export] Fallback download failed:', err);
-        alert(`Download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        ctmError('[Export] ObjectURL download failed:', err);
+        downloadWithDataUrl(blob, filename);
     }
+}
+
+/** Download via data: URL (most compatible with Tampermonkey sandbox) */
+function downloadWithDataUrl(blob: Blob, filename: string): void {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        if (reader.readyState === FileReader.DONE) {
+            const a = document.createElement('a');
+            a.href = reader.result as string;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            ctmLog('[Export] DataURL download triggered');
+        } else {
+            ctmError('[Export] FileReader failed to read blob');
+            alert('Download failed: could not read ZIP file for download.');
+        }
+    };
+    reader.onerror = () => {
+        ctmError('[Export] FileReader error:', reader.error);
+        alert('Download failed: error reading ZIP file.');
+    };
+    reader.readAsDataURL(blob);
 }
