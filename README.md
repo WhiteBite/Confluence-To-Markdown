@@ -58,6 +58,13 @@ Converts diagrams to target format (e.g., Mermaid).
 2. Click on `confluence-to-markdown.user.js` from [Releases](https://github.com/WhiteBite/confluence-to-markdown/releases)
 3. Tampermonkey will prompt to install — click "Install"
 
+### Option 3: One-Click Install (GitHub Pages)
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) browser extension
+2. Click the link below — Tampermonkey will auto-detect and prompt to install:
+
+   **[👉 Install Confluence to Markdown](https://whitebite.github.io/Confluence-To-Markdown/confluence-to-markdown.user.js)**
+
 ## Usage
 
 1. Navigate to any Confluence page
