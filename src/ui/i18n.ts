@@ -112,8 +112,8 @@ const en: Translations = {
     presetObsidianDesc: 'Folders, wikilinks, assets in /attachments',
     presetSingle: '📄 Single Markdown File',
     presetSingleDesc: 'Everything in one .md file',
-    presetGithub: '🐙 GitHub / GitLab (Zip)',
-    presetGithubDesc: 'Standard markdown, repo structure',
+    presetGithub: '🐙 GitHub / GitLab (MD)',
+    presetGithubDesc: 'Single .md file, standard markdown',
 
     // Diagrams section
     diagramsTitle: 'Diagrams',
@@ -191,8 +191,8 @@ const ru: Translations = {
     presetObsidianDesc: 'Папки, wikilinks, вложения в /attachments',
     presetSingle: '📄 Один Markdown файл',
     presetSingleDesc: 'Всё в одном .md файле',
-    presetGithub: '🐙 GitHub / GitLab (Zip)',
-    presetGithubDesc: 'Стандартный markdown, структура репозитория',
+    presetGithub: '🐙 GitHub / GitLab (MD)',
+    presetGithubDesc: 'Один .md файл, стандартный markdown',
 
     // Diagrams section
     diagramsTitle: 'Диаграммы',
