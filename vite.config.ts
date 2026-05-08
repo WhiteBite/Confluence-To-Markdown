@@ -3,7 +3,7 @@ import monkey from 'vite-plugin-monkey';
 import pkg from './package.json' assert { type: 'json' };
 
 const REPO_URL = 'https://github.com/WhiteBite/Confluence-To-Markdown';
-const RAW_URL = 'https://raw.githubusercontent.com/WhiteBite/Confluence-To-Markdown/main/dist/confluence-to-markdown.user.js';
+const PAGES_URL = 'https://whitebite.github.io/Confluence-To-Markdown/confluence-to-markdown.user.js';
 
 export default defineConfig({
     plugins: [
@@ -17,8 +17,8 @@ export default defineConfig({
                 author: 'WhiteBite',
                 homepage: REPO_URL,
                 supportURL: `${REPO_URL}/issues`,
-                updateURL: RAW_URL,
-                downloadURL: RAW_URL,
+                updateURL: PAGES_URL,
+                downloadURL: PAGES_URL,
                 match: [
                     'https://*.atlassian.net/wiki/*',
                     'https://*/wiki/*',
