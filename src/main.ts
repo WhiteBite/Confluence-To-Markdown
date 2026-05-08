@@ -21,6 +21,22 @@ import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
 let exportButton: HTMLButtonElement | null = null;
 
 // ============================================================================
+// Dummy Controller for Space Export (no modal UI)
+// ============================================================================
+
+/** Safe no-op controller for operations without a modal */
+const NOOP_CONTROLLER: ModalController = {
+    show: () => {},
+    close: () => {},
+    setState: () => {},
+    getState: () => 'idle',
+    showProgress: () => {},
+    hideProgress: () => {},
+    showToast: () => {},
+    updateTree: () => {},
+};
+
+// ============================================================================
 // Debug Logging
 // ============================================================================
 
@@ -402,22 +418,22 @@ async function startSpaceExport(): Promise<void> {
                     try {
                         switch (action) {
                             case 'copy':
-                                await handleCopy(undefined, ctx, rootTree, spaceName);
+                                await handleCopy(NOOP_CONTROLLER, ctx, rootTree, spaceName);
                                 ctmLog('[CTM] spaceExport onAction copy DONE');
                                 break;
 
                             case 'download':
-                                await handleDownload(undefined, ctx, rootTree, spaceName);
+                                await handleDownload(NOOP_CONTROLLER, ctx, rootTree, spaceName);
                                 ctmLog('[CTM] spaceExport onAction download DONE');
                                 break;
 
                             case 'obsidian':
-                                await handleObsidian(undefined, ctx, rootTree, spaceName);
+                                await handleObsidian(NOOP_CONTROLLER, ctx, rootTree, spaceName);
                                 ctmLog('[CTM] spaceExport onAction obsidian DONE');
                                 break;
 
                             case 'pdf':
-                                await handlePdf(undefined, ctx, rootTree, spaceName);
+                                await handlePdf(NOOP_CONTROLLER, ctx, rootTree, spaceName);
                                 ctmLog('[CTM] spaceExport onAction pdf DONE');
                                 break;
                         }
