@@ -1,11 +1,14 @@
 import { zipSync, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
 import { ctmLog, ctmError } from '@/utils/logger';
+import { runWithConcurrency } from '@/utils/queue';
+import { MAX_CONCURRENCY } from '@/config';
 import type {
     PageContentData,
     PageTreeNode,
     ObsidianExportSettings,
     ObsidianExportResult,
+    AttachmentInfo,
 } from '@/api/types';
 import { convertToMarkdown, sanitizeHtml } from './converter';
 import { flattenTree } from './tree-processor';
@@ -290,26 +293,41 @@ export async function createObsidianVault(
         onProgress?.('Converting pages...', i + 1, pages.length);
     }
 
-    // Phase 2: Download attachments and diagrams
-    if (settings.downloadAttachments || settings.exportDiagrams) {
-        const totalPages = pages.length;
-        let processedPages = 0;
+    // Phase 2: Download attachments and diagrams (PARALLEL)
+    if (settings.downloadAttachments || settings.exportDiagrams || settings.exportAllAttachments) {
+        // Step 1: Fetch attachment lists for all pages in parallel (with concurrency limit)
+        onProgress?.('Fetching attachment lists...', 0, pages.length);
 
-        for (const page of pages) {
-            onProgress?.('Downloading attachments...', processedPages, totalPages);
+        interface AttachmentList { pageId: string; attachments: AttachmentInfo[] }
 
-            // Fetch all attachments for this page
-            ctmLog(`[Export] Fetching attachments for page ${page.id}`);
-            const attachments = await fetchPageAttachments(page.id);
-            ctmLog(`[Export] Found ${attachments.length} attachments`);
+        const attachmentLists = await runWithConcurrency<PageContentData, AttachmentList>(
+            pages,
+            async (page) => {
+                ctmLog(`[Export] Fetching attachments for page ${page.id}`);
+                const attachments = await fetchPageAttachments(page.id);
+                ctmLog(`[Export] Found ${attachments.length} attachments for page ${page.id}`);
+                return { pageId: page.id, attachments };
+            },
+            {
+                concurrency: MAX_CONCURRENCY,
+                onProgress: (completed, total) => onProgress?.('Fetching attachment lists...', completed, total),
+            }
+        );
 
-            // Build a set of diagram source filenames (without extension)
-            // Draw.io diagrams have mediaType 'application/vnd.jgraph.mxfile'
+        // Step 2: Build download queue
+        interface DownloadTask {
+            att: AttachmentInfo;
+            pageId: string;
+            type: 'diagram' | 'image' | 'file';
+        }
+
+        const downloadTasks: DownloadTask[] = [];
+
+        for (const { pageId, attachments } of attachmentLists) {
             const diagramSourceNames = new Set<string>();
             for (const att of attachments) {
                 if (att.mediaType === 'application/vnd.jgraph.mxfile') {
                     diagramSourceNames.add(att.filename);
-                    ctmLog(`[Export] Found diagram source: ${att.filename}`);
                 }
             }
 
@@ -329,51 +347,55 @@ export async function createObsidianVault(
                 const nameWithoutExt = att.filename.replace(/\.png$/i, '');
                 const isDiagramPng = diagramSourceNames.has(nameWithoutExt);
 
-                if (isDiagramPng) {
-                    // This is a Draw.io diagram PNG preview
-                    if (settings.exportDiagrams) {
-                        ctmLog(`[Export] Downloading diagram PNG: ${att.filename}`);
-                        const exported = await exportImageAttachment(att);
-                        if (exported) {
-                            attachmentFiles.push({
-                                path: `_attachments/${exported.filename}`,
-                                blob: exported.blob,
-                            });
-                            diagramCount++;
-                            attachmentCount++;
-                            ctmLog(`[Export] Downloaded diagram: ${att.filename}`);
-                        }
-                    }
-                } else if (isImageAttachment(att)) {
-                    // Regular image attachment
-                    if (settings.downloadAttachments && settings.includeImages) {
-                        ctmLog(`[Export] Downloading image: ${att.filename}`);
-                        const exported = await exportImageAttachment(att);
-                        if (exported) {
-                            attachmentFiles.push({
-                                path: `_attachments/${exported.filename}`,
-                                blob: exported.blob,
-                            });
-                            attachmentCount++;
-                            ctmLog(`[Export] Downloaded image: ${att.filename}`);
-                        }
-                    }
+                if (isDiagramPng && settings.exportDiagrams) {
+                    downloadTasks.push({ att, pageId, type: 'diagram' });
+                } else if (isImageAttachment(att) && settings.downloadAttachments && settings.includeImages) {
+                    downloadTasks.push({ att, pageId, type: 'image' });
                 } else if (settings.exportAllAttachments) {
-                    // Non-image attachment (PDF, DOC, etc.) - download all if exportAllAttachments is true
-                    ctmLog(`[Export] Downloading non-image attachment: ${att.filename} (${att.mediaType})`);
-                    const exported = await exportAnyAttachment(att);
-                    if (exported) {
-                        attachmentFiles.push({
-                            path: `_attachments/${exported.filename}`,
-                            blob: exported.blob,
-                        });
-                        attachmentCount++;
-                        ctmLog(`[Export] Downloaded attachment: ${att.filename} (${att.fileSize} bytes)`);
-                    }
+                    downloadTasks.push({ att, pageId, type: 'file' });
                 }
             }
+        }
 
-            processedPages++;
+        // Step 3: Download all attachments in parallel (with concurrency limit)
+        const totalDownloads = downloadTasks.length;
+        onProgress?.('Downloading attachments...', 0, totalDownloads);
+        ctmLog(`[Export] Starting parallel download of ${totalDownloads} attachments (concurrency: ${MAX_CONCURRENCY})`);
+
+        interface DownloadResult {
+            filename: string;
+            blob: Blob;
+            type: 'diagram' | 'image' | 'file';
+        }
+
+        const downloadResults = await runWithConcurrency<DownloadTask, DownloadResult | null>(
+            downloadTasks,
+            async (task) => {
+                ctmLog(`[Export] Downloading ${task.type}: ${task.att.filename}`);
+                const exported = task.type === 'file'
+                    ? await exportAnyAttachment(task.att)
+                    : await exportImageAttachment(task.att);
+                if (exported) {
+                    ctmLog(`[Export] Downloaded ${task.att.filename}`);
+                    return { filename: exported.filename, blob: exported.blob, type: task.type };
+                }
+                return null;
+            },
+            {
+                concurrency: MAX_CONCURRENCY,
+                onProgress: (completed, total) => onProgress?.('Downloading attachments...', completed, total),
+            }
+        );
+
+        // Step 4: Collect results
+        for (const result of downloadResults) {
+            if (!result) continue;
+            attachmentFiles.push({
+                path: `_attachments/${result.filename}`,
+                blob: result.blob,
+            });
+            attachmentCount++;
+            if (result.type === 'diagram') diagramCount++;
         }
     }
 
