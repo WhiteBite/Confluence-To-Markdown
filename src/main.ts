@@ -324,8 +324,7 @@ async function startExport(): Promise<void> {
                         switch (action) {
                             case 'copy':
                                 await handleCopy(controller, ctx, rootTree, rootTitle);
-                                // Stay open for more actions
-                                controller.setState('ready');
+                                // UI auto-restored by modal's finally handler
                                 break;
 
                             case 'download':
@@ -346,7 +345,7 @@ async function startExport(): Promise<void> {
                     } catch (error) {
                         logError(error, `pageExport:${action}`, { pageId });
                         alert(`Export failed: ${getErrorMessage(error)}`);
-                        controller?.setState('ready');
+                        // UI auto-restored by modal's finally handler — no need to setState here
                     }
                 },
 

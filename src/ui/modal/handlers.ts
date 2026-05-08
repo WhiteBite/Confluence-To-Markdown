@@ -459,7 +459,7 @@ export function enableModalInteraction(element: HTMLElement, icons: { download: 
  * @returns Cleanup function to remove all listeners
  */
 export function setupEventListeners(deps: HandlerDependencies): () => void {
-    const { element, callbacks, getState, setState, close, updateTree, updateStats } = deps;
+    const { element, callbacks, setState, close, updateTree, updateStats } = deps;
 
     // Store cleanup functions
     const cleanups: (() => void)[] = [];
@@ -469,19 +469,19 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
     // -------------------------------------------------------------------------
     const handleActionClick = async (e: Event) => {
         const target = e.target as HTMLElement;
-        const btn = target.closest('[data-action]') as HTMLElement;
+        const btn = target.closest('[data-action]') as HTMLButtonElement;
         if (!btn) return;
 
         const action = btn.dataset.action;
-
-        // Ignore clicks during processing
-        if (getState() === 'processing') {
-            console.log('[Modal] Ignoring click - processing in progress');
-            return;
-        }
+        if (!action) return;
 
         if (action === 'cancel') {
             close();
+            return;
+        }
+
+        // Ignore if THIS button is already processing
+        if (btn.hasAttribute('data-processing')) {
             return;
         }
 
@@ -495,7 +495,23 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
 
             saveCurrentSettings(element);
             setState('processing');
-            disableModalInteraction(element);
+
+            // Mark this specific button as processing — others stay clickable
+            const originalHtml = btn.innerHTML;
+            btn.setAttribute('data-processing', 'true');
+            btn.disabled = true;
+            btn.innerHTML = `<span style="opacity:0.8">⏳ ${t('processing')}...</span>`;
+
+            // Disable checkboxes only (selection must not change during export)
+            element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').forEach((cb) => {
+                cb.disabled = true;
+            });
+
+            // Show progress section
+            const progressSection = element.querySelector('#md-progress-section') as HTMLElement;
+            if (progressSection) {
+                progressSection.style.display = 'block';
+            }
 
             // Debug: log export format decision
             console.log('[Modal] Export action:', action);
@@ -511,8 +527,37 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                 obsidianSettings: currentObsidianSettings,
             };
 
-            // Let the callback handle the action
-            await callbacks.onAction(modalAction, ctx);
+            try {
+                // Let the callback handle the action
+                await callbacks.onAction(modalAction, ctx);
+            } catch (error) {
+                console.error('[Modal] Action failed:', error);
+                // Briefly show error on the button
+                btn.innerHTML = `<span style="color:var(--md-danger)">❌ ${t('exportError')}</span>`;
+                await new Promise((r) => setTimeout(r, 1500));
+            } finally {
+                // ALWAYS restore UI — even if callback threw or modal was closed
+                btn.removeAttribute('data-processing');
+                btn.disabled = false;
+
+                if (document.body.contains(element)) {
+                    btn.innerHTML = originalHtml;
+
+                    // Re-enable checkboxes
+                    element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').forEach((cb) => {
+                        cb.disabled = false;
+                    });
+
+                    // If no other button is still processing, return to ready & hide progress
+                    const stillProcessing = element.querySelector('[data-processing]');
+                    if (!stillProcessing) {
+                        setState('ready');
+                        if (progressSection) {
+                            progressSection.style.display = 'none';
+                        }
+                    }
+                }
+            }
             return;
         }
 
