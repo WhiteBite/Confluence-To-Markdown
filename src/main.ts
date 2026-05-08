@@ -68,20 +68,25 @@ async function handleCopy(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
+    ctmLog('[CTM] handleCopy ENTER — hasController:', !!controller, 'selectedIds:', ctx.selectedIds.length);
     try {
-        if (!controller) {
-            ctmLog('[CTM] Copy action started (no modal — space export)');
-        } else {
+        if (controller?.showProgress) {
             controller.showProgress('content', 0, ctx.selectedIds.length);
         }
 
         const pagesContent = await fetchPagesContent(
             ctx.selectedIds,
             ctx.settings,
-            (completed, total, phase) => controller?.showProgress(phase, completed, total)
+            (completed, total, phase) => {
+                if (controller?.showProgress) {
+                    controller.showProgress(phase, completed, total);
+                }
+            }
         );
 
-        controller?.showProgress('convert', 0, 0);
+        if (controller?.showProgress) {
+            controller.showProgress('convert', 0, 0);
+        }
 
         let diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink';
         if (ctx.obsidianSettings.diagramExportMode === 'convert') {
@@ -97,17 +102,29 @@ async function handleCopy(
             ctx.obsidianSettings.diagramExportMode
         );
 
+        ctmLog('[CTM] handleCopy: built markdown, pageCount:', result.pageCount, '— attempting clipboard copy');
         const success = await copyToClipboard(result);
+        ctmLog('[CTM] handleCopy: copyToClipboard returned:', success);
 
         if (success) {
-            controller?.showToast('Copied to clipboard!');
+            if (controller?.showToast) {
+                controller.showToast('Copied to clipboard!');
+            } else {
+                ctmLog('[CTM] handleCopy: no controller.showToast, skipping toast');
+            }
             updateStatus(`Copied ${result.pageCount} pages`);
         } else {
             throw new Error('Failed to copy to clipboard');
         }
     } catch (error) {
         logError(error, 'handleCopy', { pageCount: ctx.selectedIds.length, hasController: !!controller });
-        controller?.showToast('Copy failed!');
+        if (controller?.showToast) {
+            try {
+                controller.showToast('Copy failed!');
+            } catch (toastError) {
+                ctmError('[CTM] handleCopy: even showToast failed:', toastError);
+            }
+        }
         throw error;
     }
 }
@@ -121,18 +138,24 @@ async function handleDownload(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
-    if (!controller) {
-        ctmLog('[CTM] Download action started (no modal — space export)');
+    ctmLog('[CTM] handleDownload ENTER — hasController:', !!controller, 'selectedIds:', ctx.selectedIds.length);
+    if (controller?.showProgress) {
+        controller.showProgress('content', 0, ctx.selectedIds.length);
     }
-    controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
         ctx.selectedIds,
         ctx.settings,
-        (completed, total, phase) => controller?.showProgress(phase, completed, total)
+        (completed, total, phase) => {
+            if (controller?.showProgress) {
+                controller.showProgress(phase, completed, total);
+            }
+        }
     );
 
-    controller?.showProgress('convert', 0, 0);
+    if (controller?.showProgress) {
+        controller.showProgress('convert', 0, 0);
+    }
 
     let diagramFormat: 'mermaid' | 'drawio-xml' | 'wikilink' = 'wikilink';
     if (ctx.obsidianSettings.diagramExportMode === 'convert') {
@@ -161,25 +184,35 @@ async function handleObsidian(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
-    if (!controller) {
-        ctmLog('[CTM] Obsidian action started (no modal — space export)');
+    ctmLog('[CTM] handleObsidian ENTER — hasController:', !!controller, 'selectedIds:', ctx.selectedIds.length);
+    if (controller?.showProgress) {
+        controller.showProgress('content', 0, ctx.selectedIds.length);
     }
-    controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
         ctx.selectedIds,
         ctx.settings,
-        (completed, total, phase) => controller?.showProgress(phase, completed, total)
+        (completed, total, phase) => {
+            if (controller?.showProgress) {
+                controller.showProgress(phase, completed, total);
+            }
+        }
     );
 
-    controller?.showProgress('vault', 0, 0);
+    if (controller?.showProgress) {
+        controller.showProgress('vault', 0, 0);
+    }
 
     const vaultResult = await createObsidianVault(
         pagesContent,
         rootTree,
         rootTitle,
         ctx.obsidianSettings,
-        (phase, current, total) => controller?.showProgress(phase, current, total)
+        (phase, current, total) => {
+            if (controller?.showProgress) {
+                controller.showProgress(phase, current, total);
+            }
+        }
     );
 
     downloadVaultZip(vaultResult);
@@ -195,15 +228,19 @@ async function handlePdf(
     rootTree: PageTreeNode,
     rootTitle: string
 ): Promise<void> {
-    if (!controller) {
-        ctmLog('[CTM] PDF action started (no modal — space export)');
+    ctmLog('[CTM] handlePdf ENTER — hasController:', !!controller, 'selectedIds:', ctx.selectedIds.length);
+    if (controller?.showProgress) {
+        controller.showProgress('content', 0, ctx.selectedIds.length);
     }
-    controller?.showProgress('content', 0, ctx.selectedIds.length);
 
     const pagesContent = await fetchPagesContent(
         ctx.selectedIds,
         ctx.settings,
-        (completed, total, phase) => controller?.showProgress(phase, completed, total)
+        (completed, total, phase) => {
+            if (controller?.showProgress) {
+                controller.showProgress(phase, completed, total);
+            }
+        }
     );
 
     exportToPdf(pagesContent, rootTree, rootTitle, ctx.settings);
@@ -361,27 +398,44 @@ async function startSpaceExport(): Promise<void> {
             rootTitle: spaceName,
             callbacks: {
                 onAction: async (action: ModalAction, ctx: ModalContext) => {
+                    ctmLog('[CTM] spaceExport onAction START — action:', action, 'selectedIds:', ctx.selectedIds.length);
                     try {
                         switch (action) {
                             case 'copy':
                                 await handleCopy(undefined, ctx, rootTree, spaceName);
+                                ctmLog('[CTM] spaceExport onAction copy DONE');
                                 break;
 
                             case 'download':
                                 await handleDownload(undefined, ctx, rootTree, spaceName);
+                                ctmLog('[CTM] spaceExport onAction download DONE');
                                 break;
 
                             case 'obsidian':
                                 await handleObsidian(undefined, ctx, rootTree, spaceName);
+                                ctmLog('[CTM] spaceExport onAction obsidian DONE');
                                 break;
 
                             case 'pdf':
                                 await handlePdf(undefined, ctx, rootTree, spaceName);
+                                ctmLog('[CTM] spaceExport onAction pdf DONE');
                                 break;
                         }
+                        ctmLog('[CTM] spaceExport onAction END — action:', action);
                     } catch (error) {
+                        ctmError('[CTM] spaceExport onAction ERROR — action:', action, 'error:', error);
                         logError(error, `spaceExport:${action}`, { spaceKey, spaceName });
                         alert(`Export failed: ${getErrorMessage(error)}`);
+                    } finally {
+                        // Space export has no controller to reset modal state —
+                        // we must re-enable interaction manually so buttons work again
+                        ctmLog('[CTM] spaceExport onAction finally — re-enabling modal interaction');
+                        const modalEl = document.getElementById('md-export-modal');
+                        if (modalEl) {
+                            import('@/ui/modal/handlers').then(({ enableModalInteraction }) => {
+                                enableModalInteraction(modalEl, { download: '', copy: '' });
+                            }).catch((e) => ctmError('[CTM] Failed to re-enable modal:', e));
+                        }
                     }
                 },
 
