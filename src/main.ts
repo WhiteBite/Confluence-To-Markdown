@@ -225,6 +225,7 @@ async function startExport(): Promise<void> {
     }
 
     setButtonLoading(exportButton, true, 'Export to Markdown');
+    ctmLog('[CTM] startExport called, pageId:', pageId);
 
     try {
         // Check cache first
@@ -258,6 +259,7 @@ async function startExport(): Promise<void> {
             callbacks: {
                 onAction: async (action: ModalAction, ctx: ModalContext) => {
                     try {
+                        ctmLog('[CTM] Controller has showProgress:', !!controller?.showProgress);
                         ctmLog('[CTM] Received action:', action);
                         ctmLog('[CTM] ctx.obsidianSettings.exportFormat:', ctx.obsidianSettings.exportFormat);
 
@@ -333,6 +335,7 @@ async function startSpaceExport(): Promise<void> {
 
     const spaceName = getSpaceName();
     setButtonLoading(spaceExportButton, true, 'Export Space');
+    ctmLog('[CTM] startSpaceExport called, spaceKey:', spaceKey, 'spaceName:', spaceName);
 
     try {
         updateStatus('Loading space...');
@@ -553,6 +556,9 @@ function init(): void {
 }
 
 // Start
+const SCRIPT_VERSION = (typeof GM_info !== 'undefined' ? GM_info?.script?.version : 'dev') ?? 'unknown';
+ctmLog('[CTM] Confluence To Markdown v' + SCRIPT_VERSION + ' initialized');
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
