@@ -303,15 +303,28 @@ interface SpacePagesResponse {
     _links?: { next?: string };
 }
 
-export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAncestors[]> {
+export async function fetchAllPagesInSpace(
+    spaceKey: string,
+    onProgress?: (count: number) => void
+): Promise<PageWithAncestors[]> {
     const baseUrl = getBaseUrl();
     const pages: PageWithAncestors[] = [];
     let start = 0;
     const limit = 200;
     let hasMore = true;
     let useFallback = false;
+    let iteration = 0;
+    const MAX_ITERATIONS = 50; // 50 × 200 = 10,000 pages max (safety break)
+
+    ctmLog(`[API] fetchAllPagesInSpace START: spaceKey=${spaceKey}, baseUrl=${baseUrl}`);
 
     while (hasMore) {
+        iteration++;
+        if (iteration > MAX_ITERATIONS) {
+            ctmError(`[API] fetchAllPagesInSpace: exceeded max iterations (${MAX_ITERATIONS}), loaded ${pages.length} pages. Possible API pagination bug.`);
+            break;
+        }
+
         let url: string;
         
         if (!useFallback) {
@@ -324,14 +337,18 @@ export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAn
         }
 
         try {
+            ctmLog(`[API] fetchAllPagesInSpace page ${iteration}: start=${start}, limit=${limit}, mode=${useFallback ? 'fallback' : 'cql'}`);
             const response = await fetchJson<SpacePagesResponse>(url);
 
             if (response.results?.length) {
                 pages.push(...response.results);
+                onProgress?.(pages.length);
             }
 
             hasMore = response.results?.length === limit;
             start += limit;
+
+            ctmLog(`[API] fetchAllPagesInSpace progress: ${pages.length} pages loaded (this batch: ${response.results?.length || 0})`);
         } catch (error) {
             if (!useFallback && (error as Error).message?.includes('400')) {
                 ctmWarn('[API] CQL search failed with 400, trying fallback endpoint');
@@ -339,10 +356,11 @@ export async function fetchAllPagesInSpace(spaceKey: string): Promise<PageWithAn
                 // Retry with fallback (don't advance start, try same page)
                 continue;
             }
-            ctmError('[API] fetchAllPagesInSpace failed:', error);
+            ctmError('[API] fetchAllPagesInSpace failed at iteration', iteration, ':', error);
             throw error;
         }
     }
 
+    ctmLog(`[API] fetchAllPagesInSpace DONE: ${pages.length} total pages loaded in ${iteration} iterations`);
     return pages;
 }

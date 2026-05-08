@@ -185,9 +185,12 @@ export async function buildSpaceTree(
     onStatus?: StatusCallback
 ): Promise<PageTreeNode> {
     onStatus?.('Loading space...');
+    ctmLog(`[Tree] buildSpaceTree START: spaceKey=${spaceKey}`);
 
     try {
         // Get space info to find homepage
+        onStatus?.('Fetching space info...');
+        ctmLog(`[Tree] Fetching space info for ${spaceKey}...`);
         const space = await fetchSpace(spaceKey);
 
         if (!space.homepageId) {
@@ -195,11 +198,21 @@ export async function buildSpaceTree(
         }
 
         onStatus?.(`Found space: ${space.name}`);
+        ctmLog(`[Tree] Space found: "${space.name}" homepageId=${space.homepageId}`);
 
-        // Get all pages in space
-        const allPages = await fetchAllPagesInSpace(spaceKey);
+        // Get all pages in space (with progress callback)
+        onStatus?.('Loading page list (0 pages)...');
+        ctmLog(`[Tree] Starting fetchAllPagesInSpace for ${spaceKey}...`);
+        let lastCount = 0;
+        const allPages = await fetchAllPagesInSpace(spaceKey, (count) => {
+            if (count !== lastCount) {
+                lastCount = count;
+                onStatus?.(`Loading page list (${count} pages)...`);
+            }
+        });
 
         onStatus?.(`Found ${allPages.length} pages in space`);
+        ctmLog(`[Tree] Total pages loaded: ${allPages.length}`);
 
         if (DEBUG) {
             ctmLog(`[Tree] Space "${space.name}" has ${allPages.length} pages`);
@@ -216,6 +229,8 @@ export async function buildSpaceTree(
             const ancestors = p.ancestors || [];
             return ancestors.some(a => a.id === space.homepageId);
         });
+
+        ctmLog(`[Tree] Homepage "${homepage.title}" has ${descendants.length} descendants`);
 
         return buildTreeFromDescendants(
             { id: homepage.id, title: homepage.title },
