@@ -217,6 +217,22 @@ function generateIndexFile(
     return lines.join('\n');
 }
 
+/** Convert Blob to Uint8Array using FileReader (more compatible than blob.arrayBuffer() in Tampermonkey) */
+function blobToUint8Array(blob: Blob): Promise<Uint8Array> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (reader.readyState === FileReader.DONE && reader.result instanceof ArrayBuffer) {
+                resolve(new Uint8Array(reader.result));
+            } else {
+                reject(new Error('FileReader failed to read blob as ArrayBuffer'));
+            }
+        };
+        reader.onerror = () => reject(new Error('FileReader error: ' + reader.error?.message));
+        reader.readAsArrayBuffer(blob);
+    });
+}
+
 /** Main export function */
 export async function createObsidianVault(
     pages: PageContentData[],
@@ -375,9 +391,11 @@ export async function createObsidianVault(
     for (const file of attachmentFiles) {
         ctmLog(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
         try {
-            const arrayBuffer = await file.blob.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
+            const uint8Array = await blobToUint8Array(file.blob);
             ctmLog(`[Export] Converted to Uint8Array: ${uint8Array.length} bytes`);
+            if (uint8Array.length === 0) {
+                ctmError(`[Export] WARNING: attachment ${file.path} has 0 bytes after conversion!`);
+            }
             zipFiles[file.path] = uint8Array;
         } catch (err) {
             ctmError(`[Export] Failed to convert blob for ${file.path}:`, err);
@@ -423,15 +441,58 @@ export async function createObsidianVault(
 
 /** Download the vault ZIP */
 export function downloadVaultZip(result: ObsidianExportResult): void {
-    const url = URL.createObjectURL(result.zipBlob);
+    ctmLog(`[Export] downloadVaultZip called, blob size: ${result.zipBlob.size} bytes, type: ${result.zipBlob.type}`);
+
+    if (result.zipBlob.size === 0) {
+        ctmError('[Export] ZIP blob is empty! Cannot download.');
+        alert('Export failed: ZIP file is empty. Please check console logs.');
+        return;
+    }
+
     const filename = `${sanitizeFilename(result.title)}_obsidian.zip`;
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Try GM_download first (Tampermonkey) — more reliable than Blob+URL in sandbox
+    if (typeof GM_download === 'function') {
+        try {
+            const blobUrl = URL.createObjectURL(result.zipBlob);
+            GM_download({
+                url: blobUrl,
+                name: filename,
+                saveAs: true,
+                onerror(error) {
+                    ctmError('[Export] GM_download failed:', error);
+                    URL.revokeObjectURL(blobUrl);
+                    fallbackDownload(result.zipBlob, filename);
+                },
+                onload() {
+                    URL.revokeObjectURL(blobUrl);
+                },
+            });
+            ctmLog('[Export] Using GM_download for ZIP');
+            return;
+        } catch (err) {
+            ctmError('[Export] GM_download error, falling back:', err);
+        }
+    }
+
+    fallbackDownload(result.zipBlob, filename);
+}
+
+/** Fallback download using anchor element */
+function fallbackDownload(blob: Blob, filename: string): void {
+    try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        ctmLog('[Export] Fallback download triggered');
+    } catch (err) {
+        ctmError('[Export] Fallback download failed:', err);
+        alert(`Download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
 }

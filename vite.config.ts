@@ -26,7 +26,7 @@ export default defineConfig({
                     'https://*/pages/*',
                 ],
                 icon: 'https://www.atlassian.com/favicon.ico',
-                grant: ['GM_xmlhttpRequest', 'GM_addStyle'],
+                grant: ['GM_xmlhttpRequest', 'GM_addStyle', 'GM_download'],
                 connect: ['*'],
             },
             build: {
