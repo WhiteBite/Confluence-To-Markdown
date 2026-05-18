@@ -10,7 +10,7 @@ import {
 } from '@/ui/modal';
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import { createButton, createStatus, updateStatus, setButtonLoading } from '@/ui/components';
-import { getCurrentPageId, getErrorMessage, getSpaceKey } from '@/utils/helpers';
+import { getCurrentPageId, getErrorMessage, getSpaceKey, findActionMenuContainer } from '@/utils/helpers';
 import { ctmLog, ctmError } from '@/utils/logger';
 import { getCachedTree, setCachedTree, clearCachedTree } from '@/storage/storage';
 import type { PageTreeNode } from '@/api/types';
@@ -539,13 +539,23 @@ let spaceExportButton: HTMLButtonElement | null = null;
 
 /** Add export button to page */
 function addExportButton(): void {
-    if (document.getElementById('md-export-trigger')) return;
+    if (document.getElementById('md-export-trigger')) {
+        ctmLog('[CTM] addExportButton: buttons already exist');
+        return;
+    }
 
     const pageId = getCurrentPageId();
     const spaceKey = getSpaceKey();
 
-    const actionMenu = document.getElementById('action-menu-link');
-    if (!actionMenu?.parentElement) return;
+    ctmLog('[CTM] addExportButton: pageId=', pageId, 'spaceKey=', spaceKey);
+
+    const container = findActionMenuContainer();
+    if (!container) {
+        ctmLog('[CTM] addExportButton: NO container found — tried #action-menu-link, #toolbar, .page-metadata, .aui-toolbar, .cp-header-actions, .content-header, #main-header');
+        return;
+    }
+
+    ctmLog('[CTM] addExportButton: container found, tagName=', container.tagName, 'class=', container.className?.substring(0, 50));
 
     let status: HTMLElement | null = null;
 
@@ -555,8 +565,11 @@ function addExportButton(): void {
         exportButton.id = 'md-export-trigger';
 
         status = createStatus();
-        actionMenu.parentElement.insertBefore(exportButton, actionMenu.nextSibling);
-        actionMenu.parentElement.insertBefore(status, exportButton.nextSibling);
+        container.appendChild(exportButton);
+        container.appendChild(status);
+        ctmLog('[CTM] addExportButton: PAGE export button added');
+    } else {
+        ctmLog('[CTM] addExportButton: NO pageId — page export button skipped');
     }
 
     // Space export button - needs spaceKey
@@ -569,14 +582,17 @@ function addExportButton(): void {
         if (exportBtn) {
             exportBtn.parentElement?.insertBefore(spaceExportButton, exportBtn.nextSibling);
         } else {
-            actionMenu.parentElement.insertBefore(spaceExportButton, actionMenu.nextSibling);
+            container.appendChild(spaceExportButton);
         }
+        ctmLog('[CTM] addExportButton: SPACE export button added');
+    } else if (!spaceKey) {
+        ctmLog('[CTM] addExportButton: NO spaceKey — space export button skipped');
     }
 
     if (isHubConfigured() && !document.getElementById('md-hub-trigger')) {
         const hubButton = createButton('📡 Привязать к Hub', 'aui-button hub-button', startHubLink);
         hubButton.id = 'md-hub-trigger';
-        actionMenu.parentElement.insertBefore(hubButton, status.nextSibling);
+        container.appendChild(hubButton);
     }
 
     if (!document.getElementById('md-hub-settings-trigger')) {
@@ -587,13 +603,33 @@ function addExportButton(): void {
         settingsBtn.textContent = '⚙️';
         settingsBtn.style.cssText = 'margin-left:4px;padding:0 6px;min-width:auto;font-size:0.85em;';
         settingsBtn.addEventListener('click', showHubSettingsPanel);
-        actionMenu.parentElement.insertBefore(settingsBtn, (document.getElementById('md-hub-trigger') || status).nextSibling);
+        container.appendChild(settingsBtn);
     }
 }
 
 /** Initialize script */
 function init(): void {
+    ctmLog('[CTM] init() called — readyState:', document.readyState, 'URL:', window.location.href);
     addExportButton();
+
+    // Retry a few times for Server Confluence where AJS.Meta loads asynchronously
+    let retries = 0;
+    const maxRetries = 5;
+    const retryInterval = setInterval(() => {
+        retries++;
+        const hasButtons = document.getElementById('md-export-trigger') || document.getElementById('md-space-export-trigger');
+        if (!hasButtons) {
+            ctmLog(`[CTM] init retry ${retries}/${maxRetries}: buttons not found, trying again...`);
+            addExportButton();
+        } else {
+            ctmLog(`[CTM] init retry ${retries}: buttons found, stopping retries`);
+            clearInterval(retryInterval);
+        }
+        if (retries >= maxRetries) {
+            ctmLog('[CTM] init: max retries reached, buttons may not be available');
+            clearInterval(retryInterval);
+        }
+    }, 1000);
 
     if (isHubConfigured()) {
         import('@/hub/sync-checker').then(({ checkForUpdates, updateBadge }) => {
@@ -606,6 +642,7 @@ function init(): void {
     const observer = new MutationObserver(() => {
         if (location.href !== lastHref) {
             lastHref = location.href;
+            ctmLog('[CTM] SPA navigation detected:', window.location.href);
             setTimeout(addExportButton, 500);
             if (isHubConfigured()) {
                 import('@/hub/sync-checker').then(({ checkForUpdates, updateBadge }) => {
@@ -614,14 +651,9 @@ function init(): void {
             }
         } else if (
             !document.getElementById('md-export-trigger') &&
-            document.getElementById('action-menu-link')
+            findActionMenuContainer()
         ) {
-            setTimeout(addExportButton, 200);
-        } else if (
-            isHubConfigured() &&
-            !document.getElementById('md-hub-trigger') &&
-            document.getElementById('md-export-trigger')
-        ) {
+            ctmLog('[CTM] MutationObserver: buttons missing but container found, retrying...');
             setTimeout(addExportButton, 200);
         }
     });
