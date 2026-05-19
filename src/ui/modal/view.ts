@@ -510,6 +510,9 @@ function renderFooter(): string {
           ${ICONS.copy}
           <span>${t('copy')}</span>
         </button>
+        <button class="md-btn md-btn-secondary" data-action="backup" id="md-backup-btn" title="Confluence Backup (.cfb.zip)">
+          <span>💾 Backup</span>
+        </button>
         <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="${t('pdf')}">
           <span>${t('pdf')}</span>
         </button>

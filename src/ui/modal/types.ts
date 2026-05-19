@@ -18,7 +18,7 @@ export type ModalState = 'idle' | 'ready' | 'processing' | 'error';
 // ============================================================================
 
 /** Available modal actions */
-export type ModalAction = 'copy' | 'download' | 'obsidian' | 'pdf';
+export type ModalAction = 'copy' | 'download' | 'obsidian' | 'pdf' | 'backup';
 
 // ============================================================================
 // Context & Callbacks

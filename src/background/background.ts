@@ -14,6 +14,7 @@ interface FetchResponse {
     data?: unknown;
     error?: string;
     status?: number;
+    retryAfterMs?: number;
 }
 
 interface HubPushRequest {
@@ -73,10 +74,13 @@ async function handleFetch(url: string, options?: RequestInit): Promise<FetchRes
         });
 
         if (!response.ok) {
+            const retryAfter = response.headers.get('Retry-After');
+            const retryAfterMs = retryAfter ? parseRetryAfterValue(retryAfter) : undefined;
             return {
                 success: false,
                 error: `HTTP ${response.status}: ${response.statusText}`,
                 status: response.status,
+                retryAfterMs,
             };
         }
 
@@ -152,4 +156,19 @@ async function handleHubPush(request: HubPushRequest): Promise<HubPushResponse> 
             error: error instanceof Error ? error.message : 'Network error',
         };
     }
+}
+
+
+/** Parse Retry-After header: integer seconds or HTTP-date → ms */
+function parseRetryAfterValue(value: string): number | undefined {
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) {
+        return Number(trimmed) * 1000;
+    }
+    const dateMs = Date.parse(trimmed);
+    if (!Number.isNaN(dateMs)) {
+        const delta = dateMs - Date.now();
+        return delta > 0 ? delta : 0;
+    }
+    return undefined;
 }

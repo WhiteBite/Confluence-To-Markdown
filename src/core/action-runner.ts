@@ -19,6 +19,7 @@ import {
 } from './exporter';
 import { exportToPdf } from './pdf-exporter';
 import { createObsidianVault, downloadVaultZip } from './obsidian-exporter';
+import { createConfluenceBackup, downloadBackupZip } from './backup-exporter';
 
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import type { PageTreeNode } from '@/api/types';
@@ -76,6 +77,9 @@ export async function runExportAction(
 
         case 'pdf':
             return finalizePdf(ctx, pagesContent, rootTree, rootTitle);
+
+        case 'backup':
+            return finalizeBackup(controller, ctx, rootTree, rootTitle);
 
         default: {
             // Compile-time exhaustiveness check
@@ -198,5 +202,40 @@ async function finalizePdf(
         action: 'pdf',
         pageCount: pages.length,
         status: `PDF preview opened for ${pages.length} pages`,
+    };
+}
+
+async function finalizeBackup(
+    controller: ModalController | undefined,
+    ctx: ModalContext,
+    rootTree: PageTreeNode,
+    rootTitle: string
+): Promise<ActionResult> {
+    // Backup fetches body.storage directly (not body.view), so it doesn't use
+    // the pre-fetched pagesContent. It has its own fetch pipeline.
+    const spaceKey = ctx.obsidianSettings.exportFormat === 'obsidian'
+        ? null // page-level export
+        : null;
+
+    const result = await createConfluenceBackup(
+        ctx.selectedIds,
+        rootTree,
+        rootTitle,
+        spaceKey,
+        rootTitle,
+        {
+            includeAttachments: true,
+            includeViewHtml: false,
+        },
+        (phase, current, total) => {
+            controller?.showProgress?.(phase, current, total);
+        }
+    );
+
+    downloadBackupZip(result);
+    return {
+        action: 'backup',
+        pageCount: result.pageCount,
+        status: `Backup downloaded: ${result.pageCount} pages, ${result.attachmentCount} attachments`,
     };
 }
