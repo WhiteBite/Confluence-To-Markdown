@@ -17,6 +17,7 @@ import { isHubConfigured } from '@/storage/hub-settings';
 
 const PAGE_BUTTON_ID = 'md-export-trigger';
 const SPACE_BUTTON_ID = 'md-space-export-trigger';
+const IMPORT_BUTTON_ID = 'md-import-trigger';
 const HUB_BUTTON_ID = 'md-hub-trigger';
 const HUB_SETTINGS_ID = 'md-hub-settings-trigger';
 const STATUS_ID = 'md-export-status';
@@ -29,6 +30,8 @@ export interface BootstrapCallbacks {
     onPageExport: () => void;
     /** Triggered when "Export Space" is clicked */
     onSpaceExport: () => void;
+    /** Triggered when "Import Backup" is clicked */
+    onImport: () => void;
     /** Triggered when "Привязать к Hub" is clicked. Optional — button hidden if absent. */
     onHubLink?: () => void;
     /** Triggered when ⚙ Hub settings is clicked */
@@ -147,6 +150,7 @@ function addExportButtons(): void {
 
     if (pageId) injectPageButton(container);
     if (spaceKey) injectSpaceButton(container);
+    injectImportButton(container);
     if (isHubConfigured() && activeCallbacks.onHubLink) injectHubButton(container);
     injectHubSettingsButton(container);
 }
@@ -186,6 +190,32 @@ function injectSpaceButton(container: Element): void {
         container.appendChild(btn);
     }
     ctmLog('addExportButtons: SPACE export button added');
+}
+
+function injectImportButton(container: Element): void {
+    if (!activeCallbacks) return;
+    if (document.getElementById(IMPORT_BUTTON_ID)) return;
+
+    const btn = createButton(
+        'Import Backup',
+        'aui-button aui-button-secondary',
+        activeCallbacks.onImport
+    );
+    btn.id = IMPORT_BUTTON_ID;
+    btn.style.marginLeft = '8px';
+
+    const spaceBtn = document.getElementById(SPACE_BUTTON_ID);
+    if (spaceBtn) {
+        spaceBtn.parentElement?.insertBefore(btn, spaceBtn.nextSibling);
+    } else {
+        const pageBtn = document.getElementById(PAGE_BUTTON_ID);
+        if (pageBtn) {
+            pageBtn.parentElement?.insertBefore(btn, pageBtn.nextSibling);
+        } else {
+            container.appendChild(btn);
+        }
+    }
+    ctmLog('addExportButtons: IMPORT button added');
 }
 
 function injectHubButton(container: Element): void {

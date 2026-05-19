@@ -28,6 +28,7 @@ import { updateStatus, setButtonLoading } from '@/ui/components';
 import { bootstrap } from '@/ui/bootstrap';
 import { showHubModal } from '@/ui/hub-modal';
 import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
+import { showImportModal } from '@/ui/import-modal';
 
 import { getCurrentPageId, getErrorMessage, getSpaceKey } from '@/utils/helpers';
 import { ctmLog } from '@/utils/logger';
@@ -289,6 +290,15 @@ function getSpaceName(): string {
 }
 
 // ============================================================================
+// Import
+// ============================================================================
+
+function startImport(): void {
+    ctmLog('startImport called');
+    showImportModal();
+}
+
+// ============================================================================
 // Boot
 // ============================================================================
 
@@ -299,6 +309,7 @@ ctmLog(`Confluence To Markdown v${SCRIPT_VERSION} initialized`);
 bootstrap({
     onPageExport: startExport,
     onSpaceExport: startSpaceExport,
+    onImport: startImport,
     onHubLink: startHubLink,
     onHubSettings: showHubSettingsPanel,
 });
