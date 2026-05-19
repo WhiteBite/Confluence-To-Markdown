@@ -3012,3 +3012,15 @@
     opacity: 0.7;
     background: var(--md-primary-light);
 }
+
+
+/* --- Tree indent lines (visual hierarchy) --- */
+#md-export-modal .md-tree ul ul {
+    position: relative;
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--md-border);
+}
+#md-export-modal .md-tree ul ul li:last-child {
+    border-left-color: transparent;
+}

@@ -482,6 +482,11 @@ export async function createObsidianVault(
     }
     ctmLog(`[Export] ZIP generated, size: ${zipBlob.size} bytes`);
 
+    // Warn if ZIP exceeds browser Blob limit
+    if (zipBlob.size > 1.5 * 1024 * 1024 * 1024) {
+        ctmError(`[Export] ZIP is ${(zipBlob.size / (1024 * 1024)).toFixed(0)} MB — may exceed browser limits`);
+    }
+
     onProgress?.('Done!', 1, 1);
 
     return {

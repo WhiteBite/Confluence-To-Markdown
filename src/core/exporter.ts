@@ -309,10 +309,34 @@ function makeAnchor(title: string): string {
 /** Trigger file download */
 export function downloadMarkdown(result: ExportResult): void {
     const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-
     const filename = `${sanitizeFilename(result.title)}.md`;
 
+    // Warn if file is very large (browser Blob limit ~2GB)
+    if (blob.size > 1.5 * 1024 * 1024 * 1024) {
+        const sizeMB = (blob.size / (1024 * 1024)).toFixed(0);
+        alert(`Warning: Export is ${sizeMB} MB. Browser may struggle with files >1.5 GB. Consider exporting fewer pages.`);
+    }
+
+    // Try GM_download first (Tampermonkey)
+    if (typeof GM_download === 'function') {
+        try {
+            const blobUrl = URL.createObjectURL(blob);
+            GM_download({
+                url: blobUrl,
+                name: filename,
+                saveAs: true,
+                onerror() { URL.revokeObjectURL(blobUrl); downloadViaAnchor(blob, filename); },
+                onload() { URL.revokeObjectURL(blobUrl); },
+            });
+            return;
+        } catch { /* fall through */ }
+    }
+
+    downloadViaAnchor(blob, filename);
+}
+
+function downloadViaAnchor(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
