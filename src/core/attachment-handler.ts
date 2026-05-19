@@ -89,9 +89,12 @@ export function isImageAttachment(attachment: AttachmentInfo): boolean {
     return imageTypes.includes(attachment.mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(attachment.filename);
 }
 
+/** Timeout for large attachment downloads (5 minutes) */
+const ATTACHMENT_TIMEOUT_MS = 5 * 60 * 1000;
+
 /** Download attachment as Blob */
 export async function downloadAttachment(url: string): Promise<Blob> {
-    return fetchBlob(url);
+    return fetchBlob(url, { timeoutMs: ATTACHMENT_TIMEOUT_MS });
 }
 
 /** Download diagram with source and preview */

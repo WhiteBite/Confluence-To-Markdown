@@ -43,6 +43,16 @@ export function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+/** Russian pluralization helper */
+export function pluralize(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(n) % 100;
+  const lastDigit = abs % 10;
+  if (abs > 10 && abs < 20) return many;
+  if (lastDigit > 1 && lastDigit < 5) return few;
+  if (lastDigit === 1) return one;
+  return many;
+}
+
 /** Count total nodes in tree */
 export function countNodes(node: PageTreeNode): number {
   let count = 1;
@@ -463,10 +473,6 @@ function renderObsidianSection(obsidianSettings: RenderModalOptions['obsidianSet
           <input type="checkbox" id="setting-callouts" ${obsidianSettings.useObsidianCallouts ? 'checked' : ''}>
           <span>${t('optionCallouts')}</span>
         </label>
-        <label class="md-checkbox-compact">
-          <input type="checkbox" id="setting-all-attachments" ${obsidianSettings.exportAllAttachments ? 'checked' : ''}>
-          <span>${t('optionAllAttachments')}</span>
-        </label>
       </div>
     </div>
   `;
@@ -728,18 +734,29 @@ export function updateSelectionCount(element: HTMLElement): void {
     badge.classList.toggle('has-count', count > 0);
   }
 
+  // Check if search is filtering results
+  const searchInput = element.querySelector('#md-search-input') as HTMLInputElement;
+  const isSearchActive = searchInput?.value?.trim().length > 0;
+  const totalChecked = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked').length;
+
   // Update selection hint in footer
   const hint = element.querySelector('#md-selection-hint');
   if (hint) {
-    if (count === 0) {
+    if (isSearchActive && totalChecked > count) {
+      hint.textContent = `⚠️ ${count} of ${totalChecked} pages visible (search active)`;
+      hint.classList.add('md-hint-warning');
+      hint.classList.remove('md-hint-empty');
+    } else if (count === 0) {
       hint.textContent = t('selectPagesHint') ?? 'Select pages to export';
       hint.classList.add('md-hint-empty');
+      hint.classList.remove('md-hint-warning');
     } else {
       const total = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').length;
       hint.textContent = count === total
         ? `All ${count} pages selected`
         : `${count} pages selected`;
       hint.classList.remove('md-hint-empty');
+      hint.classList.remove('md-hint-warning');
     }
   }
 
@@ -756,6 +773,14 @@ export function updateSelectionCount(element: HTMLElement): void {
   const pagesStat = element.querySelector('#stat-pages');
   if (pagesStat) {
     pagesStat.textContent = String(count);
+    // Update label with proper pluralization for Russian
+    const locale = getLocale();
+    const labelEl = pagesStat.parentElement;
+    if (labelEl && locale === 'ru') {
+      labelEl.innerHTML = `<span id="stat-pages">${count}</span> ${pluralize(count, 'Страница', 'Страницы', 'Страниц')}`;
+    } else if (labelEl && locale === 'en') {
+      labelEl.innerHTML = `<span id="stat-pages">${count}</span> ${count === 1 ? 'Page' : 'Pages'}`;
+    }
   }
 }
 

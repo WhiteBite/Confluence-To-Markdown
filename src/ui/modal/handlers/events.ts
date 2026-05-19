@@ -19,7 +19,8 @@ import {
     getCurrentObsidianSettings,
     setCurrentObsidianSettings,
 } from './settings';
-import { getSelectedIds, updateSelectionCount, filterTree, applyFilter } from './tree';
+import { getSelectedIds, filterTree, applyFilter } from './tree';
+import { updateSelectionCount } from '../view';
 import { shakeElement, isInputFocused, togglePanel, handleToggleTheme } from './interaction';
 
 // ============================================================================
@@ -171,6 +172,11 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             return;
         }
 
+        // Block ALL export actions if any is already processing
+        if (element.querySelector('[data-processing]')) {
+            return;
+        }
+
         // Ignore if THIS button is already processing
         if (btn.hasAttribute('data-processing')) {
             return;
@@ -226,6 +232,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                 selectedIds,
                 settings: currentSettings,
                 obsidianSettings: currentObsidianSettings,
+                signal: abortController.signal,
             };
 
             try {
@@ -402,10 +409,10 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             return;
         }
 
-        // Ctrl+D - download
+        // Ctrl+D - download/backup
         if (e.ctrlKey && e.key === 'd') {
             e.preventDefault();
-            const downloadBtn = element.querySelector('[data-action="download"]') as HTMLButtonElement;
+            const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
             downloadBtn?.click();
             return;
         }
@@ -784,12 +791,8 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         } else if (target.id === 'setting-attachments') {
             currentObsidianSettings.downloadAttachments = target.checked;
             settingsChanged = true;
-        } else if (target.id === 'setting-all-attachments' || target.id === 'setting-attachments-all') {
+        } else if (target.id === 'setting-attachments-all') {
             currentObsidianSettings.exportAllAttachments = target.checked;
-            // Sync the other checkbox with same meaning
-            const otherId = target.id === 'setting-all-attachments' ? 'setting-attachments-all' : 'setting-all-attachments';
-            const otherCb = element.querySelector(`#${otherId}`) as HTMLInputElement;
-            if (otherCb) otherCb.checked = target.checked;
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;

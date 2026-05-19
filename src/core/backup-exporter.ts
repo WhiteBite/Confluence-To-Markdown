@@ -118,7 +118,8 @@ export async function createConfluenceBackup(
         includeAttachments: boolean;
         includeViewHtml: boolean;
     },
-    onProgress?: BackupProgressCallback
+    onProgress?: BackupProgressCallback,
+    signal?: AbortSignal
 ): Promise<BackupExportResult> {
     const baseUrl = getBaseUrl();
     const now = new Date();
@@ -172,6 +173,7 @@ export async function createConfluenceBackup(
         },
         {
             concurrency: MAX_CONCURRENCY,
+            signal,
             onProgress: (completed, total) => onProgress?.('content', completed, total),
         }
     );
@@ -191,6 +193,7 @@ export async function createConfluenceBackup(
             },
             {
                 concurrency: MAX_CONCURRENCY,
+                signal,
                 onProgress: (completed, total) =>
                     onProgress?.('attachments', completed, total),
             }
@@ -232,6 +235,7 @@ export async function createConfluenceBackup(
                 {
                     concurrency: MAX_CONCURRENCY,
                     bailOnError: false,
+                    signal,
                     onProgress: (completed, total) =>
                         onProgress?.('Downloading attachments...', completed, total),
                 }

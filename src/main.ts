@@ -179,6 +179,7 @@ async function dispatchAction(
             controller: safeController,
             rootTree,
             rootTitle,
+            signal: ctx.signal,
         });
 
         // Friendly status + toast feedback

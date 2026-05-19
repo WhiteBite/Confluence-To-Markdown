@@ -3,7 +3,6 @@ import type { PageContentData } from '@/api/types';
 import type { ExportSettings } from '@/storage/types';
 import { MAX_CONCURRENCY, DEBUG } from '@/config';
 import { runWithConcurrency } from '@/utils/queue';
-import { sanitizeHtml } from './converter';
 import { ctmError } from '@/utils/logger';
 
 export type ProgressCallback = (completed: number, total: number, phase: string) => void;
@@ -11,14 +10,10 @@ export type ProgressCallback = (completed: number, total: number, phase: string)
 /** Fetch content for multiple pages with concurrency pool */
 export async function fetchPagesContent(
     pageIds: string[],
-    settings: ExportSettings,
-    onProgress?: ProgressCallback
+    _settings: ExportSettings,
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
 ): Promise<PageContentData[]> {
-    const sanitizeOptions = {
-        includeImages: settings.includeImages,
-        includeComments: settings.includeComments,
-    };
-
     const fetchSingle = async (pageId: string): Promise<PageContentData> => {
         try {
             const page = await fetchPageWithContent(pageId);
@@ -26,7 +21,7 @@ export async function fetchPagesContent(
             return {
                 id: page.id,
                 title: page.title,
-                htmlContent: sanitizeHtml(page.body.view.value, sanitizeOptions, pageId),
+                htmlContent: page.body.view.value,
                 ancestors: page.ancestors || [],
                 version: page.version,
                 error: false,
@@ -46,6 +41,7 @@ export async function fetchPagesContent(
 
     const results = await runWithConcurrency(pageIds, fetchSingle, {
         concurrency: MAX_CONCURRENCY,
+        signal,
         onProgress: (completed, total) => {
             onProgress?.(completed, total, 'content');
         },
