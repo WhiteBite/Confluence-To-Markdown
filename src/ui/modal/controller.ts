@@ -58,7 +58,10 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
 
     const includeImages = (element.querySelector('#setting-images') as HTMLInputElement)?.checked ?? true;
     const includeAttachments = (element.querySelector('#setting-attachments') as HTMLInputElement)?.checked ?? false;
-    const includeAllAttachments = (element.querySelector('#setting-all-attachments') as HTMLInputElement)?.checked ?? false;
+    const includeAllAttachments =
+        (element.querySelector('#setting-all-attachments') as HTMLInputElement)?.checked ||
+        (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ||
+        false;
 
     const estimate = calculateSizeEstimate(selectedIds, {
         includeImages,

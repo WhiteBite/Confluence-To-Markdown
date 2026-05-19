@@ -784,8 +784,12 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         } else if (target.id === 'setting-attachments') {
             currentObsidianSettings.downloadAttachments = target.checked;
             settingsChanged = true;
-        } else if (target.id === 'setting-all-attachments') {
+        } else if (target.id === 'setting-all-attachments' || target.id === 'setting-attachments-all') {
             currentObsidianSettings.exportAllAttachments = target.checked;
+            // Sync the other checkbox with same meaning
+            const otherId = target.id === 'setting-all-attachments' ? 'setting-attachments-all' : 'setting-all-attachments';
+            const otherCb = element.querySelector(`#${otherId}`) as HTMLInputElement;
+            if (otherCb) otherCb.checked = target.checked;
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;
