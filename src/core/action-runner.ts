@@ -87,9 +87,6 @@ export async function runExportAction(
         case 'pdf':
             return finalizePdf(ctx, pagesContent, rootTree, rootTitle);
 
-        case 'backup':
-            return finalizeBackup(controller, ctx, rootTree, rootTitle, signal);
-
         default: {
             // Compile-time exhaustiveness check
             const _never: never = action;

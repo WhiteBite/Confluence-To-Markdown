@@ -11,7 +11,7 @@
  * lossless import into another Confluence instance via REST API.
  */
 
-import { zipSync, strToU8 } from 'fflate';
+import { zip, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
 import { fetchJson } from '@/utils/transport';
 import { runWithConcurrency } from '@/utils/queue';
@@ -294,8 +294,13 @@ export async function createConfluenceBackup(
         zipFiles[file.path] = [file.data, { mtime: now }];
     }
 
-    // Generate ZIP
-    const zipData = zipSync(zipFiles);
+    // Generate ZIP (async — non-blocking)
+    const zipData = await new Promise<Uint8Array>((resolve, reject) => {
+        zip(zipFiles, { level: 6 }, (err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+        });
+    });
     const ab = new ArrayBuffer(zipData.byteLength);
     new Uint8Array(ab).set(zipData);
     const zipBlob = new Blob([ab], { type: 'application/zip' });
@@ -314,16 +319,68 @@ export async function createConfluenceBackup(
 
 /** Download the backup ZIP */
 export function downloadBackupZip(result: BackupExportResult): void {
+    if (result.zipBlob.size === 0) {
+        alert('Export failed: ZIP file is empty.');
+        return;
+    }
+
     const filename = `${sanitizeTitle(result.title)}_backup.cfb.zip`;
-    const url = URL.createObjectURL(result.zipBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    // Try GM_download first (Tampermonkey) — most reliable in sandbox
+    if (typeof GM_download === 'function') {
+        try {
+            const blobUrl = URL.createObjectURL(result.zipBlob);
+            GM_download({
+                url: blobUrl,
+                name: filename,
+                saveAs: true,
+                onerror() {
+                    URL.revokeObjectURL(blobUrl);
+                    downloadWithObjectUrl(result.zipBlob, filename);
+                },
+                onload() {
+                    URL.revokeObjectURL(blobUrl);
+                },
+            });
+            return;
+        } catch {
+            // Fall through to ObjectURL
+        }
+    }
+
+    downloadWithObjectUrl(result.zipBlob, filename);
+}
+
+function downloadWithObjectUrl(blob: Blob, filename: string): void {
+    try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch {
+        downloadWithDataUrl(blob, filename);
+    }
+}
+
+function downloadWithDataUrl(blob: Blob, filename: string): void {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        if (reader.readyState === FileReader.DONE) {
+            const a = document.createElement('a');
+            a.href = reader.result as string;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    };
+    reader.readAsDataURL(blob);
 }
 
 // ============================================================================

@@ -1,4 +1,4 @@
-import { zipSync, strToU8 } from 'fflate';
+import { zip, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
 import { ctmLog, ctmError } from '@/utils/logger';
 import { runWithConcurrency } from '@/utils/queue';
@@ -33,10 +33,7 @@ interface PageFile {
     pageId: string;
 }
 
-interface AttachmentFile {
-    path: string;
-    blob: Blob;
-}
+// AttachmentFile no longer needed — blobs are converted to Uint8Array immediately during download
 
 /** Generate YAML frontmatter for a page */
 function generateFrontmatter(
@@ -270,7 +267,6 @@ export async function createObsidianVault(
     const pageMap = new Map(pages.map((p) => [p.id, p.title]));
 
     const pageFiles: PageFile[] = [];
-    const attachmentFiles: AttachmentFile[] = [];
     let diagramCount = 0;
     let attachmentCount = 0;
 
@@ -418,52 +414,43 @@ export async function createObsidianVault(
             const safeName = sanitizeAttachmentFilename(result.filename);
             let finalPath = `_attachments/${safeName}`;
             if (attachmentNames.has(finalPath)) {
-                // Collision: prefix with pageId
                 const dotIndex = safeName.lastIndexOf('.');
                 const stem = dotIndex > 0 ? safeName.substring(0, dotIndex) : safeName;
                 const ext = dotIndex > 0 ? safeName.substring(dotIndex) : '';
-                // Note: pageId not available in DownloadResult — use counter fallback
                 let n = 2;
                 while (attachmentNames.has(`_attachments/${stem}_${n}${ext}`)) n++;
                 finalPath = `_attachments/${stem}_${n}${ext}`;
             }
             attachmentNames.add(finalPath);
-            attachmentFiles.push({
-                path: finalPath,
-                blob: result.blob,
-            });
+
+            // Convert blob to Uint8Array immediately and release blob reference
+            // This reduces peak memory: blob is GC'd after conversion
+            try {
+                const uint8Array = await blobToUint8Array(result.blob);
+                if (uint8Array.length > 0) {
+                    zipFiles[finalPath] = [uint8Array, { mtime: new Date() }];
+                }
+            } catch (err) {
+                ctmError(`[Export] Failed to convert blob for ${finalPath}:`, err);
+            }
+
             attachmentCount++;
             if (result.type === 'diagram') diagramCount++;
         }
     }
 
-    // Phase 3: Build ZIP using fflate (synchronous, works in Tampermonkey)
-    ctmLog(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentFiles.length} attachments`);
+    // Phase 3: Build ZIP
+    ctmLog(`[Export] Building ZIP with ${pageFiles.length} pages, ${attachmentCount} attachments`);
     onProgress?.('Creating ZIP archive...', 0, 1);
 
     // Add page files (convert string to Uint8Array, attach mtime via tuple form)
     const now = new Date();
     for (const file of pageFiles) {
-        ctmLog(`[Export] Adding page: ${file.path}`);
         zipFiles[file.path] = [strToU8(file.content), { mtime: now }];
     }
 
-    // Add attachment files - convert blob to Uint8Array, attach mtime via tuple form
-    for (const file of attachmentFiles) {
-        ctmLog(`[Export] Adding attachment: ${file.path}, size: ${file.blob.size} bytes, type: ${file.blob.type}`);
-        try {
-            const uint8Array = await blobToUint8Array(file.blob);
-            ctmLog(`[Export] Converted to Uint8Array: ${uint8Array.length} bytes`);
-            if (uint8Array.length === 0) {
-                ctmError(`[Export] WARNING: attachment ${file.path} has 0 bytes after conversion!`);
-            }
-            zipFiles[file.path] = [uint8Array, { mtime: now }];
-        } catch (err) {
-            ctmError(`[Export] Failed to convert blob for ${file.path}:`, err);
-            throw err;
-        }
-    }
-    ctmLog(`[Export] All ${attachmentFiles.length} attachments added to ZIP object`);
+    // Attachments already added to zipFiles during download phase (memory-efficient)
+    ctmLog(`[Export] All files added to ZIP object`);
 
     // Add index file
     const indexContent = generateIndexFile(rootNode, pages, {
@@ -472,19 +459,20 @@ export async function createObsidianVault(
     });
     zipFiles['_Index.md'] = [strToU8(indexContent), { mtime: now }];
 
-    // Generate ZIP blob using fflate (synchronous!)
-    ctmLog('[Export] Starting ZIP generation with fflate...');
+    // Generate ZIP blob using fflate async (non-blocking — doesn't freeze UI)
+    ctmLog('[Export] Starting ZIP generation with fflate (async)...');
     ctmLog(`[Export] Total files in ZIP:`, Object.keys(zipFiles).length);
 
     let zipBlob: Blob;
     try {
-        ctmLog('[Export] Calling zipSync...');
-        // Use default compression (deflate) — STORE (level:0) causes issues with some unzippers
-        const zipData = zipSync(zipFiles);
-        ctmLog(`[Export] zipSync completed! Length: ${zipData.length}`);
-        // Wrap Uint8Array in a fresh ArrayBuffer to satisfy strict `BlobPart`
-        // (Uint8Array<ArrayBufferLike> is not assignable to BlobPart in TS 5.7+
-        // because `ArrayBufferLike` may be `SharedArrayBuffer`).
+        ctmLog('[Export] Calling zip (async)...');
+        const zipData = await new Promise<Uint8Array>((resolve, reject) => {
+            zip(zipFiles, { level: 6 }, (err, data) => {
+                if (err) reject(err);
+                else resolve(data);
+            });
+        });
+        ctmLog(`[Export] zip completed! Length: ${zipData.length}`);
         const ab = new ArrayBuffer(zipData.byteLength);
         new Uint8Array(ab).set(zipData);
         zipBlob = new Blob([ab], { type: 'application/zip' });
