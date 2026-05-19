@@ -4,50 +4,13 @@
  */
 
 import type { PageTreeNode } from '@/api/types';
-import { updateCopyButtonState } from './settings';
+
+// Re-export from view (single source of truth)
+export { updateSelectionCount, getSelectedIds } from '../view';
 
 // ============================================================================
 // Tree Functions
 // ============================================================================
-
-/**
- * Get selected page IDs from modal
- */
-export function getSelectedIds(element: HTMLElement): string[] {
-    const ids: string[] = [];
-    element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked').forEach((cb) => {
-        const li = cb.closest('li');
-        if (cb.dataset.pageId && !li?.classList.contains('hidden')) {
-            ids.push(cb.dataset.pageId);
-        }
-    });
-    return ids;
-}
-
-/**
- * Update selection counter display
- */
-export function updateSelectionCount(element: HTMLElement): void {
-    const checkboxes = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked');
-    let count = 0;
-    checkboxes.forEach((cb) => {
-        if (!cb.closest('li')?.classList.contains('hidden')) count++;
-    });
-
-    const counter = element.querySelector('#md-selection-count');
-    if (counter) {
-        counter.textContent = `${count} selected`;
-    }
-
-    const badge = element.querySelector('#md-download-badge');
-    if (badge) {
-        badge.textContent = String(count);
-        badge.classList.toggle('has-count', count > 0);
-    }
-
-    // Update Copy button state
-    updateCopyButtonState(element);
-}
 
 /**
  * Count total nodes in tree

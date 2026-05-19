@@ -23,12 +23,15 @@ import { createConfluenceBackup, downloadBackupZip } from './backup-exporter';
 
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import type { PageTreeNode } from '@/api/types';
+import { getSpaceKey } from '@/utils/helpers';
 
 export interface ActionRunnerDeps {
     /** Optional modal controller for progress/toast UI. May be undefined for headless flows. */
     controller?: ModalController;
     rootTree: PageTreeNode;
     rootTitle: string;
+    /** Cancellation signal (propagated to fetch/download pipelines) */
+    signal?: AbortSignal;
 }
 
 export interface ActionResult {
@@ -51,7 +54,12 @@ export async function runExportAction(
     ctx: ModalContext,
     deps: ActionRunnerDeps
 ): Promise<ActionResult> {
-    const { controller, rootTree, rootTitle } = deps;
+    const { controller, rootTree, rootTitle, signal } = deps;
+
+    // Backup has its own fetch pipeline — skip fetchPagesContent
+    if (action === 'backup') {
+        return finalizeBackup(controller, ctx, rootTree, rootTitle, signal);
+    }
 
     // ── Phase 1: fetch page contents ─────────────────────────────
     controller?.showProgress?.('content', 0, ctx.selectedIds.length);
@@ -61,7 +69,8 @@ export async function runExportAction(
         ctx.settings,
         (completed, total, phase) => {
             controller?.showProgress?.(phase, completed, total);
-        }
+        },
+        signal
     );
 
     // ── Phase 2: dispatch to action-specific finalizer ───────────
@@ -73,13 +82,13 @@ export async function runExportAction(
             return finalizeDownload(controller, ctx, pagesContent, rootTree, rootTitle);
 
         case 'obsidian':
-            return finalizeObsidian(controller, ctx, pagesContent, rootTree, rootTitle);
+            return finalizeObsidian(controller, ctx, pagesContent, rootTree, rootTitle, signal);
 
         case 'pdf':
             return finalizePdf(ctx, pagesContent, rootTree, rootTitle);
 
         case 'backup':
-            return finalizeBackup(controller, ctx, rootTree, rootTitle);
+            return finalizeBackup(controller, ctx, rootTree, rootTitle, signal);
 
         default: {
             // Compile-time exhaustiveness check
@@ -169,7 +178,8 @@ async function finalizeObsidian(
     ctx: ModalContext,
     pages: PagesContent,
     rootTree: PageTreeNode,
-    rootTitle: string
+    rootTitle: string,
+    signal?: AbortSignal
 ): Promise<ActionResult> {
     controller?.showProgress?.('vault', 0, 0);
 
@@ -180,7 +190,8 @@ async function finalizeObsidian(
         ctx.obsidianSettings,
         (phase, current, total) => {
             controller?.showProgress?.(phase, current, total);
-        }
+        },
+        signal
     );
 
     downloadVaultZip(vaultResult);
@@ -209,13 +220,12 @@ async function finalizeBackup(
     controller: ModalController | undefined,
     ctx: ModalContext,
     rootTree: PageTreeNode,
-    rootTitle: string
+    rootTitle: string,
+    signal?: AbortSignal
 ): Promise<ActionResult> {
     // Backup fetches body.storage directly (not body.view), so it doesn't use
     // the pre-fetched pagesContent. It has its own fetch pipeline.
-    const spaceKey = ctx.obsidianSettings.exportFormat === 'obsidian'
-        ? null // page-level export
-        : null;
+    const spaceKey = getSpaceKey();
 
     const result = await createConfluenceBackup(
         ctx.selectedIds,
@@ -229,7 +239,8 @@ async function finalizeBackup(
         },
         (phase, current, total) => {
             controller?.showProgress?.(phase, current, total);
-        }
+        },
+        signal
     );
 
     downloadBackupZip(result);

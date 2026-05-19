@@ -43,8 +43,12 @@ function getSystemTheme(): 'light' | 'dark' {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+/** Stats generation counter to prevent race conditions */
+let statsGeneration = 0;
+
 /** Update statistics display (uses cached sizes — call fetchPageSizes first) */
 async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promise<void> {
+    const gen = ++statsGeneration;
     const selectedIds = getSelectedIdsFromElement(element);
     const stats = calculateTreeStats(rootNode, new Set(selectedIds));
     const selectedCount = stats.selectedPages ?? 0;
@@ -56,18 +60,22 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
     // Use real sizes from cache (populated by fetchPageSizes on modal open)
     const { calculateSizeEstimate } = await import('@/core/size-estimator');
 
+    // Check if this update is still current
+    if (gen !== statsGeneration) return;
+
     const includeImages = (element.querySelector('#setting-images') as HTMLInputElement)?.checked ?? true;
     const includeAttachments = (element.querySelector('#setting-attachments') as HTMLInputElement)?.checked ?? false;
     const includeAllAttachments =
-        (element.querySelector('#setting-all-attachments') as HTMLInputElement)?.checked ||
-        (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ||
-        false;
+        (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false;
 
     const estimate = calculateSizeEstimate(selectedIds, {
         includeImages,
         includeAttachments,
         includeAllAttachments,
     });
+
+    // Check again after calculation
+    if (gen !== statsGeneration) return;
 
     // Update images count (real from cache)
     const imagesEl = element.querySelector('#stat-images');

@@ -65,7 +65,8 @@ export function saveCurrentSettings(element: HTMLElement): void {
         includeMetadata: (element.querySelector('#setting-metadata') as HTMLInputElement)?.checked ?? true,
         includeComments: (element.querySelector('#setting-comments') as HTMLInputElement)?.checked ?? false,
         includeSourceLinks: (element.querySelector('#setting-links') as HTMLInputElement)?.checked ?? true,
-        exportAllAttachments: (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false,
+        exportAllAttachments:
+            (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false,
     };
     saveSettings(currentSettings);
 

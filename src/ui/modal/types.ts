@@ -32,6 +32,8 @@ export interface ModalContext {
     readonly settings: ExportSettings;
     /** Current Obsidian export settings */
     readonly obsidianSettings: ObsidianExportSettings;
+    /** Cancellation signal (wired to Cancel button) */
+    readonly signal?: AbortSignal;
 }
 
 /** Callbacks interface for modal interactions */

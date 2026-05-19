@@ -235,15 +235,17 @@ function generateIndexFile(
 /** Convert Blob to Uint8Array using FileReader (more compatible than blob.arrayBuffer() in Tampermonkey) */
 function blobToUint8Array(blob: Blob): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('blobToUint8Array timeout (60s)')), 60_000);
         const reader = new FileReader();
         reader.onloadend = () => {
+            clearTimeout(timeout);
             if (reader.readyState === FileReader.DONE && reader.result instanceof ArrayBuffer) {
                 resolve(new Uint8Array(reader.result));
             } else {
                 reject(new Error('FileReader failed to read blob as ArrayBuffer'));
             }
         };
-        reader.onerror = () => reject(new Error('FileReader error: ' + reader.error?.message));
+        reader.onerror = () => { clearTimeout(timeout); reject(new Error('FileReader error: ' + reader.error?.message)); };
         reader.readAsArrayBuffer(blob);
     });
 }
@@ -254,7 +256,8 @@ export async function createObsidianVault(
     rootNode: PageTreeNode,
     rootTitle: string,
     settings: ObsidianExportSettings,
-    onProgress?: ProgressCallback
+    onProgress?: ProgressCallback,
+    signal?: AbortSignal
 ): Promise<ObsidianExportResult> {
     // fflate input format: each entry must be Uint8Array or [Uint8Array, opts] TUPLE.
     // Object form `{ data, mtime }` is interpreted as a nested Zippable folder, NOT a file
@@ -327,6 +330,7 @@ export async function createObsidianVault(
             },
             {
                 concurrency: MAX_CONCURRENCY,
+                signal,
                 onProgress: (completed, total) => onProgress?.('Fetching attachment lists...', completed, total),
             }
         );
@@ -400,6 +404,8 @@ export async function createObsidianVault(
             },
             {
                 concurrency: MAX_CONCURRENCY,
+                bailOnError: false,
+                signal,
                 onProgress: (completed, total) => onProgress?.('Downloading attachments...', completed, total),
             }
         );
@@ -408,7 +414,7 @@ export async function createObsidianVault(
         // and dedupe colliding names by appending pageId
         const attachmentNames = new Set<string>();
         for (const result of downloadResults) {
-            if (!result) continue;
+            if (!result || result instanceof Error) continue;
             const safeName = sanitizeAttachmentFilename(result.filename);
             let finalPath = `_attachments/${safeName}`;
             if (attachmentNames.has(finalPath)) {
