@@ -87,6 +87,29 @@ export interface Translations {
 
     // Selection & hints
     selectPagesHint: string;
+
+    // Format pills
+    formatSingle: string;
+    formatObsidian: string;
+    formatBackup: string;
+    formatBackupDesc: string;
+
+    // Scope toggle
+    scopeCurrentPage: string;
+    scopeEntireSpace: string;
+
+    // Section titles
+    sectionFormat: string;
+    sectionDiagrams: string;
+    sectionContent: string;
+    sectionObsidian: string;
+
+    // Footer
+    pagesSelected: string;
+
+    // Header buttons
+    btnExport: string;
+    btnImport: string;
 }
 
 const en: Translations = {
@@ -170,6 +193,29 @@ const en: Translations = {
 
     // Selection & hints
     selectPagesHint: 'Select pages to export',
+
+    // Format pills
+    formatSingle: '📄 Single MD',
+    formatObsidian: '💎 Obsidian Vault',
+    formatBackup: '💾 Backup',
+    formatBackupDesc: 'Lossless Confluence backup (.cfb.zip)',
+
+    // Scope toggle
+    scopeCurrentPage: '📄 Current Page',
+    scopeEntireSpace: '🗂️ Entire Space',
+
+    // Section titles
+    sectionFormat: 'Format',
+    sectionDiagrams: 'Diagrams',
+    sectionContent: 'Content',
+    sectionObsidian: 'Obsidian',
+
+    // Footer
+    pagesSelected: 'pages selected',
+
+    // Header buttons
+    btnExport: '📤 Export',
+    btnImport: '📥 Import',
 };
 
 const ru: Translations = {
@@ -253,6 +299,29 @@ const ru: Translations = {
 
     // Selection & hints
     selectPagesHint: 'Выберите страницы для экспорта',
+
+    // Format pills
+    formatSingle: '📄 Один MD',
+    formatObsidian: '💎 Obsidian Vault',
+    formatBackup: '💾 Бэкап',
+    formatBackupDesc: 'Полный бэкап Confluence (.cfb.zip)',
+
+    // Scope toggle
+    scopeCurrentPage: '📄 Текущая страница',
+    scopeEntireSpace: '🗂️ Весь спейс',
+
+    // Section titles
+    sectionFormat: 'Формат',
+    sectionDiagrams: 'Диаграммы',
+    sectionContent: 'Контент',
+    sectionObsidian: 'Obsidian',
+
+    // Footer
+    pagesSelected: 'страниц выбрано',
+
+    // Header buttons
+    btnExport: '📤 Экспорт',
+    btnImport: '📥 Импорт',
 };
 
 const translations: Record<Locale, Translations> = { en, ru };

@@ -136,6 +136,10 @@ function buildBody(): string {
 function buildFilePicker(): string {
     return `
         <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="font-size:0.8125rem;color:var(--md-text-subtle);margin:0;line-height:1.4;">
+                Restore pages from a Confluence Backup (<code>.cfb.zip</code>) created by this extension.
+                Pages will be created in the target space with their original hierarchy and attachments.
+            </p>
             <div id="md-import-dropzone" style="
                 border:2px dashed var(--md-border);border-radius:var(--md-radius-lg);
                 padding:2.5rem 1.5rem;text-align:center;cursor:pointer;

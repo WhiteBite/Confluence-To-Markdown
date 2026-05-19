@@ -26,7 +26,6 @@ import {
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import { updateStatus, setButtonLoading } from '@/ui/components';
 import { bootstrap } from '@/ui/bootstrap';
-import { showHubModal } from '@/ui/hub-modal';
 import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
 import { showImportModal } from '@/ui/import-modal';
 
@@ -85,6 +84,35 @@ async function startExport(): Promise<void> {
                     updateStatus('Tree refreshed');
                     return newTree;
                 },
+                onScopeChange: async (scope) => {
+                    if (scope === 'space') {
+                        const spaceKey = getSpaceKey();
+                        if (!spaceKey) return null;
+                        updateStatus('Loading space...');
+                        const spaceTree = await buildSpaceTree(spaceKey, updateStatus);
+                        if (spaceTree && !spaceTree.error) {
+                            const spaceName = getSpaceName();
+                            setCachedTree(spaceKey, spaceName, spaceTree);
+                            currentTree = spaceTree;
+                            currentTitle = spaceName;
+                            updateStatus('Space loaded');
+                            return spaceTree;
+                        }
+                        updateStatus('Error loading space');
+                        return null;
+                    }
+                    // Switch back to page scope
+                    updateStatus('Loading page...');
+                    clearCachedTree(pageId);
+                    const pageTree = await buildPageTree(pageId, updateStatus);
+                    if (pageTree && !pageTree.error) {
+                        setCachedTree(pageId, pageTree.title, pageTree);
+                        currentTree = pageTree;
+                        currentTitle = pageTree.title;
+                    }
+                    updateStatus('Page loaded');
+                    return pageTree;
+                },
                 onClose: () => updateStatus('Closed'),
             },
         });
@@ -118,68 +146,6 @@ async function loadOrBuildPageTree(
     setCachedTree(pageId, rootTree.title, rootTree);
     updateStatus('Tree cached');
     return { rootTree, rootTitle: rootTree.title };
-}
-
-// ============================================================================
-// Space export
-// ============================================================================
-
-async function startSpaceExport(): Promise<void> {
-    const spaceButton = document.getElementById(
-        'md-space-export-trigger'
-    ) as HTMLButtonElement | null;
-    if (!spaceButton || spaceButton.disabled) return;
-
-    const spaceKey = getSpaceKey();
-    if (!spaceKey) {
-        alert('Could not find space key!');
-        return;
-    }
-
-    const spaceName = getSpaceName();
-    setButtonLoading(spaceButton, true, 'Export Space');
-    ctmLog('startSpaceExport called, spaceKey:', spaceKey, 'spaceName:', spaceName);
-
-    try {
-        updateStatus('Loading space...');
-        const rootTree = await buildSpaceTree(spaceKey, updateStatus);
-        if (!rootTree || rootTree.error) {
-            alert('Failed to load space hierarchy.');
-            updateStatus('Error: Could not load space');
-            return;
-        }
-        setCachedTree(spaceKey, spaceName, rootTree);
-
-        const controller = createExportModal({
-            rootNode: rootTree,
-            rootTitle: spaceName,
-            callbacks: {
-                onAction: async (action, ctx) => {
-                    await dispatchAction(action, ctx, controller, rootTree, spaceName, {
-                        contextLabel: 'spaceExport',
-                        contextExtra: { spaceKey, spaceName },
-                        closeOnSuccess: action !== 'copy',
-                    });
-                },
-                onRefresh: async () => {
-                    updateStatus('Refreshing space...');
-                    const newTree = await buildSpaceTree(spaceKey, updateStatus);
-                    if (newTree && !newTree.error) {
-                        setCachedTree(spaceKey, spaceName, newTree);
-                    }
-                    updateStatus('Space refreshed');
-                    return newTree;
-                },
-                onClose: () => updateStatus('Closed'),
-            },
-        });
-    } catch (error) {
-        logError(error, 'startSpaceExport', { spaceKey, spaceName });
-        alert(`Space export failed: ${getErrorMessage(error)}`);
-        updateStatus(`Error: ${getErrorMessage(error)}`);
-    } finally {
-        setButtonLoading(spaceButton, false, 'Export Space');
-    }
 }
 
 // ============================================================================
@@ -241,43 +207,8 @@ async function dispatchAction(
 }
 
 // ============================================================================
-// Hub link
+// Helpers
 // ============================================================================
-
-async function startHubLink(): Promise<void> {
-    const pageId = getCurrentPageId();
-    if (!pageId) {
-        alert('Не удалось определить текущую страницу!');
-        return;
-    }
-
-    const spaceKey = getSpaceKey();
-    const spaceName = getSpaceName();
-
-    let pageTree: PageTreeNode | null;
-    const cached = getCachedTree(pageId);
-    if (cached) {
-        pageTree = cached.tree;
-    } else {
-        try {
-            updateStatus('Загрузка дерева...');
-            pageTree = await buildPageTree(pageId, updateStatus);
-            if (pageTree && !pageTree.error) {
-                setCachedTree(pageId, pageTree.title, pageTree);
-            }
-        } catch {
-            pageTree = null;
-        }
-    }
-
-    showHubModal({
-        pageId,
-        spaceKey: spaceKey ?? '',
-        spaceName,
-        pageTree,
-    });
-    updateStatus('');
-}
 
 function getSpaceName(): string {
     const breadcrumb = document.querySelector('#breadcrumb-section a[data-space-key]');
@@ -308,8 +239,6 @@ ctmLog(`Confluence To Markdown v${SCRIPT_VERSION} initialized`);
 
 bootstrap({
     onPageExport: startExport,
-    onSpaceExport: startSpaceExport,
     onImport: startImport,
-    onHubLink: startHubLink,
     onHubSettings: showHubSettingsPanel,
 });

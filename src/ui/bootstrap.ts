@@ -4,6 +4,11 @@
  *
  * Designed to be the SOLE entry-point UI logic — `main.ts` should call
  * `bootstrap(...)` once and never touch DOM directly.
+ *
+ * Header buttons (3 total):
+ *   [📤 Export]  — opens export modal (page/space toggle inside)
+ *   [📥 Import]  — opens import modal
+ *   [⚙️]         — hub settings
  */
 
 import { createButton, createStatus } from './components';
@@ -15,10 +20,8 @@ import {
 import { ctmLog } from '@/utils/logger';
 import { isHubConfigured } from '@/storage/hub-settings';
 
-const PAGE_BUTTON_ID = 'md-export-trigger';
-const SPACE_BUTTON_ID = 'md-space-export-trigger';
+const EXPORT_BUTTON_ID = 'md-export-trigger';
 const IMPORT_BUTTON_ID = 'md-import-trigger';
-const HUB_BUTTON_ID = 'md-hub-trigger';
 const HUB_SETTINGS_ID = 'md-hub-settings-trigger';
 const STATUS_ID = 'md-export-status';
 
@@ -26,14 +29,10 @@ const RETRY_INTERVAL_MS = 1000;
 const MAX_RETRIES = 5;
 
 export interface BootstrapCallbacks {
-    /** Triggered when "Export to Markdown" is clicked */
+    /** Triggered when "📤 Export" is clicked — opens export modal */
     onPageExport: () => void;
-    /** Triggered when "Export Space" is clicked */
-    onSpaceExport: () => void;
-    /** Triggered when "Import Backup" is clicked */
+    /** Triggered when "📥 Import" is clicked */
     onImport: () => void;
-    /** Triggered when "Привязать к Hub" is clicked. Optional — button hidden if absent. */
-    onHubLink?: () => void;
     /** Triggered when ⚙ Hub settings is clicked */
     onHubSettings: () => void;
 }
@@ -97,7 +96,7 @@ function setupSpaWatcher(): void {
         }
         // Buttons may have been wiped by Confluence DOM updates (filter changes etc).
         if (
-            !document.getElementById(PAGE_BUTTON_ID) &&
+            !document.getElementById(EXPORT_BUTTON_ID) &&
             findActionMenuContainer()
         ) {
             ctmLog('MutationObserver: buttons missing but container found, retrying');
@@ -119,15 +118,12 @@ function triggerHubSyncCheck(): void {
 // ============================================================================
 
 function hasButtonsInjected(): boolean {
-    return !!(
-        document.getElementById(PAGE_BUTTON_ID) ||
-        document.getElementById(SPACE_BUTTON_ID)
-    );
+    return !!document.getElementById(EXPORT_BUTTON_ID);
 }
 
 function addExportButtons(): void {
     if (!activeCallbacks) return;
-    if (document.getElementById(PAGE_BUTTON_ID)) {
+    if (document.getElementById(EXPORT_BUTTON_ID)) {
         ctmLog('addExportButtons: already injected');
         return;
     }
@@ -148,48 +144,28 @@ function addExportButtons(): void {
         container.className?.substring(0, 50)
     );
 
-    if (pageId) injectPageButton(container);
-    if (spaceKey) injectSpaceButton(container);
+    // Only inject if we have a page or space context
+    if (pageId || spaceKey) {
+        injectExportButton(container);
+    }
     injectImportButton(container);
-    if (isHubConfigured() && activeCallbacks.onHubLink) injectHubButton(container);
     injectHubSettingsButton(container);
 }
 
-function injectPageButton(container: Element): void {
+function injectExportButton(container: Element): void {
     if (!activeCallbacks) return;
     const btn = createButton(
-        'Export to Markdown',
+        '📤 Export',
         'aui-button',
         activeCallbacks.onPageExport
     );
-    btn.id = PAGE_BUTTON_ID;
+    btn.id = EXPORT_BUTTON_ID;
     container.appendChild(btn);
 
     if (!document.getElementById(STATUS_ID)) {
         container.appendChild(createStatus());
     }
-    ctmLog('addExportButtons: PAGE export button added');
-}
-
-function injectSpaceButton(container: Element): void {
-    if (!activeCallbacks) return;
-    if (document.getElementById(SPACE_BUTTON_ID)) return;
-
-    const btn = createButton(
-        'Export Space',
-        'aui-button aui-button-secondary',
-        activeCallbacks.onSpaceExport
-    );
-    btn.id = SPACE_BUTTON_ID;
-    btn.style.marginLeft = '8px';
-
-    const pageBtn = document.getElementById(PAGE_BUTTON_ID);
-    if (pageBtn) {
-        pageBtn.parentElement?.insertBefore(btn, pageBtn.nextSibling);
-    } else {
-        container.appendChild(btn);
-    }
-    ctmLog('addExportButtons: SPACE export button added');
+    ctmLog('addExportButtons: EXPORT button added');
 }
 
 function injectImportButton(container: Element): void {
@@ -197,37 +173,20 @@ function injectImportButton(container: Element): void {
     if (document.getElementById(IMPORT_BUTTON_ID)) return;
 
     const btn = createButton(
-        'Import Backup',
+        '📥 Import',
         'aui-button aui-button-secondary',
         activeCallbacks.onImport
     );
     btn.id = IMPORT_BUTTON_ID;
     btn.style.marginLeft = '8px';
 
-    const spaceBtn = document.getElementById(SPACE_BUTTON_ID);
-    if (spaceBtn) {
-        spaceBtn.parentElement?.insertBefore(btn, spaceBtn.nextSibling);
+    const exportBtn = document.getElementById(EXPORT_BUTTON_ID);
+    if (exportBtn) {
+        exportBtn.parentElement?.insertBefore(btn, exportBtn.nextSibling);
     } else {
-        const pageBtn = document.getElementById(PAGE_BUTTON_ID);
-        if (pageBtn) {
-            pageBtn.parentElement?.insertBefore(btn, pageBtn.nextSibling);
-        } else {
-            container.appendChild(btn);
-        }
+        container.appendChild(btn);
     }
     ctmLog('addExportButtons: IMPORT button added');
-}
-
-function injectHubButton(container: Element): void {
-    if (!activeCallbacks?.onHubLink) return;
-    if (document.getElementById(HUB_BUTTON_ID)) return;
-    const btn = createButton(
-        '📡 Привязать к Hub',
-        'aui-button hub-button',
-        activeCallbacks.onHubLink
-    );
-    btn.id = HUB_BUTTON_ID;
-    container.appendChild(btn);
 }
 
 function injectHubSettingsButton(container: Element): void {

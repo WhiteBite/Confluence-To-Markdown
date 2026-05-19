@@ -40,6 +40,8 @@ export interface ModalCallbacks {
     onAction: (action: ModalAction, ctx: ModalContext) => Promise<void>;
     /** Called when user requests tree refresh */
     onRefresh: () => Promise<PageTreeNode>;
+    /** Called when user switches scope (page ↔ space) */
+    onScopeChange?: (scope: 'page' | 'space') => Promise<PageTreeNode | null>;
     /** Called when modal is closed (optional) */
     onClose?: () => void;
 }

@@ -363,9 +363,20 @@
 }
 
 .md-tree ul ul {
-    margin-left: 1rem;
-    padding-left: 0.75rem;
-    border-left: 1px solid var(--md-border);
+    position: relative;
+    margin-left: 0;
+    padding-left: 1.25rem;
+    border-left: none;
+}
+
+.md-tree ul ul::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--md-border);
 }
 
 .md-tree li {
@@ -766,25 +777,51 @@
    ======================================== */
 .md-modal-footer {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 0 1.25rem;
     border-top: 1px solid var(--md-border);
     background: var(--md-bg);
     height: var(--md-footer-height);
     flex-shrink: 0;
+    gap: 0.75rem;
 }
 
 .md-footer-left {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.md-footer-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.md-selection-count {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--md-text-subtle);
 }
 
 .md-footer-right {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.md-footer-btn-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.md-kbd-hint {
+    font-size: 0.625rem;
+    color: var(--md-text-muted);
 }
 
 /* Buttons */
@@ -2781,4 +2818,159 @@
 #md-export-modal .md-checkbox-compact label,
 #md-export-modal .md-card-option {
     transition: background-color 0.15s, border-color 0.15s;
+}
+
+/* ========================================
+   Format Pills (Part 5)
+   ======================================== */
+.md-format-pills {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--md-bg-subtle);
+    padding: 0.25rem;
+    border-radius: var(--md-radius);
+}
+
+.md-pill {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-radius: calc(var(--md-radius) - 2px);
+    background: transparent;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--md-text-subtle);
+    font-family: var(--md-font);
+    white-space: nowrap;
+}
+
+.md-pill.active {
+    background: var(--md-bg);
+    color: var(--md-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.md-pill:hover:not(.active) {
+    color: var(--md-text);
+}
+
+/* ========================================
+   Scope Toggle (Part 6)
+   ======================================== */
+.md-scope-toggle {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--md-bg);
+    border-bottom: 1px solid var(--md-border);
+    flex-shrink: 0;
+}
+
+.md-scope-btn {
+    flex: 1;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--md-border);
+    border-radius: var(--md-radius);
+    background: transparent;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--md-text-subtle);
+    font-family: var(--md-font);
+    text-align: center;
+}
+
+.md-scope-btn.active {
+    background: var(--md-primary-light);
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+
+.md-scope-btn:hover:not(.active) {
+    border-color: var(--md-text-muted);
+    color: var(--md-text);
+}
+
+.md-scope-btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* ========================================
+   Section Cards (Part 2)
+   ======================================== */
+.md-section-card {
+    border: 1px solid var(--md-border);
+    border-radius: var(--md-radius);
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.md-section-card:last-child {
+    margin-bottom: 0;
+}
+
+.md-section-card-title {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--md-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.md-section-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.md-section-card-header .md-section-card-title {
+    margin-bottom: 0;
+}
+
+/* Config panel content wrapper */
+.md-config-content {
+    padding: 0.75rem 1rem;
+}
+
+/* ========================================
+   Tree Size Estimate
+   ======================================== */
+.md-tree-size {
+    font-size: 0.625rem;
+    color: var(--md-text-muted);
+    margin-left: auto;
+    padding-left: 0.5rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ========================================
+   Responsive for new components
+   ======================================== */
+@media (max-width: 768px) {
+    .md-format-pills {
+        flex-direction: column;
+    }
+
+    .md-scope-toggle {
+        flex-direction: column;
+    }
+
+    .md-footer-center {
+        display: none;
+    }
+
+    .md-footer-right {
+        gap: 0.25rem;
+    }
+
+    .md-kbd-hint {
+        display: none;
+    }
 }

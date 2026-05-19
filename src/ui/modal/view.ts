@@ -57,6 +57,16 @@ export function countNodes(node: PageTreeNode): number {
 // Tree Rendering
 // ============================================================================
 
+/** Estimate page size in KB (rough heuristic: ~50KB per page) */
+function estimatePageSize(node: PageTreeNode): string {
+  const totalPages = countNodes(node);
+  const sizeKB = totalPages * 50;
+  if (sizeKB >= 1024) {
+    return `~${(sizeKB / 1024).toFixed(1)} MB`;
+  }
+  return `~${sizeKB} KB`;
+}
+
 /** Build tree HTML recursively */
 export function renderTree(nodes: PageTreeNode[], level = 0): string {
   let html = `<ul${level === 0 ? '' : ''}>`;
@@ -69,6 +79,7 @@ export function renderTree(nodes: PageTreeNode[], level = 0): string {
 
     const iconClass = 'md-tree-icon page';
     const icon = ICONS.page;
+    const sizeEstimate = estimatePageSize(node);
 
     html += `<li data-page-id="${node.id}" data-level="${level}">`;
     html += `<div class="md-tree-item" data-level="${level}">`;
@@ -76,6 +87,7 @@ export function renderTree(nodes: PageTreeNode[], level = 0): string {
     html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
     html += `<span class="${iconClass}">${icon}</span>`;
     html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}</span>`;
+    html += `<span class="md-tree-size">${sizeEstimate}</span>`;
     if (hasChildren) {
       html += `<span class="md-child-count">${childCount}</span>`;
     }
@@ -193,10 +205,16 @@ function renderHeader(rootTitle: string, theme: 'light' | 'dark'): string {
 // Left Column - Source Panel
 // ============================================================================
 
-/** Render source panel (left column) with tree, search, filters */
+/** Render source panel (left column) with scope toggle, tree, search, filters */
 function renderSourcePanel(rootNode: PageTreeNode): string {
   return `
     <div class="md-source-panel">
+      <!-- Scope Toggle (Page / Space) -->
+      <div class="md-scope-toggle">
+        <button class="md-scope-btn active" data-scope="page">${t('scopeCurrentPage')}</button>
+        <button class="md-scope-btn" data-scope="space">${t('scopeEntireSpace')}</button>
+      </div>
+      
       <!-- Search Bar -->
       <div class="md-search-bar">
         <span class="md-search-icon">${ICONS.search}</span>
@@ -260,50 +278,52 @@ function renderStatusBar(): string {
 // Right Column - Config Panel
 // ============================================================================
 
-/** Render config panel (right column) with all settings */
+/** Render config panel (right column) with all settings in card sections */
 function renderConfigPanel(
   settings: RenderModalOptions['settings'],
   obsidianSettings: RenderModalOptions['obsidianSettings']
 ): string {
   return `
     <div class="md-config-panel">
-      ${renderPlatformSelect(obsidianSettings)}
-      ${renderDiagramsSection(obsidianSettings)}
-      ${renderContentSettings(settings, obsidianSettings)}
-    </div>
-  `;
-}
-
-/** Render platform/format selector dropdown */
-function renderPlatformSelect(obsidianSettings: RenderModalOptions['obsidianSettings']): string {
-  const platforms = [
-    { value: 'obsidian', label: t('presetObsidian'), desc: t('presetObsidianDesc') },
-    { value: 'single', label: t('presetSingle'), desc: t('presetSingleDesc') },
-    { value: 'github', label: t('presetGithub'), desc: t('presetGithubDesc') },
-  ];
-
-  const current = obsidianSettings.exportFormat;
-  const currentPlatform = platforms.find(p => p.value === current) || platforms[0];
-
-  return `
-    <div class="md-config-section">
-      <label class="md-config-label">${t('exportPreset')}</label>
-      <div class="md-select-wrapper">
-        <select id="setting-platform" class="md-select" data-setting="platform">
-          ${platforms.map(p => `
-            <option value="${p.value}" ${p.value === current ? 'selected' : ''}>
-              ${p.label}
-            </option>
-          `).join('')}
+      <div class="md-config-content">
+        <!-- Hidden select for settings persistence -->
+        <select id="setting-platform" class="md-select" data-setting="platform" style="display:none;">
+          <option value="obsidian" ${obsidianSettings.exportFormat === 'obsidian' ? 'selected' : ''}>Obsidian</option>
+          <option value="single" ${obsidianSettings.exportFormat === 'single' ? 'selected' : ''}>Single</option>
         </select>
+        ${renderFormatSection(obsidianSettings)}
+        ${renderDiagramsSection(obsidianSettings)}
+        ${renderContentSection(settings, obsidianSettings)}
+        ${renderObsidianSection(obsidianSettings)}
       </div>
-      <p class="md-config-hint" id="platform-hint">${currentPlatform.desc}</p>
+    </div>
+  `;
+}
+
+/** Render format section with pills */
+function renderFormatSection(obsidianSettings: RenderModalOptions['obsidianSettings']): string {
+  const current = obsidianSettings.exportFormat;
+  // Map 'obsidian' to 'obsidian', 'single' to 'single', treat 'backup' as separate
+  return `
+    <div class="md-section-card">
+      <div class="md-section-card-title">${t('sectionFormat')}</div>
+      <div class="md-format-pills">
+        <button class="md-pill ${current === 'single' ? 'active' : ''}" data-format="single">
+          📄 ${t('formatSingle')}
+        </button>
+        <button class="md-pill ${current === 'obsidian' ? 'active' : ''}" data-format="obsidian">
+          💎 ${t('formatObsidian')}
+        </button>
+        <button class="md-pill" data-format="backup">
+          💾 ${t('formatBackup')}
+        </button>
+      </div>
     </div>
   `;
 }
 
 
-/** Render simplified diagrams section */
+/** Render simplified diagrams section in a card */
 function renderDiagramsSection(obsidianSettings: RenderModalOptions['obsidianSettings']): string {
   const exportModes = [
     { value: 'copy-as-is', label: t('diagramCopyAsIs'), icon: '📋', desc: t('diagramCopyAsIsDesc') },
@@ -316,17 +336,15 @@ function renderDiagramsSection(obsidianSettings: RenderModalOptions['obsidianSet
     { value: 'drawio-xml', label: 'Draw.io XML' },
   ];
 
-  // Determine which checkboxes should be disabled based on mode
   const mode = obsidianSettings.diagramExportMode;
-  const sourceDisabled = mode === 'copy-as-is'; // copy-as-is always includes source
-  const previewDisabled = mode === 'copy-as-is'; // copy-as-is has no preview
-  const embedDisabled = mode === 'svg-preview'; // svg-preview is always embedded
+  const sourceDisabled = mode === 'copy-as-is';
+  const previewDisabled = mode === 'copy-as-is';
+  const embedDisabled = mode === 'svg-preview';
 
   return `
-    <div class="md-config-section">
-      <div class="md-section-header">
-        <span class="md-section-icon">🎨</span>
-        <span class="md-section-title">${t('diagramsTitle')}</span>
+    <div class="md-section-card" id="md-diagrams-card">
+      <div class="md-section-card-header">
+        <span class="md-section-card-title">${t('sectionDiagrams')}</span>
         <label class="md-toggle-switch">
           <input type="checkbox" id="setting-diagrams" ${obsidianSettings.exportDiagrams ? 'checked' : ''}>
           <span class="md-toggle-slider"></span>
@@ -334,7 +352,6 @@ function renderDiagramsSection(obsidianSettings: RenderModalOptions['obsidianSet
       </div>
       
       <div class="md-diagrams-options ${obsidianSettings.exportDiagrams ? '' : 'disabled'}" id="md-diagrams-options">
-        <!-- Export Mode Cards -->
         <div class="md-card-select" id="diagram-export-mode">
           ${exportModes.map(m => `
             <button class="md-card-option ${obsidianSettings.diagramExportMode === m.value ? 'active' : ''}" 
@@ -345,7 +362,6 @@ function renderDiagramsSection(obsidianSettings: RenderModalOptions['obsidianSet
           `).join('')}
         </div>
         
-        <!-- Target Format (shown only for convert mode) -->
         <div class="md-inline-option" id="convert-format-options" 
              style="display: ${obsidianSettings.diagramExportMode === 'convert' ? 'flex' : 'none'};">
           <span class="md-option-label">${t('diagramFormat')}:</span>
@@ -359,7 +375,6 @@ function renderDiagramsSection(obsidianSettings: RenderModalOptions['obsidianSet
           </div>
         </div>
         
-        <!-- Diagram Options Grid with conditional disable -->
         <div class="md-options-grid md-options-2col">
           <label class="md-checkbox-compact ${sourceDisabled ? 'disabled' : ''}">
             <input type="checkbox" id="setting-diagram-source" 
@@ -386,18 +401,14 @@ function renderDiagramsSection(obsidianSettings: RenderModalOptions['obsidianSet
 }
 
 
-/** Render content settings as checkbox grid */
-function renderContentSettings(
+/** Render content settings in a card section */
+function renderContentSection(
   settings: RenderModalOptions['settings'],
   obsidianSettings: RenderModalOptions['obsidianSettings']
 ): string {
   return `
-    <div class="md-config-section">
-      <div class="md-section-header">
-        <span class="md-section-icon">${ICONS.settings.replace('<svg', '<svg class="icon"')}</span>
-        <span class="md-section-title">${t('contentTitle')}</span>
-      </div>
-      
+    <div class="md-section-card" id="md-content-card">
+      <div class="md-section-card-title">${t('sectionContent')}</div>
       <div class="md-options-grid md-options-2col">
         <label class="md-checkbox-compact">
           <input type="checkbox" id="setting-images" ${settings.includeImages ? 'checked' : ''}>
@@ -428,28 +439,33 @@ function renderContentSettings(
           <span>${t('optionFrontmatter')}</span>
         </label>
       </div>
-      
-      <!-- Obsidian-specific options -->
-      <div class="md-obsidian-options" id="md-obsidian-options" 
-           style="display: ${obsidianSettings.exportFormat === 'obsidian' ? 'block' : 'none'};">
-        <div class="md-options-grid md-options-2col">
-          <label class="md-checkbox-compact">
-            <input type="checkbox" id="setting-hierarchical" ${obsidianSettings.folderStructure === 'hierarchical' ? 'checked' : ''}>
-            <span>${t('optionHierarchical')}</span>
-          </label>
-          <label class="md-checkbox-compact">
-            <input type="checkbox" id="setting-wikilinks" ${obsidianSettings.linkStyle === 'wikilink' ? 'checked' : ''}>
-            <span>${t('optionWikilinks')}</span>
-          </label>
-          <label class="md-checkbox-compact">
-            <input type="checkbox" id="setting-callouts" ${obsidianSettings.useObsidianCallouts ? 'checked' : ''}>
-            <span>${t('optionCallouts')}</span>
-          </label>
-          <label class="md-checkbox-compact">
-            <input type="checkbox" id="setting-all-attachments" ${obsidianSettings.exportAllAttachments ? 'checked' : ''}>
-            <span>${t('optionAllAttachments')}</span>
-          </label>
-        </div>
+    </div>
+  `;
+}
+
+/** Render Obsidian-specific section (shown only when Obsidian format selected) */
+function renderObsidianSection(obsidianSettings: RenderModalOptions['obsidianSettings']): string {
+  return `
+    <div class="md-section-card md-obsidian-section" id="md-obsidian-options" 
+         style="display: ${obsidianSettings.exportFormat === 'obsidian' ? 'block' : 'none'};">
+      <div class="md-section-card-title">${t('sectionObsidian')}</div>
+      <div class="md-options-grid md-options-2col">
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-hierarchical" ${obsidianSettings.folderStructure === 'hierarchical' ? 'checked' : ''}>
+          <span>${t('optionHierarchical')}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-wikilinks" ${obsidianSettings.linkStyle === 'wikilink' ? 'checked' : ''}>
+          <span>${t('optionWikilinks')}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-callouts" ${obsidianSettings.useObsidianCallouts ? 'checked' : ''}>
+          <span>${t('optionCallouts')}</span>
+        </label>
+        <label class="md-checkbox-compact">
+          <input type="checkbox" id="setting-all-attachments" ${obsidianSettings.exportAllAttachments ? 'checked' : ''}>
+          <span>${t('optionAllAttachments')}</span>
+        </label>
       </div>
     </div>
   `;
@@ -489,7 +505,7 @@ function renderToast(): string {
   `;
 }
 
-/** Render simplified footer */
+/** Render new footer layout */
 function renderFooter(): string {
   return `
     <div class="md-modal-footer">
@@ -498,29 +514,31 @@ function renderFooter(): string {
           ${ICONS.reset.replace('<svg', '<svg class="icon"')}
           ${t('resetDefaults')}
         </button>
-        <span class="md-selection-hint" id="md-selection-hint"></span>
+      </div>
+      <div class="md-footer-center">
+        <span class="md-selection-count" id="md-selection-hint"></span>
       </div>
       <div class="md-footer-right">
-        <span class="md-kbd-hints">
-          <kbd>Ctrl+C</kbd> ${t('copy')}
-          <kbd>Ctrl+D</kbd> ${t('download')}
-          <kbd>Esc</kbd> ${t('close')}
-        </span>
-        <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="${t('copy')} (Ctrl+C)">
-          ${ICONS.copy}
-          <span>${t('copy')}</span>
-        </button>
-        <button class="md-btn md-btn-secondary" data-action="backup" id="md-backup-btn" title="Confluence Backup (.cfb.zip)">
-          <span>💾 Backup</span>
-        </button>
-        <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="${t('pdf')}">
-          <span>${t('pdf')}</span>
-        </button>
-        <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="${t('download')} (Ctrl+D)">
-          ${ICONS.download}
-          <span>${t('download')}</span>
-          <span class="md-btn-badge" id="md-download-badge">0</span>
-        </button>
+        <div class="md-footer-btn-group">
+          <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="${t('copy')} (Ctrl+C)">
+            ${ICONS.copy}
+            <span>${t('copy')}</span>
+          </button>
+          <span class="md-kbd-hint">Ctrl+C</span>
+        </div>
+        <div class="md-footer-btn-group">
+          <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="${t('pdf')}">
+            <span>${t('pdf')}</span>
+          </button>
+        </div>
+        <div class="md-footer-btn-group">
+          <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="${t('download')} (Ctrl+D)">
+            ${ICONS.download}
+            <span>⬇ ${t('download')}</span>
+            <span class="md-btn-badge" id="md-download-badge">0</span>
+          </button>
+          <span class="md-kbd-hint">Ctrl+D</span>
+        </div>
       </div>
     </div>
   `;
@@ -578,7 +596,7 @@ export function updateModalUI(element: HTMLElement, state: ModalState): void {
     if (isProcessing) {
       downloadBtn.innerHTML = '<span>Processing...</span>';
     } else {
-      downloadBtn.innerHTML = `${ICONS.download}<span>Download</span><span class="md-btn-badge" id="md-download-badge">0</span>`;
+      downloadBtn.innerHTML = `${ICONS.download}<span>⬇ ${t('download')}</span><span class="md-btn-badge" id="md-download-badge">0</span>`;
     }
   }
 

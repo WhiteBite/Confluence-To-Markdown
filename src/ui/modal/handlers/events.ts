@@ -61,6 +61,101 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
     const cleanups: (() => void)[] = [];
 
     // -------------------------------------------------------------------------
+    // Format Pills & Scope Toggle Handlers
+    // -------------------------------------------------------------------------
+    const handleFormatPillClick = (e: Event) => {
+        const target = e.target as HTMLElement;
+        const pill = target.closest('.md-pill[data-format]') as HTMLElement;
+        if (!pill) return;
+
+        const format = pill.dataset.format as 'single' | 'obsidian' | 'backup';
+        const currentObsidianSettings = getCurrentObsidianSettings();
+
+        // Update pill active states
+        element.querySelectorAll('.md-pill[data-format]').forEach(btn => {
+            btn.classList.toggle('active', btn === pill);
+        });
+
+        if (format === 'backup') {
+            // Backup mode: hide most config, show minimal
+            currentObsidianSettings.exportFormat = 'single'; // internally use single for storage
+            const contentCard = element.querySelector('#md-content-card') as HTMLElement;
+            const diagramsCard = element.querySelector('#md-diagrams-card') as HTMLElement;
+            const obsidianSection = element.querySelector('#md-obsidian-options') as HTMLElement;
+            if (contentCard) contentCard.style.display = 'none';
+            if (diagramsCard) diagramsCard.style.display = 'none';
+            if (obsidianSection) obsidianSection.style.display = 'none';
+
+            // Update download button to indicate backup
+            const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
+            if (downloadBtn) {
+                downloadBtn.setAttribute('data-action', 'backup');
+            }
+        } else {
+            // Normal mode: show all config
+            currentObsidianSettings.exportFormat = format;
+            const contentCard = element.querySelector('#md-content-card') as HTMLElement;
+            const diagramsCard = element.querySelector('#md-diagrams-card') as HTMLElement;
+            const obsidianSection = element.querySelector('#md-obsidian-options') as HTMLElement;
+            if (contentCard) contentCard.style.display = '';
+            if (diagramsCard) diagramsCard.style.display = '';
+            if (obsidianSection) obsidianSection.style.display = format === 'obsidian' ? 'block' : 'none';
+
+            // Restore download button action
+            const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
+            if (downloadBtn) {
+                downloadBtn.setAttribute('data-action', 'download');
+            }
+        }
+
+        // Update hidden select for compatibility
+        const platformSelect = element.querySelector('#setting-platform') as HTMLSelectElement;
+        if (platformSelect) {
+            platformSelect.value = currentObsidianSettings.exportFormat;
+        }
+
+        updateCopyButtonState(element);
+        saveObsidianSettings(currentObsidianSettings);
+    };
+
+    element.addEventListener('click', handleFormatPillClick);
+    cleanups.push(() => element.removeEventListener('click', handleFormatPillClick));
+
+    // Scope toggle (Page / Space)
+    const handleScopeToggle = async (e: Event) => {
+        const target = e.target as HTMLElement;
+        const scopeBtn = target.closest('.md-scope-btn[data-scope]') as HTMLElement;
+        if (!scopeBtn) return;
+        if (scopeBtn.classList.contains('active')) return;
+
+        const scope = scopeBtn.dataset.scope as 'page' | 'space';
+
+        // Update active state
+        element.querySelectorAll('.md-scope-btn').forEach(btn => {
+            btn.classList.toggle('active', btn === scopeBtn);
+        });
+
+        // Call scope change callback
+        if (callbacks.onScopeChange) {
+            scopeBtn.classList.add('loading');
+            try {
+                const newTree = await callbacks.onScopeChange(scope);
+                if (newTree) {
+                    setRootNode(newTree);
+                    updateTree(newTree);
+                    updateSelectionCount(element);
+                    updateStats();
+                }
+            } finally {
+                scopeBtn.classList.remove('loading');
+            }
+        }
+    };
+
+    element.addEventListener('click', handleScopeToggle);
+    cleanups.push(() => element.removeEventListener('click', handleScopeToggle));
+
+    // -------------------------------------------------------------------------
     // Action Button Handler
     // -------------------------------------------------------------------------
     const handleActionClick = async (e: Event) => {
