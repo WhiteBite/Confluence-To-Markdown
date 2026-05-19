@@ -1,6 +1,7 @@
 import { HubClient } from '@/api/hub-client';
 import { getHubSettings, saveHubSettings } from '@/storage/hub-settings';
 import type { HubSettings, LinkedSpace } from '@/storage/types';
+import { escapeHtml } from './modal/view';
 
 let settingsPanelElement: HTMLElement | null = null;
 
@@ -69,15 +70,15 @@ export function showHubSettingsPanel(): void {
                     <div class="md-settings-title">Подключение</div>
                     <div class="md-hub-field">
                         <label class="md-config-label">Hub URL</label>
-                        <input type="url" id="md-hub-url" class="md-hub-input" value="${settings.url}" placeholder="https://your-midas.ai">
+                        <input type="url" id="md-hub-url" class="md-hub-input" value="${escapeHtml(settings.url)}" placeholder="https://your-midas.ai">
                     </div>
                     <div class="md-hub-field">
                         <label class="md-config-label">API Token</label>
-                        <input type="password" id="md-hub-token" class="md-hub-input" value="${settings.apiToken}" placeholder="hub_xxxxxxxx">
+                        <input type="password" id="md-hub-token" class="md-hub-input" value="${escapeHtml(settings.apiToken)}" placeholder="hub_xxxxxxxx">
                     </div>
                     <div class="md-hub-field">
                         <label class="md-config-label">Source Alias</label>
-                        <input type="text" id="md-hub-alias" class="md-hub-input" value="${settings.alias}" placeholder="acme-wiki">
+                        <input type="text" id="md-hub-alias" class="md-hub-input" value="${escapeHtml(settings.alias)}" placeholder="acme-wiki">
                     </div>
                     <div class="md-hub-test-row">
                         <button class="md-btn md-btn-secondary md-hub-test-btn">Проверить связь</button>

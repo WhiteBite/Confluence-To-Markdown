@@ -3,6 +3,7 @@ import { fetchPageForHub, fetchSpaceCatalog } from '@/api/confluence';
 import { getHubSettings, isHubConfigured } from '@/storage/hub-settings';
 import type { HubContentPage, PageTreeNode } from '@/api/types';
 import { showHubSettingsPanel } from './hub-settings-panel';
+import { escapeHtml } from './modal/view';
 
 type HubLinkMode = 'page' | 'space' | 'tree';
 
@@ -141,7 +142,7 @@ function renderTreeCheckboxes(nodes: PageTreeNode[]): string {
         html += `<div class="md-tree-item">`;
         html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}">`;
         html += `<span class="md-tree-icon page"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></span>`;
-        html += `<span class="md-tree-label">${node.title}</span>`;
+        html += `<span class="md-tree-label">${escapeHtml(node.title)}</span>`;
         if (node.children.length > 0) {
             html += `<span class="md-child-count">${node.children.length}</span>`;
         }
@@ -216,7 +217,7 @@ export function showHubModal(options: HubModalOptions): void {
                         </label>
                         <label class="md-radio-label">
                             <input type="radio" name="hub-mode" value="space" class="md-hub-radio">
-                            Весь спейс "${spaceName}"
+                            Весь спейс "${escapeHtml(spaceName)}"
                         </label>
                         ${treeSectionHtml}
                     </div>
