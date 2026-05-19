@@ -3005,3 +3005,10 @@
 .md-cancel-btn:hover {
     background: var(--md-danger-light);
 }
+
+
+/* --- Indeterminate checkbox (partial selection) --- */
+#md-export-modal .md-tree-checkbox:indeterminate {
+    opacity: 0.7;
+    background: var(--md-primary-light);
+}

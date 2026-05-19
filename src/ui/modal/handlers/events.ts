@@ -507,37 +507,55 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         const isChecked = target.checked;
         const li = target.closest('li');
 
-        // Shift+click = cascade to children
-        if ((e as any).shiftKey && isChecked) {
-            li?.querySelectorAll<HTMLInputElement>(':scope > ul .md-tree-checkbox').forEach((cb) => {
-                cb.checked = true;
+        // Rule 1 & 2: Check/uncheck parent → cascade to ALL children (always)
+        if (li) {
+            li.querySelectorAll<HTMLInputElement>(':scope > ul .md-tree-checkbox').forEach((cb) => {
+                cb.checked = isChecked;
+                cb.indeterminate = false;
             });
         }
 
-        // If unchecking, also uncheck children (to avoid orphan selections)
-        if (!isChecked) {
-            li?.querySelectorAll<HTMLInputElement>(':scope > ul .md-tree-checkbox').forEach((cb) => {
-                cb.checked = false;
-            });
-        }
+        // Rule 3, 4, 5: Update parent state based on siblings
+        updateParentCheckboxState(target);
 
         updateSelectionCount(element);
         updateStats();
     };
 
+    /** Walk up the tree and set parent checkbox to checked/unchecked/indeterminate */
+    function updateParentCheckboxState(checkbox: HTMLInputElement): void {
+        const parentLi = checkbox.closest('li')?.parentElement?.closest('li');
+        if (!parentLi) return;
+
+        const parentCheckbox = parentLi.querySelector<HTMLInputElement>(':scope > .md-tree-item .md-tree-checkbox');
+        if (!parentCheckbox) return;
+
+        const siblingCheckboxes = parentLi.querySelectorAll<HTMLInputElement>(':scope > ul > li > .md-tree-item .md-tree-checkbox');
+        let allChecked = true;
+        let noneChecked = true;
+
+        siblingCheckboxes.forEach(cb => {
+            if (cb.checked || cb.indeterminate) noneChecked = false;
+            if (!cb.checked || cb.indeterminate) allChecked = false;
+        });
+
+        if (allChecked) {
+            parentCheckbox.checked = true;
+            parentCheckbox.indeterminate = false;
+        } else if (noneChecked) {
+            parentCheckbox.checked = false;
+            parentCheckbox.indeterminate = false;
+        } else {
+            parentCheckbox.checked = false;
+            parentCheckbox.indeterminate = true;
+        }
+
+        // Recurse up
+        updateParentCheckboxState(parentCheckbox);
+    }
+
     element.addEventListener('change', handleCheckboxChange);
     cleanups.push(() => element.removeEventListener('change', handleCheckboxChange));
-
-    // Handle Shift+click on checkbox for cascade selection
-    const handleShiftClick = (e: Event) => {
-        const target = e.target as HTMLElement;
-        if (target.classList.contains('md-tree-checkbox') && (e as MouseEvent).shiftKey) {
-            (e as any).shiftKey = true;
-        }
-    };
-
-    element.addEventListener('click', handleShiftClick, true);
-    cleanups.push(() => element.removeEventListener('click', handleShiftClick, true));
 
     // -------------------------------------------------------------------------
     // Format Preset & Filter Handlers
