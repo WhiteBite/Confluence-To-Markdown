@@ -187,6 +187,9 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             saveCurrentSettings(element);
             setState('processing');
 
+            // Create AbortController for cancellation
+            const abortController = new AbortController();
+
             // Mark this specific button as processing — others stay clickable
             const originalHtml = btn.innerHTML;
             btn.setAttribute('data-processing', 'true');
@@ -198,10 +201,15 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                 cb.disabled = true;
             });
 
-            // Show progress section
+            // Show progress section + wire cancel button
             const progressSection = element.querySelector('#md-progress-section') as HTMLElement;
             if (progressSection) {
                 progressSection.style.display = 'block';
+            }
+            const cancelBtn = element.querySelector('#md-cancel-export') as HTMLButtonElement;
+            const onCancel = (): void => { abortController.abort(); };
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', onCancel);
             }
 
             // Debug: log export format decision
@@ -230,11 +238,20 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                     await new Promise((r) => setTimeout(r, 800));
                 }
             } catch (error) {
-                console.error('[Modal] Action failed:', error);
-                // Briefly show error on the button
-                btn.innerHTML = `<span style="color:var(--md-danger)">❌ ${t('exportError')}</span>`;
-                await new Promise((r) => setTimeout(r, 1500));
+                // Check if cancelled by user
+                if (error instanceof Error && error.name === 'AbortError') {
+                    console.log('[Modal] Export cancelled by user');
+                    btn.innerHTML = `<span style="color:var(--md-text-muted)">Cancelled</span>`;
+                    await new Promise((r) => setTimeout(r, 800));
+                } else {
+                    console.error('[Modal] Action failed:', error);
+                    btn.innerHTML = `<span style="color:var(--md-danger)">❌ ${t('exportError')}</span>`;
+                    await new Promise((r) => setTimeout(r, 1500));
+                }
             } finally {
+                // Cleanup cancel listener
+                if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+
                 // ALWAYS restore UI — even if callback threw or modal was closed
                 btn.removeAttribute('data-processing');
                 btn.disabled = false;

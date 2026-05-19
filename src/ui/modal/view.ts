@@ -270,6 +270,7 @@ function renderStatusBar(): string {
         <span class="md-status-approx">~</span><span id="stat-size">0.0</span> MB
       </span>
     </div>
+    <div class="md-size-warning" id="md-size-warning" style="display:none;"></div>
   `;
 }
 
@@ -480,9 +481,14 @@ function renderObsidianSection(obsidianSettings: RenderModalOptions['obsidianSet
 function renderProgressSection(): string {
   return `
     <div class="md-progress-section" id="md-progress-section" style="display: none;">
-      <div class="md-progress-label">
-        <span id="md-progress-text">${t('progressPreparing')}</span>
-        <span id="md-progress-count"></span>
+      <div class="md-progress-header">
+        <div class="md-progress-label">
+          <span id="md-progress-text">${t('progressPreparing')}</span>
+          <span id="md-progress-count"></span>
+        </div>
+        <button class="md-btn-text md-cancel-btn" id="md-cancel-export" title="Cancel export">
+          ✕ Cancel
+        </button>
       </div>
       <div class="md-progress-bar">
         <div class="md-progress-fill" id="md-progress-fill"></div>
@@ -641,7 +647,7 @@ export function showProgress(
     fill.style.width = `${percent}%`;
     fill.classList.remove('indeterminate');
   } else {
-    count.textContent = '';
+    count.textContent = phase === 'convert' ? '(may take a while for large exports)' : '';
     fill.classList.add('indeterminate');
   }
 

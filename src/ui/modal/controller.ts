@@ -70,13 +70,27 @@ function updateStats(element: HTMLElement, rootNode: PageTreeNode): void {
         diagramsEl.textContent = String(estimatedDiagrams);
     }
 
-    // Estimate size: ~50KB per page + ~200KB per image + ~100KB per diagram
-    // Size is approximate, shown with ~ prefix in HTML
-    const estimatedSizeKB = (selectedCount * 50) + (estimatedImages * 200) + (estimatedDiagrams * 100);
+    // Estimate size: ~50KB per page text + attachments estimate
+    // When attachments are enabled, average attachment is ~500KB (images, PDFs, etc.)
+    // This is still a rough estimate — real size depends on actual attachments
+    const attachmentsEnabled = (element.querySelector('#setting-attachments') as HTMLInputElement)?.checked ||
+        (element.querySelector('#setting-all-attachments') as HTMLInputElement)?.checked;
+    const attachmentMultiplier = attachmentsEnabled ? 500 : 0; // KB per image when downloading
+    const estimatedSizeKB = (selectedCount * 50) + (estimatedImages * attachmentMultiplier) + (estimatedDiagrams * 100);
     const estimatedMB = estimatedSizeKB / 1024;
     const sizeEl = element.querySelector('#stat-size');
     if (sizeEl) {
         sizeEl.textContent = estimatedMB.toFixed(1);
+        // Warn if estimated size is large
+        const warningEl = element.querySelector('#md-size-warning') as HTMLElement;
+        if (warningEl) {
+            if (estimatedMB > 100) {
+                warningEl.style.display = 'block';
+                warningEl.textContent = `⚠️ Large export (~${estimatedMB.toFixed(0)} MB). Consider disabling attachments or selecting fewer pages.`;
+            } else {
+                warningEl.style.display = 'none';
+            }
+        }
     }
 }
 
