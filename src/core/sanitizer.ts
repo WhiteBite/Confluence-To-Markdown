@@ -1,5 +1,5 @@
-import { DEBUG } from '@/config';
 import { ctmLog, ctmWarn } from '@/utils/logger';
+import { DEBUG } from '@/config';
 
 /** Base selectors to always remove */
 const BASE_SELECTORS_TO_REMOVE = [
@@ -123,7 +123,7 @@ export function extractDiagramInfoFromHtml(html: string): DiagramInfo[] {
         htmlEl.setAttribute('data-diagram-index', String(index));
     });
 
-    if (DEBUG && diagrams.length > 0) {
+    if (diagrams.length > 0) {
         ctmLog('Extracted diagram info:', diagrams);
     }
 
@@ -137,7 +137,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
 
-    if (DEBUG) ctmLog(`Sanitize HTML for Page ID: ${pageId || 'N/A'}`);
+    ctmLog(`Sanitize HTML for Page ID: ${pageId || 'N/A'}`);
 
     // Extract only main content, ignore Confluence UI
     const contentSelectors = [
@@ -151,14 +151,14 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
     for (const selector of contentSelectors) {
         contentElement = doc.querySelector(selector);
         if (contentElement) {
-            if (DEBUG) ctmLog(`Found content using selector: ${selector}`);
+            ctmLog(`Found content using selector: ${selector}`);
             break;
         }
     }
 
     // If no content container found, work with body but remove UI elements
     if (!contentElement) {
-        if (DEBUG) ctmWarn('No content container found, using body with cleanup');
+        ctmWarn('No content container found, using body with cleanup');
         contentElement = doc.body;
 
         // Remove Confluence UI elements

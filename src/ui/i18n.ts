@@ -84,6 +84,9 @@ export interface Translations {
     copiedToClipboard: string;
     downloadComplete: string;
     exportError: string;
+
+    // Selection & hints
+    selectPagesHint: string;
 }
 
 const en: Translations = {
@@ -164,6 +167,9 @@ const en: Translations = {
     copiedToClipboard: 'Copied to clipboard!',
     downloadComplete: 'Download complete!',
     exportError: 'Export failed',
+
+    // Selection & hints
+    selectPagesHint: 'Select pages to export',
 };
 
 const ru: Translations = {
@@ -244,6 +250,9 @@ const ru: Translations = {
     copiedToClipboard: 'Скопировано в буфер!',
     downloadComplete: 'Загрузка завершена!',
     exportError: 'Ошибка экспорта',
+
+    // Selection & hints
+    selectPagesHint: 'Выберите страницы для экспорта',
 };
 
 const translations: Record<Locale, Translations> = { en, ru };

@@ -1175,7 +1175,7 @@ function updateLocalizedText(element: HTMLElement): void {
     });
 
     // Content checkboxes
-    const checkboxLabels: Record<string, keyof typeof import('../i18n').Translations.prototype> = {
+    const checkboxLabels: Record<string, keyof import('../i18n').Translations> = {
         'setting-images': 'optionImages',
         'setting-attachments': 'optionAttachments',
         'setting-metadata': 'optionMetadata',

@@ -110,6 +110,7 @@ export interface RenderModalOptions {
     readonly includeMetadata: boolean;
     readonly includeComments: boolean;
     readonly includeSourceLinks: boolean;
+    readonly exportAllAttachments: boolean;
   };
   readonly obsidianSettings: {
     readonly exportFormat: 'single' | 'obsidian';
@@ -125,6 +126,7 @@ export interface RenderModalOptions {
     readonly includeDiagramPreview: boolean;
     readonly diagramPreviewScale: 1 | 2 | 3;
     readonly downloadAttachments: boolean;
+    readonly exportAllAttachments: boolean;
   };
 }
 
@@ -162,7 +164,7 @@ function renderHeader(rootTitle: string, theme: 'light' | 'dark'): string {
   return `
     <div class="md-modal-header">
       <div class="md-header-row">
-        <h3 class="md-header-title">${t('title')}</h3>
+        <h3 class="md-header-title" id="md-modal-title">${t('title')}</h3>
         <div class="md-header-actions">
           <button class="md-btn-lang" data-action="toggle-locale" title="EN / RU">
             ${locale.toUpperCase()}
@@ -480,9 +482,9 @@ function renderProgressSection(): string {
 /** Render toast notification */
 function renderToast(): string {
   return `
-    <div class="md-toast" id="md-toast" style="display: none;">
-      ${ICONS.check}
-      <span>${t('copiedToClipboard')}</span>
+    <div class="md-toast" id="md-toast" role="status" style="display: none;">
+      <span class="md-toast-icon">ℹ</span>
+      <span></span>
     </div>
   `;
 }
@@ -496,16 +498,22 @@ function renderFooter(): string {
           ${ICONS.reset.replace('<svg', '<svg class="icon"')}
           ${t('resetDefaults')}
         </button>
+        <span class="md-selection-hint" id="md-selection-hint"></span>
       </div>
       <div class="md-footer-right">
-        <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="${t('copy')}">
+        <span class="md-kbd-hints">
+          <kbd>Ctrl+C</kbd> ${t('copy')}
+          <kbd>Ctrl+D</kbd> ${t('download')}
+          <kbd>Esc</kbd> ${t('close')}
+        </span>
+        <button class="md-btn md-btn-secondary" data-action="copy" id="md-copy-btn" title="${t('copy')} (Ctrl+C)">
           ${ICONS.copy}
           <span>${t('copy')}</span>
         </button>
         <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="${t('pdf')}">
           <span>${t('pdf')}</span>
         </button>
-        <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="${t('download')}">
+        <button class="md-btn md-btn-primary" data-action="download" id="md-download-btn" title="${t('download')} (Ctrl+D)">
           ${ICONS.download}
           <span>${t('download')}</span>
           <span class="md-btn-badge" id="md-download-badge">0</span>
@@ -642,22 +650,40 @@ export function hideProgress(element: HTMLElement): void {
 
 
 /** Show toast notification */
-export function showToast(element: HTMLElement, message: string): void {
+export function showToast(
+  element: HTMLElement,
+  message: string,
+  variant: 'success' | 'error' | 'info' = 'info'
+): void {
   const toast = element.querySelector('#md-toast') as HTMLElement;
   if (!toast) return;
+
+  const icons: Record<string, string> = {
+    success: '✓',
+    error: '✕',
+    info: 'ℹ',
+  };
 
   const span = toast.querySelector('span');
   if (span) span.textContent = message;
 
-  toast.style.display = 'flex';
-  toast.classList.add('show');
+  // Set icon
+  const iconEl = toast.querySelector('.md-toast-icon');
+  if (iconEl) iconEl.textContent = icons[variant] ?? icons.info;
 
+  // Set variant class
+  toast.className = 'md-toast show';
+  toast.classList.add(`md-toast--${variant}`);
+  toast.setAttribute('role', variant === 'error' ? 'alert' : 'status');
+  toast.style.display = 'flex';
+
+  const duration = variant === 'error' ? 5000 : 3000;
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => {
       toast.style.display = 'none';
     }, 300);
-  }, 2000);
+  }, duration);
 }
 
 /** Update selection count */
@@ -674,6 +700,30 @@ export function updateSelectionCount(element: HTMLElement): void {
     badge.textContent = String(count);
     badge.classList.toggle('has-count', count > 0);
   }
+
+  // Update selection hint in footer
+  const hint = element.querySelector('#md-selection-hint');
+  if (hint) {
+    if (count === 0) {
+      hint.textContent = t('selectPagesHint') ?? 'Select pages to export';
+      hint.classList.add('md-hint-empty');
+    } else {
+      const total = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').length;
+      hint.textContent = count === total
+        ? `All ${count} pages selected`
+        : `${count} pages selected`;
+      hint.classList.remove('md-hint-empty');
+    }
+  }
+
+  // Disable/enable action buttons based on selection
+  const actionBtns = element.querySelectorAll<HTMLButtonElement>(
+    '[data-action="copy"], [data-action="download"], [data-action="pdf"]'
+  );
+  actionBtns.forEach(btn => {
+    btn.disabled = count === 0;
+    btn.title = count === 0 ? (t('selectPagesHint') ?? 'Select pages to export') : btn.getAttribute('data-original-title') ?? '';
+  });
 
   // Update pages stat
   const pagesStat = element.querySelector('#stat-pages');

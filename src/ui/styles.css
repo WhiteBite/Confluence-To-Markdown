@@ -2676,3 +2676,109 @@
     white-space: nowrap;
     z-index: 1;
 }
+
+
+/* ========================================
+   UX Improvements v5
+   Toast variants, keyboard hints, focus, ARIA
+   ======================================== */
+
+/* --- Toast variants --- */
+.md-toast--success { border-left: 3px solid var(--md-success); }
+.md-toast--error { border-left: 3px solid var(--md-danger); background: var(--md-danger-light); }
+.md-toast--info { border-left: 3px solid var(--md-primary); }
+.md-toast-icon {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+.md-toast--success .md-toast-icon { color: var(--md-success); }
+.md-toast--error .md-toast-icon { color: var(--md-danger); }
+.md-toast--info .md-toast-icon { color: var(--md-primary); }
+
+/* --- Keyboard hints --- */
+.md-kbd-hints {
+    display: none;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--md-text-muted);
+    margin-right: 0.75rem;
+}
+@media (min-width: 768px) {
+    .md-kbd-hints { display: flex; }
+}
+.md-kbd-hints kbd {
+    display: inline-block;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.65rem;
+    font-family: inherit;
+    line-height: 1;
+    color: var(--md-text-subtle);
+    background: var(--md-bg-subtle, #f4f5f7);
+    border: 1px solid var(--md-border, #dfe1e6);
+    border-radius: 3px;
+    margin-right: 0.15rem;
+}
+
+/* --- Selection hint --- */
+.md-selection-hint {
+    font-size: 0.75rem;
+    color: var(--md-text-subtle);
+    margin-left: 0.75rem;
+}
+.md-selection-hint.md-hint-empty {
+    color: var(--md-warning);
+    font-style: italic;
+}
+
+/* --- Focus ring (WCAG) --- */
+#md-export-modal button:focus-visible,
+#md-export-modal input:focus-visible,
+#md-export-modal select:focus-visible {
+    outline: 2px solid var(--md-primary);
+    outline-offset: 2px;
+}
+
+/* --- Disabled action buttons --- */
+#md-export-modal .md-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* --- Loading spinner on buttons --- */
+#md-export-modal .md-btn[data-processing] {
+    position: relative;
+    pointer-events: none;
+}
+#md-export-modal .md-btn[data-processing]::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-top: -0.4375rem;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: md-spin 0.6s linear infinite;
+}
+@keyframes md-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Progress bar ARIA --- */
+.md-progress-fill[aria-valuenow] {
+    transition: width 0.3s ease;
+}
+
+/* --- Smooth transitions --- */
+#md-export-modal .md-btn {
+    transition: background-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+#md-export-modal .md-checkbox-compact label,
+#md-export-modal .md-card-option {
+    transition: background-color 0.15s, border-color 0.15s;
+}

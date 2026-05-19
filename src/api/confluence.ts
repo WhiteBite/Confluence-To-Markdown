@@ -1,7 +1,8 @@
 import { PAGE_LIMIT, EXPAND_CONTENT } from '@/config';
+import { fetchJson as transportFetchJson } from '@/utils/transport';
 import { withRetry } from '@/utils/queue';
-import { IS_TAMPERMONKEY } from '@/utils/env';
-import { ctmError, ctmWarn } from '@/utils/logger';
+import { ctmError, ctmLog, ctmWarn } from '@/utils/logger';
+import { ConfluenceApiError } from '@/api/errors';
 import type {
     ConfluencePage,
     ConfluencePageWithContent,
@@ -16,82 +17,18 @@ export function getBaseUrl(): string {
     return `${protocol}//${host}`;
 }
 
-/** Fetch JSON via GM_xmlhttpRequest (Tampermonkey) */
-function gmFetch<T>(url: string): Promise<T> {
-    return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
-            method: 'GET',
-            url,
-            headers: { Accept: 'application/json' },
-            onload(response) {
-                if (response.status >= 200 && response.status < 300) {
-                    try {
-                        resolve(JSON.parse(response.responseText) as T);
-                    } catch (e) {
-                        reject(new Error(`JSON parse error: ${e}`));
-                    }
-                } else if (response.status === 429) {
-                    reject(new Error('429 Rate Limited'));
-                } else {
-                    reject(new Error(`API error ${response.status}: ${response.statusText}`));
-                }
-            },
-            onerror(response) {
-                reject(new Error(`Network error: ${response.statusText || 'Unknown'}`));
-            },
-        });
-    });
-}
-
-/** Fetch JSON via native fetch or chrome.runtime (Extension) */
-async function browserFetch<T>(url: string): Promise<T> {
-    // Try direct fetch first (same-origin)
-    try {
-        const response = await fetch(url, {
-            credentials: 'include',
-            headers: { Accept: 'application/json' },
-        });
-
-        if (response.ok) {
-            return response.json();
-        }
-
-        if (response.status === 429) {
-            throw new Error('429 Rate Limited');
-        }
-
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    } catch (error) {
-        // If direct fetch fails and we're in extension, try via background script
-        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-            const result = await chrome.runtime.sendMessage({
-                type: 'FETCH',
-                url,
-            });
-
-            if (result.success) {
-                return result.data as T;
-            }
-
-            if (result.status === 429) {
-                throw new Error('429 Rate Limited');
-            }
-
-            throw new Error(result.error || 'Background fetch failed');
-        }
-
-        throw error;
-    }
-}
-
-/** Universal fetch with retry */
+/**
+ * Universal fetch with retry. Delegates to the unified transport layer and
+ * wraps the call in `withRetry` so 429/5xx/transient network failures are
+ * retried with backoff (capped by RATE_LIMIT_MAX_DELAY_MS). Auth/forbidden/
+ * 404 errors are NOT retried — they bubble up immediately as
+ * {@link ConfluenceApiError}.
+ *
+ * Re-exported for legacy callers (e.g. `src/hub/sync-checker.ts`); new code
+ * should import from `@/utils/transport` directly when retry is not needed.
+ */
 export function fetchJson<T>(url: string): Promise<T> {
-    return withRetry(async () => {
-        if (IS_TAMPERMONKEY) {
-            return gmFetch<T>(url);
-        }
-        return browserFetch<T>(url);
-    });
+    return withRetry(() => transportFetchJson<T>(url));
 }
 
 /** Fetch single page info (minimal data) */
@@ -341,7 +278,15 @@ export async function fetchAllPagesInSpace(
             const response = await fetchJson<SpacePagesResponse>(url);
 
             if (response.results?.length) {
-                pages.push(...response.results);
+                // Map raw response into PageWithAncestors (fill required fields with defaults
+                // since `/space/{key}/content` and `/content/search` return slightly different shapes).
+                for (const r of response.results) {
+                    pages.push({
+                        ...r,
+                        type: 'page',
+                        status: 'current',
+                    } as PageWithAncestors);
+                }
                 onProgress?.(pages.length);
             }
 

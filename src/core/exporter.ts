@@ -7,6 +7,7 @@ import { fetchPageAttachments, downloadAttachment } from './attachment-handler';
 import { convertDrawioToMermaid } from './diagrams';
 import { convert } from '@whitebite/diagram-converter';
 import { ctmLog, ctmWarn } from '@/utils/logger';
+import { sanitizeFilename } from './link-resolver';
 
 /**
  * Check if mermaid output is empty (just header, no content)
@@ -260,11 +261,19 @@ export async function buildMarkdownDocument(
                 includeComments: settings.includeComments,
             }, page.id);
 
+            // Map our 'wikilink'|'drawio-xml'|'mermaid' to converter's TargetFormat.
+            const converterTargetFormat: 'mermaid' | 'drawio' | 'excalidraw' | 'original' =
+                diagramFormat === 'wikilink'
+                    ? 'original'
+                    : diagramFormat === 'drawio-xml'
+                      ? 'drawio'
+                      : 'mermaid';
+
             // Convert to markdown with diagram export mode
             // Single file export uses standard markdown (no wikilinks)
             let markdown = convertToMarkdown(sanitizedHtml, {
                 diagramExportMode,
-                diagramTargetFormat: diagramFormat,
+                diagramTargetFormat: converterTargetFormat,
                 embedDiagramsAsCode: true,
                 useWikilinks: false, // Single file export uses standard markdown image syntax
             });
@@ -331,12 +340,4 @@ export async function copyToClipboard(result: ExportResult): Promise<boolean> {
         document.body.removeChild(textarea);
         return success;
     }
-}
-
-/** Sanitize filename */
-function sanitizeFilename(name: string): string {
-    return name
-        .replace(/[<>:"/\\|?*]/g, '_')
-        .replace(/\s+/g, '_')
-        .substring(0, 100);
 }

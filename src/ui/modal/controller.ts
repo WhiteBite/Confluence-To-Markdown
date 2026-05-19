@@ -143,6 +143,9 @@ export function createExportModal(options: CreateModalOptions): ModalController 
     const modal = document.createElement('div');
     modal.id = 'md-export-modal';
     modal.setAttribute('data-theme', currentTheme);
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'md-modal-title');
 
     // Render modal HTML
     const renderOptions: RenderModalOptions = {

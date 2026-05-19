@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>11111111 - Мое Тестовое Пространство - Confluence</title>
+    <!-- Atlassian Confluence 8.5.3 Server mock page -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
+        #header { background: #003366; color: white; padding: 10px; }
+        #header-nav { display: flex; gap: 20px; }
+        #header-nav a { color: white; text-decoration: none; }
+        #main { display: flex; }
+        #sidebar { width: 200px; background: #f0f0f0; padding: 10px; }
+        #content { flex: 1; padding: 20px; background: white; }
+        .page-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .page-metadata { padding: 10px; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 15px; }
+        .aui-toolbar { padding: 10px; background: #f0f0f0; border: 1px solid #ccc; }
+        .aui-toolbar .aui-buttons { display: flex; gap: 5px; }
+        .aui-button { padding: 5px 10px; border: 1px solid #999; background: #fff; cursor: pointer; }
+        .aui-button-primary { background: #0052CC; color: white; border-color: #0052CC; }
+        .tree-node { margin-left: 10px; }
+        .tree-toggle { cursor: pointer; user-select: none; }
+        .breadcrumb { color: #666; margin-bottom: 10px; }
+        .breadcrumb a { color: #0052CC; }
+        #footer { text-align: center; padding: 20px; color: #999; }
+        .warning-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 4px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div id="header-nav">
+            <a href="/">Confluence</a>
+            <a href="/spaces">Пространства</a>
+            <a href="/users">Пользователи</a>
+            <a href="/calendar">Календари</a>
+            <a href="/analytics">Analytics</a>
+            <a href="/create">Создать</a>
+        </div>
+    </div>
+
+    <div style="padding: 10px;">
+        <div class="warning-banner">
+            <strong>⚠️ End of Life:</strong> Ваша система не прошла проверку состояния приложения End of Life.
+        </div>
+        <div class="warning-banner">
+            <strong>⚠️ Security Vulnerabilities:</strong> Ваша система не прошла проверку состояния приложения Security Vulnerabilities.
+        </div>
+    </div>
+
+    <div id="main">
+        <div id="sidebar">
+            <div style="padding: 10px; border-bottom: 1px solid #ddd;">
+                <strong>Мое Тестовое Пространство</strong>
+            </div>
+            <div style="padding: 10px;">
+                <div><a href="#">Страницы</a></div>
+                <div><a href="#">Блог</a></div>
+                <div><a href="#">Календари</a></div>
+                <div><a href="#">Analytics</a></div>
+                <hr style="margin: 10px 0;">
+                <div><strong>БЫСТРЫЕ ССЫЛКИ</strong></div>
+                <div style="font-size: 12px; color: #666; margin: 5px 0;">
+                    Здесь Вы можете добавлять ссылки быстрого доступа к наиболее важным данным для Вашей команды или проекта.
+                </div>
+                <a href="#">Настроить боковую панель.</a>
+                <hr style="margin: 10px 0;">
+                <div><strong>ДЕРЕВО СТРАНИЦ</strong></div>
+                <div class="tree-node">
+                    <span class="tree-toggle">▶</span> 3
+                </div>
+                <div class="tree-node" style="margin-left: 20px;">
+                    <span class="tree-toggle">▼</span> 11111111
+                    <div style="margin-left: 20px;">
+                        <span class="tree-toggle">▶</span> 2
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="breadcrumb">
+                <a href="/display/SPC">Страницы</a> / 
+                <a href="/display/SPC">Мое Тестовое Пространство</a>
+                <span style="float: right;">
+                    <span>Analytics</span>
+                </span>
+            </div>
+
+            <div class="aui-toolbar">
+                <div class="aui-buttons">
+                    <button class="aui-button" id="edit-btn">Редактировать</button>
+                    <button class="aui-button">Просмотр встроенных комментариев (0)</button>
+                    <button class="aui-button">Сохранить на потом</button>
+                    <button class="aui-button">Наблюдаемое</button>
+                    <button class="aui-button">Поделиться</button>
+                    <button class="aui-button aui-button-primary">Действия ▼</button>
+                </div>
+            </div>
+
+            <div class="page-title">11111111</div>
+            <div class="page-metadata">
+                Создал(a) admin менее минуты назад
+            </div>
+
+            <div style="padding: 20px;">
+                <p>111</p>
+                <div style="margin-top: 20px;">
+                    <button style="border: none; background: none; cursor: pointer;">
+                        <span>👍 Нравится</span>
+                    </button>
+                    <span style="color: #999; margin-left: 10px;">Станьте первым кому понравится это</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid #ddd; padding: 20px; margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; background: #0052CC; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">A</div>
+                    <div>
+                        <div><strong>admin</strong></div>
+                        <div style="color: #999; font-size: 12px;">Написать комментарий...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer">
+        <div>На платформе Atlassian Confluence 8.5.3 · Сообщить об ошибке · Новости Atlassian</div>
+        <div style="margin-top: 10px; font-size: 24px;">▲ ATLASSIAN</div>
+    </div>
+
+    <!-- Confluence Server AJS mock -->
+    <script>
+        window.AJS = {
+            Meta: {
+                get: function(key) {
+                    const metaData = {
+                        'page-id': '12345678',
+                        'space-key': 'SPC',
+                        'space-name': 'Мое Тестовое Пространство',
+                        'content-type': 'page',
+                        'page-title': '11111111',
+                    };
+                    return metaData[key] || null;
+                }
+            },
+            params: {
+                pageId: '12345678',
+                spaceKey: 'SPC'
+            }
+        };
+    </script>
+</body>
+</html>

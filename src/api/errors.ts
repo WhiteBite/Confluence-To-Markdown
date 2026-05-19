@@ -121,3 +121,33 @@ export function toConfluenceApiError(
         { cause: error }
     );
 }
+
+/**
+ * Parse a `Retry-After` header value into milliseconds.
+ *
+ * Supports both forms from RFC 7231 §7.1.3:
+ *  - delta-seconds (integer): `"120"` → 120_000
+ *  - HTTP-date: `"Wed, 21 Oct 2015 07:28:00 GMT"` → ms until that point (>=0)
+ *
+ * Returns `undefined` for null/empty/unparseable input.
+ */
+export function parseRetryAfter(value: string | null | undefined): number | undefined {
+    if (value == null) return undefined;
+    const trimmed = String(value).trim();
+    if (trimmed.length === 0) return undefined;
+
+    // delta-seconds — pure integer (RFC allows only integers, no decimals)
+    if (/^\d+$/.test(trimmed)) {
+        const seconds = Number(trimmed);
+        if (Number.isFinite(seconds)) return seconds * 1000;
+    }
+
+    // HTTP-date
+    const dateMs = Date.parse(trimmed);
+    if (!Number.isNaN(dateMs)) {
+        const delta = dateMs - Date.now();
+        return delta > 0 ? delta : 0;
+    }
+
+    return undefined;
+}

@@ -1,6 +1,5 @@
 import { fetchPage, fetchChildren, fetchAllDescendants, fetchSpace, fetchAllPagesInSpace, type PageWithAncestors } from '@/api/confluence';
 import type { PageTreeNode } from '@/api/types';
-import { DEBUG } from '@/config';
 import { runWithConcurrency } from '@/utils/queue';
 import { ctmLog, ctmError, ctmWarn } from '@/utils/logger';
 
@@ -86,9 +85,7 @@ export async function buildPageTree(
 
         onStatus?.(`Found ${descendants.length + 1} pages`);
 
-        if (DEBUG) {
-            ctmLog(`[Tree] CQL found ${descendants.length} descendants`);
-        }
+        ctmLog(`[Tree] CQL found ${descendants.length} descendants`);
 
         return buildTreeFromDescendants(
             { id: rootPage.id, title: rootPage.title },
@@ -145,7 +142,7 @@ async function buildPageTreeRecursive(
                 error: false,
             };
         } catch (error) {
-            if (DEBUG) ctmError(`Error fetching page ${pageId}:`, error);
+            ctmError(`Error fetching page ${pageId}:`, error);
             return {
                 id: pageId,
                 title: `Error loading (${pageId})`,
@@ -214,9 +211,7 @@ export async function buildSpaceTree(
         onStatus?.(`Found ${allPages.length} pages in space`);
         ctmLog(`[Tree] Total pages loaded: ${allPages.length}`);
 
-        if (DEBUG) {
-            ctmLog(`[Tree] Space "${space.name}" has ${allPages.length} pages`);
-        }
+        ctmLog(`[Tree] Space "${space.name}" has ${allPages.length} pages`);
 
         // Find homepage
         const homepage = allPages.find(p => p.id === space.homepageId);

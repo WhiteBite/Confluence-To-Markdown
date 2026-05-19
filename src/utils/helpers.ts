@@ -11,46 +11,45 @@ export function getCurrentPageId(): string | null {
     const params = new URLSearchParams(window.location.search);
     const pageId = params.get('pageId');
     if (pageId) {
-        ctmLog('[CTM] getCurrentPageId from URL param:', pageId);
+        ctmLog('getCurrentPageId from URL param:', pageId);
         return pageId;
     }
 
     // Try URL path /wiki/spaces/SPACE/pages/123/PageTitle (Confluence Cloud)
     const pathPageMatch = window.location.pathname.match(/\/pages\/(\d+)/);
     if (pathPageMatch) {
-        ctmLog('[CTM] getCurrentPageId from URL path:', pathPageMatch[1]);
+        ctmLog('getCurrentPageId from URL path:', pathPageMatch[1]);
         return pathPageMatch[1];
     }
 
     // Fallback to AJS.Meta (works on /display/SPACEKEY/PageTitle URLs — Confluence Server)
-    if (typeof window !== 'undefined' && (window as any).AJS?.Meta) {
-        const metaPageId = (window as any).AJS.Meta.get('page-id');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ajs = typeof window !== 'undefined' ? (window as any).AJS : undefined;
+    if (ajs?.Meta) {
+        const metaPageId = ajs.Meta.get('page-id');
         if (metaPageId) {
-            ctmLog('[CTM] getCurrentPageId from AJS.Meta:', metaPageId);
+            ctmLog('getCurrentPageId from AJS.Meta:', metaPageId);
             return String(metaPageId);
         }
     }
 
     // Try to extract from AJS.params (alternative location in some Server versions)
-    if (typeof window !== 'undefined' && (window as any).AJS?.params) {
-        const paramsPageId = (window as any).AJS.params.pageId;
+    if (ajs?.params) {
+        const paramsPageId = ajs.params.pageId;
         if (paramsPageId) {
-            ctmLog('[CTM] getCurrentPageId from AJS.params:', paramsPageId);
+            ctmLog('getCurrentPageId from AJS.params:', paramsPageId);
             return String(paramsPageId);
         }
     }
 
     // Confluence Server: /display/SPACE/PageTitle — pageId is NOT in URL, need AJS.Meta
-    // If we have /display/ path but no AJS, pageId cannot be determined from URL alone
     const isDisplayPath = window.location.pathname.includes('/display/');
     if (isDisplayPath) {
-        ctmLog('[CTM] getCurrentPageId: Server /display/ path detected but AJS.Meta not available. pageId requires AJS. URL:', window.location.href);
-        ctmLog('[CTM] getCurrentPageId: AJS available?', !!(window as any).AJS, 'AJS.Meta?', !!(window as any).AJS?.Meta);
-        // Return null — page export won't work, but space export can still work with spaceKey
+        ctmLog('getCurrentPageId: Server /display/ path but AJS.Meta missing. URL:', window.location.href);
         return null;
     }
 
-    ctmLog('[CTM] getCurrentPageId: NOT FOUND — URL:', window.location.href);
+    ctmLog('getCurrentPageId: NOT FOUND — URL:', window.location.href);
     return null;
 }
 
@@ -83,41 +82,43 @@ export function getSpaceKey(): string | null {
     const params = new URLSearchParams(window.location.search);
     const spaceKey = params.get('spaceKey');
     if (spaceKey) {
-        ctmLog('[CTM] getSpaceKey from URL param:', spaceKey);
+        ctmLog('getSpaceKey from URL param:', spaceKey);
         return spaceKey;
     }
 
     // Try URL path /display/SPACEKEY/...
     const displayMatch = window.location.pathname.match(/\/display\/([^/]+)/);
     if (displayMatch) {
-        ctmLog('[CTM] getSpaceKey from /display/ path:', displayMatch[1]);
+        ctmLog('getSpaceKey from /display/ path:', displayMatch[1]);
         return displayMatch[1];
     }
 
     // Try URL path /wiki/spaces/SPACEKEY/... (Confluence Cloud)
     const spacesMatch = window.location.pathname.match(/\/spaces\/([^/]+)/);
     if (spacesMatch) {
-        ctmLog('[CTM] getSpaceKey from /spaces/ path:', spacesMatch[1]);
+        ctmLog('getSpaceKey from /spaces/ path:', spacesMatch[1]);
         return spacesMatch[1];
     }
 
     // Try URL path /pages/viewpage.action?spaceKey=XXX
     const viewPageMatch = window.location.search.match(/[?&]spaceKey=([^&]+)/);
     if (viewPageMatch) {
-        ctmLog('[CTM] getSpaceKey from viewpage query:', viewPageMatch[1]);
+        ctmLog('getSpaceKey from viewpage query:', viewPageMatch[1]);
         return viewPageMatch[1];
     }
 
     // Fallback to AJS.Meta
-    if (typeof window !== 'undefined' && (window as any).AJS?.Meta) {
-        const metaSpaceKey = (window as any).AJS.Meta.get('space-key');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ajs = typeof window !== 'undefined' ? (window as any).AJS : undefined;
+    if (ajs?.Meta) {
+        const metaSpaceKey = ajs.Meta.get('space-key');
         if (metaSpaceKey) {
-            ctmLog('[CTM] getSpaceKey from AJS.Meta:', metaSpaceKey);
+            ctmLog('getSpaceKey from AJS.Meta:', metaSpaceKey);
             return metaSpaceKey;
         }
     }
 
-    ctmLog('[CTM] getSpaceKey: NOT FOUND — URL:', window.location.href);
+    ctmLog('getSpaceKey: NOT FOUND — URL:', window.location.href);
     return null;
 }
 

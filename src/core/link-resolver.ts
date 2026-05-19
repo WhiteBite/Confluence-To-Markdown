@@ -123,13 +123,65 @@ export function preprocessLinksForWikilinks(
     return doc.body.innerHTML;
 }
 
-/** Sanitize title for use as filename */
+/**
+ * Sanitize title for use as a filename across Windows/macOS/Linux.
+ *
+ * Windows is the strictest target — it rejects:
+ * - characters: < > : " / \ | ? *
+ * - control chars: U+0000..U+001F
+ * - trailing dots or spaces (Windows silently strips them, breaking ZIP extraction)
+ * - reserved names: CON, PRN, AUX, NUL, COM1-9, LPT1-9 (with or without extension)
+ *
+ * Path length is capped at 100 chars per segment so combined paths stay under
+ * Windows MAX_PATH (260) even with deep folder structure.
+ */
 export function sanitizeFilename(title: string): string {
-    return title
-        .replace(/[<>:"/\\|?*]/g, '_')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 200);
+    // 1) Replace forbidden chars and control chars with underscore
+    let result = title
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+        // 2) Collapse whitespace (incl. NBSP) to single space
+        .replace(/[\s\u00A0]+/g, ' ')
+        .trim();
+
+    // 3) Limit length BEFORE handling reserved names so we don't double-trim later
+    if (result.length > 100) {
+        result = result.substring(0, 100).trim();
+    }
+
+    // 4) Strip trailing dots/spaces (Windows can't create such files)
+    result = result.replace(/[. ]+$/, '');
+
+    // 5) Reserved Windows names (case-insensitive, with or without extension)
+    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.[^.]*)?$/i.test(result)) {
+        result = `_${result}`;
+    }
+
+    // 6) Empty fallback
+    if (!result) result = '_';
+
+    return result;
+}
+
+/**
+ * Sanitize a filename while preserving its extension.
+ * Used for attachments where the extension carries semantic meaning (e.g., .png, .pdf).
+ */
+export function sanitizeAttachmentFilename(filename: string): string {
+    const dotIndex = filename.lastIndexOf('.');
+    // Only treat as extension if dot is not first/last char and short enough
+    if (dotIndex > 0 && dotIndex < filename.length - 1 && filename.length - dotIndex <= 16) {
+        const name = filename.substring(0, dotIndex);
+        const ext = filename.substring(dotIndex); // includes the dot
+        const cleanExt = ext.replace(/[<>:"/\\|?*\x00-\x1f]/g, '');
+        const sanitizedName = sanitizeFilename(name);
+        // Keep room for extension in 100-char limit
+        const maxNameLen = Math.max(1, 100 - cleanExt.length);
+        const truncatedName = sanitizedName.length > maxNameLen
+            ? sanitizedName.substring(0, maxNameLen).trim()
+            : sanitizedName;
+        return truncatedName + cleanExt;
+    }
+    return sanitizeFilename(filename);
 }
 
 /** Create wikilink from title */
