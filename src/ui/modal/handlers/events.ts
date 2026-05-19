@@ -177,7 +177,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         }
 
         // Export actions
-        if (action === 'download' || action === 'copy' || action === 'pdf') {
+        if (action === 'download' || action === 'copy' || action === 'pdf' || action === 'backup') {
             const selectedIds = getSelectedIds(element);
             if (selectedIds.length === 0) {
                 shakeElement(element.querySelector('.md-selection-count'));
