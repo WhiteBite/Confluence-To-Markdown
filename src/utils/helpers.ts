@@ -7,7 +7,7 @@ export function delay(ms: number): Promise<void> {
 
 /** Get current page ID from URL or AJS.Meta */
 export function getCurrentPageId(): string | null {
-    // Try URL query param first
+    // Try URL query param first (?pageId=123)
     const params = new URLSearchParams(window.location.search);
     const pageId = params.get('pageId');
     if (pageId) {
@@ -22,9 +22,12 @@ export function getCurrentPageId(): string | null {
         return pathPageMatch[1];
     }
 
-    // Fallback to AJS.Meta (works on /display/SPACEKEY/PageTitle URLs — Confluence Server)
+    // Try AJS.Meta via multiple access paths (Confluence Server)
+    // In Tampermonkey, `window` may be sandboxed — try unsafeWindow first
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ajs = typeof window !== 'undefined' ? (window as any).AJS : undefined;
+    const win = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window) as any;
+    const ajs = win.AJS;
+
     if (ajs?.Meta) {
         const metaPageId = ajs.Meta.get('page-id');
         if (metaPageId) {
@@ -33,19 +36,45 @@ export function getCurrentPageId(): string | null {
         }
     }
 
-    // Try to extract from AJS.params (alternative location in some Server versions)
-    if (ajs?.params) {
-        const paramsPageId = ajs.params.pageId;
-        if (paramsPageId) {
-            ctmLog('getCurrentPageId from AJS.params:', paramsPageId);
-            return String(paramsPageId);
+    // Try AJS.params (alternative location in some Server versions)
+    if (ajs?.params?.pageId) {
+        ctmLog('getCurrentPageId from AJS.params:', ajs.params.pageId);
+        return String(ajs.params.pageId);
+    }
+
+    // Try HTML meta tag <meta name="ajs-page-id" content="12345">
+    const metaTag = document.querySelector('meta[name="ajs-page-id"]');
+    if (metaTag) {
+        const content = metaTag.getAttribute('content');
+        if (content) {
+            ctmLog('getCurrentPageId from meta tag:', content);
+            return content;
         }
     }
 
-    // Confluence Server: /display/SPACE/PageTitle — pageId is NOT in URL, need AJS.Meta
+    // Try #content-body data attribute
+    const contentBody = document.getElementById('content');
+    const bodyPageId = contentBody?.getAttribute('data-content-id');
+    if (bodyPageId) {
+        ctmLog('getCurrentPageId from #content data-content-id:', bodyPageId);
+        return bodyPageId;
+    }
+
+    // Try Confluence.getContentId() global function
+    if (win.Confluence?.getContentId) {
+        try {
+            const cid = win.Confluence.getContentId();
+            if (cid) {
+                ctmLog('getCurrentPageId from Confluence.getContentId():', cid);
+                return String(cid);
+            }
+        } catch { /* ignore */ }
+    }
+
+    // Confluence Server: /display/SPACE/PageTitle — pageId is NOT in URL
     const isDisplayPath = window.location.pathname.includes('/display/');
     if (isDisplayPath) {
-        ctmLog('getCurrentPageId: Server /display/ path but AJS.Meta missing. URL:', window.location.href);
+        ctmLog('getCurrentPageId: Server /display/ path, all methods failed. URL:', window.location.href);
         return null;
     }
 
@@ -109,9 +138,9 @@ export function getSpaceKey(): string | null {
 
     // Fallback to AJS.Meta
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ajs = typeof window !== 'undefined' ? (window as any).AJS : undefined;
-    if (ajs?.Meta) {
-        const metaSpaceKey = ajs.Meta.get('space-key');
+    const win = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window) as any;
+    if (win.AJS?.Meta) {
+        const metaSpaceKey = win.AJS.Meta.get('space-key');
         if (metaSpaceKey) {
             ctmLog('getSpaceKey from AJS.Meta:', metaSpaceKey);
             return metaSpaceKey;
