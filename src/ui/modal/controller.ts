@@ -43,8 +43,8 @@ function getSystemTheme(): 'light' | 'dark' {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-/** Update statistics display */
-function updateStats(element: HTMLElement, rootNode: PageTreeNode): void {
+/** Update statistics display (uses cached sizes — call fetchPageSizes first) */
+async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promise<void> {
     const selectedIds = getSelectedIdsFromElement(element);
     const stats = calculateTreeStats(rootNode, new Set(selectedIds));
     const selectedCount = stats.selectedPages ?? 0;
@@ -53,40 +53,50 @@ function updateStats(element: HTMLElement, rootNode: PageTreeNode): void {
     const pagesEl = element.querySelector('#stat-pages');
     if (pagesEl) pagesEl.textContent = String(selectedCount);
 
-    // Estimate images/diagrams based on average per page
-    // Average Confluence page has ~2 images and ~0.5 diagrams
-    const estimatedImages = Math.round(selectedCount * 2);
-    const estimatedDiagrams = Math.round(selectedCount * 0.5);
+    // Use real sizes from cache (populated by fetchPageSizes on modal open)
+    const { calculateSizeEstimate } = await import('@/core/size-estimator');
 
-    // Update images (exact count, no prefix)
+    const includeImages = (element.querySelector('#setting-images') as HTMLInputElement)?.checked ?? true;
+    const includeAttachments = (element.querySelector('#setting-attachments') as HTMLInputElement)?.checked ?? false;
+    const includeAllAttachments = (element.querySelector('#setting-all-attachments') as HTMLInputElement)?.checked ?? false;
+
+    const estimate = calculateSizeEstimate(selectedIds, {
+        includeImages,
+        includeAttachments,
+        includeAllAttachments,
+    });
+
+    // Update images count (real from cache)
     const imagesEl = element.querySelector('#stat-images');
-    if (imagesEl) {
-        imagesEl.textContent = String(estimatedImages);
-    }
+    if (imagesEl) imagesEl.textContent = String(estimate.imageCount);
 
-    // Update diagrams (exact count, no prefix)
+    // Update diagrams count (real from cache)
     const diagramsEl = element.querySelector('#stat-diagrams');
-    if (diagramsEl) {
-        diagramsEl.textContent = String(estimatedDiagrams);
-    }
+    if (diagramsEl) diagramsEl.textContent = String(estimate.diagramCount);
 
-    // Estimate size: ~50KB per page text + attachments estimate
-    // When attachments are enabled, average attachment is ~500KB (images, PDFs, etc.)
-    // This is still a rough estimate — real size depends on actual attachments
-    const attachmentsEnabled = (element.querySelector('#setting-attachments') as HTMLInputElement)?.checked ||
-        (element.querySelector('#setting-all-attachments') as HTMLInputElement)?.checked;
-    const attachmentMultiplier = attachmentsEnabled ? 500 : 0; // KB per image when downloading
-    const estimatedSizeKB = (selectedCount * 50) + (estimatedImages * attachmentMultiplier) + (estimatedDiagrams * 100);
-    const estimatedMB = estimatedSizeKB / 1024;
+    // Update size (real from cache)
     const sizeEl = element.querySelector('#stat-size');
     if (sizeEl) {
-        sizeEl.textContent = estimatedMB.toFixed(1);
-        // Warn if estimated size is large
+        const totalMB = estimate.totalMB;
+        sizeEl.textContent = totalMB >= 0.1 ? totalMB.toFixed(1) : '< 0.1';
+
+        // Show breakdown tooltip
+        const breakdown = [
+            `Text: ${estimate.textMB.toFixed(1)} MB`,
+            includeImages ? `Images: ${estimate.imagesMB.toFixed(1)} MB` : null,
+            (includeAttachments || includeAllAttachments) ? `Attachments: ${estimate.otherMB.toFixed(1)} MB` : null,
+        ].filter(Boolean).join(' + ');
+        sizeEl.parentElement?.setAttribute('title', breakdown);
+
+        // Warn if large
         const warningEl = element.querySelector('#md-size-warning') as HTMLElement;
         if (warningEl) {
-            if (estimatedMB > 100) {
+            if (totalMB > 100) {
                 warningEl.style.display = 'block';
-                warningEl.textContent = `⚠️ Large export (~${estimatedMB.toFixed(0)} MB). Consider disabling attachments or selecting fewer pages.`;
+                warningEl.textContent = `⚠️ Large export (~${totalMB.toFixed(0)} MB). Consider disabling attachments or selecting fewer pages.`;
+            } else if (totalMB > 50) {
+                warningEl.style.display = 'block';
+                warningEl.textContent = `ℹ️ Export size ~${totalMB.toFixed(0)} MB. This may take a while.`;
             } else {
                 warningEl.style.display = 'none';
             }
@@ -103,6 +113,15 @@ function getSelectedIdsFromElement(element: HTMLElement): string[] {
             ids.push(cb.dataset.pageId);
         }
     });
+    return ids;
+}
+
+/** Get all page IDs from tree (for pre-fetching sizes) */
+function flattenTreeIds(node: PageTreeNode): string[] {
+    const ids: string[] = [node.id];
+    for (const child of node.children) {
+        ids.push(...flattenTreeIds(child));
+    }
     return ids;
 }
 
@@ -294,6 +313,16 @@ export function createExportModal(options: CreateModalOptions): ModalController 
     // Initial UI updates
     updateSelectionCount(modal);
     updateStats(modal, rootNode);
+
+    // Fetch real attachment sizes in background (populates cache for updateStats)
+    const allPageIds = flattenTreeIds(rootNode);
+    void import('@/core/size-estimator').then(({ fetchPageSizes }) => {
+        fetchPageSizes(allPageIds).then(() => {
+            if (modalElement && currentRootNode) {
+                updateStats(modalElement, currentRootNode);
+            }
+        });
+    });
 
     return controller;
 }

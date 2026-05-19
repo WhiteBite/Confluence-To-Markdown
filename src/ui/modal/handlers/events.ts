@@ -799,10 +799,11 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             settingsChanged = true;
         }
 
-        // Auto-save settings to localStorage
+        // Auto-save settings to localStorage + recalculate stats
         if (settingsChanged) {
             saveSettings(currentSettings);
             saveObsidianSettings(currentObsidianSettings);
+            updateStats();
         }
     };
 
