@@ -165,12 +165,23 @@ function buildPagePath(
     }
 
     // If node has children, put the file inside its own folder
+    let fullPath: string;
     if (node.children.length > 0) {
-        return [...pathParts, sanitizeFilename(node.title) + '.md'].join('/');
+        fullPath = [...pathParts, sanitizeFilename(node.title) + '.md'].join('/');
+    } else {
+        fullPath = [...pathParts.slice(0, -1), sanitizeFilename(node.title) + '.md'].join('/').replace(/^\//, '');
     }
 
-    // Otherwise, file goes in parent's folder
-    return [...pathParts.slice(0, -1), sanitizeFilename(node.title) + '.md'].join('/').replace(/^\//, '');
+    // CRITICAL: Limit total path length to 240 chars (Windows MAX_PATH = 260,
+    // minus ~20 chars for extraction directory prefix like "C:\Users\X\Downloads\")
+    if (fullPath.length > 240) {
+        // Truncate middle segments, keep first folder + filename
+        const filename = sanitizeFilename(node.title).substring(0, 80) + '.md';
+        const firstFolder = pathParts[0]?.substring(0, 60) || '';
+        fullPath = firstFolder ? `${firstFolder}/${filename}` : filename;
+    }
+
+    return fullPath;
 }
 
 /** Generate index file (MOC) */
