@@ -15,7 +15,7 @@ import { zip, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
 import { fetchJson } from '@/utils/transport';
 import { runWithConcurrency } from '@/utils/queue';
-import { MAX_CONCURRENCY } from '@/config';
+import { MAX_CONCURRENCY, MAX_DOWNLOAD_CONCURRENCY } from '@/config';
 import { ctmLog, ctmError } from '@/utils/logger';
 import { sanitizeAttachmentFilename } from './link-resolver';
 import {
@@ -233,7 +233,7 @@ export async function createConfluenceBackup(
                     return { pageId: task.pageId, filename: exported.filename, blob: exported.blob };
                 },
                 {
-                    concurrency: MAX_CONCURRENCY,
+                    concurrency: MAX_DOWNLOAD_CONCURRENCY,
                     bailOnError: false,
                     signal,
                     onProgress: (completed, total) =>

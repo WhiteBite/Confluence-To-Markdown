@@ -103,7 +103,7 @@ export async function fetchPageSizes(
                 sizeCache.set(pageId, info);
             },
             {
-                concurrency: 4, // lower than export to not block UI
+                concurrency: 10, // Higher for metadata (lightweight requests)
                 onProgress: (done, total) => onProgress?.(done, total),
                 bailOnError: false,
             }

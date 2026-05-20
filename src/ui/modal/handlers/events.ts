@@ -102,7 +102,8 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             if (diagramsCard) diagramsCard.style.display = '';
             if (obsidianSection) obsidianSection.style.display = format === 'obsidian' ? 'block' : 'none';
 
-            // Disable attachment/frontmatter checkboxes for Single MD (they only work in Obsidian)
+            // Disable attachment/frontmatter/diagrams-toggle checkboxes for Single MD
+            // (they only affect Obsidian Vault export)
             const obsidianOnlyCheckboxes = ['setting-attachments', 'setting-attachments-all', 'setting-frontmatter'];
             for (const id of obsidianOnlyCheckboxes) {
                 const cb = element.querySelector(`#${id}`) as HTMLInputElement;
@@ -111,6 +112,18 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                     cb.disabled = format === 'single';
                     label.classList.toggle('disabled', format === 'single');
                     label.setAttribute('title', format === 'single' ? 'Only available in Obsidian Vault mode' : '');
+                }
+            }
+            // Diagrams toggle: in Single MD, inline conversion still works via diagramExportMode,
+            // but the "export diagrams as files" toggle has no effect
+            const diagramsToggle = element.querySelector('#setting-diagrams') as HTMLInputElement;
+            if (diagramsToggle) {
+                diagramsToggle.disabled = format === 'single';
+                const diagramsCard = element.querySelector('#md-diagrams-card');
+                if (diagramsCard && format === 'single') {
+                    diagramsCard.setAttribute('title', 'Diagram file export only available in Obsidian Vault mode. Inline conversion still works.');
+                } else if (diagramsCard) {
+                    diagramsCard.removeAttribute('title');
                 }
             }
 
@@ -764,6 +777,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         } else if (target.id === 'setting-metadata') {
             currentSettings.includeMetadata = target.checked;
             currentObsidianSettings.includeMetadata = target.checked;
+            currentObsidianSettings.includeConfluenceMetadata = target.checked;
             settingsChanged = true;
         } else if (target.id === 'setting-comments') {
             currentSettings.includeComments = target.checked;

@@ -1,5 +1,8 @@
-/** Max concurrent API requests (avoid 429 rate limiting) */
+/** Max concurrent API requests for metadata (avoid 429 rate limiting) */
 export const MAX_CONCURRENCY = 6;
+
+/** Max concurrent downloads for binary attachments (CDN-like, higher throughput) */
+export const MAX_DOWNLOAD_CONCURRENCY = 12;
 
 /** API pagination limit */
 export const PAGE_LIMIT = 50;

@@ -2,7 +2,7 @@ import { zip, strToU8 } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
 import { ctmLog, ctmError } from '@/utils/logger';
 import { runWithConcurrency } from '@/utils/queue';
-import { MAX_CONCURRENCY } from '@/config';
+import { MAX_DOWNLOAD_CONCURRENCY } from '@/config';
 import type {
     PageContentData,
     PageTreeNode,
@@ -330,13 +330,11 @@ export async function createObsidianVault(
         const attachmentLists = await runWithConcurrency<PageContentData, AttachmentList>(
             pages,
             async (page) => {
-                ctmLog(`[Export] Fetching attachments for page ${page.id}`);
                 const attachments = await fetchPageAttachments(page.id);
-                ctmLog(`[Export] Found ${attachments.length} attachments for page ${page.id}`);
                 return { pageId: page.id, attachments };
             },
             {
-                concurrency: MAX_CONCURRENCY,
+                concurrency: MAX_DOWNLOAD_CONCURRENCY, // Higher concurrency for metadata (lightweight)
                 signal,
                 onProgress: (completed, total) => onProgress?.('Fetching attachment lists...', completed, total),
             }
@@ -388,7 +386,7 @@ export async function createObsidianVault(
         // Step 3: Download all attachments in parallel (with concurrency limit)
         const totalDownloads = downloadTasks.length;
         onProgress?.('Downloading attachments...', 0, totalDownloads);
-        ctmLog(`[Export] Starting parallel download of ${totalDownloads} attachments (concurrency: ${MAX_CONCURRENCY})`);
+        ctmLog(`[Export] Starting parallel download of ${totalDownloads} attachments (concurrency: ${MAX_DOWNLOAD_CONCURRENCY})`);
 
         interface DownloadResult {
             filename: string;
@@ -410,7 +408,7 @@ export async function createObsidianVault(
                 return null;
             },
             {
-                concurrency: MAX_CONCURRENCY,
+                concurrency: MAX_DOWNLOAD_CONCURRENCY,
                 bailOnError: false,
                 signal,
                 onProgress: (completed, total) => onProgress?.('Downloading attachments...', completed, total),
