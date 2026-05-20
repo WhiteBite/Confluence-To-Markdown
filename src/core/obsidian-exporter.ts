@@ -468,15 +468,41 @@ export async function createObsidianVault(
     });
     zipFiles['_Index.md'] = [strToU8(indexContent), { mtime: now }];
 
-    // Generate ZIP blob using fflate async (non-blocking — doesn't freeze UI)
+    // FINAL SAFETY: Ensure ALL paths are ≤240 chars for Windows compatibility
+    const safeZipFiles: typeof zipFiles = {};
+    const usedPaths = new Set<string>();
+    for (const [path, data] of Object.entries(zipFiles)) {
+        let safePath = path;
+        if (safePath.length > 240) {
+            const parts = safePath.split('/');
+            const filename = parts[parts.length - 1].substring(0, 80);
+            const firstDir = parts[0]?.substring(0, 60) || '';
+            safePath = firstDir ? `${firstDir}/${filename}` : filename;
+        }
+        // Dedupe
+        let finalPath = safePath;
+        let n = 2;
+        while (usedPaths.has(finalPath)) {
+            const dot = safePath.lastIndexOf('.');
+            if (dot > 0) {
+                finalPath = safePath.substring(0, dot) + `_${n}` + safePath.substring(dot);
+            } else {
+                finalPath = `${safePath}_${n}`;
+            }
+            n++;
+        }
+        usedPaths.add(finalPath);
+        safeZipFiles[finalPath] = data;
+    }
+
     ctmLog('[Export] Starting ZIP generation with fflate (async)...');
-    ctmLog(`[Export] Total files in ZIP:`, Object.keys(zipFiles).length);
+    ctmLog(`[Export] Total files in ZIP:`, Object.keys(safeZipFiles).length);
 
     let zipBlob: Blob;
     try {
         ctmLog('[Export] Calling zip (async)...');
         const zipData = await new Promise<Uint8Array>((resolve, reject) => {
-            zip(zipFiles, { level: 6 }, (err, data) => {
+            zip(safeZipFiles, { level: 6 }, (err, data) => {
                 if (err) reject(err);
                 else resolve(data);
             });
