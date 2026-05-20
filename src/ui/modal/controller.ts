@@ -68,10 +68,16 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
     const includeAllAttachments =
         (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false;
 
+    // For Single MD format, attachments are NOT downloaded — don't count them in estimate
+    const platformSelect = element.querySelector('#setting-platform') as HTMLSelectElement;
+    const activePill = element.querySelector('.md-pill[data-format].active') as HTMLElement;
+    const currentFormat = activePill?.dataset.format ?? platformSelect?.value ?? 'single';
+    const isSingleFormat = currentFormat === 'single';
+
     const estimate = calculateSizeEstimate(selectedIds, {
-        includeImages,
-        includeAttachments,
-        includeAllAttachments,
+        includeImages: isSingleFormat ? false : includeImages, // Single MD doesn't download images as files
+        includeAttachments: isSingleFormat ? false : includeAttachments,
+        includeAllAttachments: isSingleFormat ? false : includeAllAttachments,
     });
 
     // Check again after calculation

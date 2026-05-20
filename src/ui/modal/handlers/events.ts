@@ -102,6 +102,18 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             if (diagramsCard) diagramsCard.style.display = '';
             if (obsidianSection) obsidianSection.style.display = format === 'obsidian' ? 'block' : 'none';
 
+            // Disable attachment/frontmatter checkboxes for Single MD (they only work in Obsidian)
+            const obsidianOnlyCheckboxes = ['setting-attachments', 'setting-attachments-all', 'setting-frontmatter'];
+            for (const id of obsidianOnlyCheckboxes) {
+                const cb = element.querySelector(`#${id}`) as HTMLInputElement;
+                const label = cb?.closest('.md-checkbox-compact');
+                if (cb && label) {
+                    cb.disabled = format === 'single';
+                    label.classList.toggle('disabled', format === 'single');
+                    label.setAttribute('title', format === 'single' ? 'Only available in Obsidian Vault mode' : '');
+                }
+            }
+
             // Restore download button action
             const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
             if (downloadBtn) {
@@ -793,6 +805,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             settingsChanged = true;
         } else if (target.id === 'setting-attachments-all') {
             currentObsidianSettings.exportAllAttachments = target.checked;
+            currentSettings.exportAllAttachments = target.checked;
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;
