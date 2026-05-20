@@ -45,9 +45,17 @@ export default defineConfig({
             compress: {
                 drop_console: true,
                 drop_debugger: true,
-                sequences: false,
+                sequences: false,       // no comma operators (ESLint no-sequences)
+                conditionals: false,    // no ternary merging (keeps if/else readable)
+                dead_code: true,
+                evaluate: true,
+                unused: true,
             },
             mangle: true,
+            format: {
+                semicolons: true,       // use semicolons (not ASI)
+                braces: true,           // always use braces for blocks
+            },
         },
         rollupOptions: {
             output: {
