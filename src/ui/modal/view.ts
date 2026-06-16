@@ -155,6 +155,7 @@ export interface RenderModalOptions {
     readonly includeDiagramPreview: boolean;
     readonly diagramPreviewScale: 1 | 2 | 3;
     readonly attachmentFilter: string;
+    readonly maxAttachmentSizeMB: number;
   };
 }
 
@@ -505,6 +506,16 @@ function renderContentSection(
                value="${filterValue}"
                placeholder="${t('filterPlaceholder')}">
         <span class="md-attachment-hint">${t('filterHint')}</span>
+      </div>
+      <div class="md-attachment-sizelimit">
+        <label class="md-attachment-label">${t('maxFileSize')}</label>
+        <div class="md-attachment-size-input">
+          <input type="number" id="setting-max-attachment-size" 
+                 value="${obsidianSettings.maxAttachmentSizeMB}" 
+                 min="0" max="500" step="5">
+          <span class="md-attachment-size-unit">MB</span>
+          <span class="md-attachment-size-hint">${obsidianSettings.maxAttachmentSizeMB === 0 ? t('noLimit') : ''}</span>
+        </div>
       </div>
     </div>
   `;

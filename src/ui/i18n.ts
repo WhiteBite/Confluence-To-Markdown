@@ -114,6 +114,8 @@ export interface Translations {
     filterPlaceholder: string;
     filterHint: string;
     filterPopular: string;
+    maxFileSize: string;
+    noLimit: string;
 
     // Footer
     pagesSelected: string;
@@ -231,6 +233,8 @@ const en: Translations = {
     filterPlaceholder: '.pdf, .csv, .json or * for all',
     filterHint: 'Categories or custom extensions (comma-separated)',
     filterPopular: 'Popular:',
+    maxFileSize: 'Max file size:',
+    noLimit: 'no limit',
 
     // Footer
     pagesSelected: 'pages selected',
@@ -348,6 +352,8 @@ const ru: Translations = {
     filterPlaceholder: '.pdf, .csv, .json или * для всех',
     filterHint: 'Категории или свои расширения (через запятую)',
     filterPopular: 'Популярные:',
+    maxFileSize: 'Макс. размер файла:',
+    noLimit: 'без ограничений',
 
     // Footer
     pagesSelected: 'страниц выбрано',

@@ -29,6 +29,10 @@ export interface PageSizeInfo {
     diagramCount: number;
     /** Number of other attachments */
     otherCount: number;
+    /** Size breakdown by file extension (lowercase, no dot) */
+    sizeByExtension: Record<string, number>;
+    /** Count breakdown by file extension */
+    countByExtension: Record<string, number>;
 }
 
 export interface SizeEstimate {
@@ -125,12 +129,15 @@ async function fetchSinglePageSize(pageId: string): Promise<PageSizeInfo> {
     let imageCount = 0;
     let diagramCount = 0;
     let otherCount = 0;
+    const sizeByExtension: Record<string, number> = {};
+    const countByExtension: Record<string, number> = {};
 
     try {
         const response = await fetchJson<AttachmentResponse>(url);
         for (const att of response.results || []) {
             const size = att.extensions?.fileSize ?? 0;
             const mediaType = att.extensions?.mediaType ?? att.metadata?.mediaType ?? '';
+            const ext = (att.title.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
 
             if (DIAGRAM_TYPES.has(mediaType)) {
                 diagramCount++;
@@ -141,6 +148,12 @@ async function fetchSinglePageSize(pageId: string): Promise<PageSizeInfo> {
             } else {
                 otherCount++;
                 otherAttachmentSizeBytes += size;
+            }
+
+            // Track per-extension breakdown for all non-diagram attachments
+            if (ext && !DIAGRAM_TYPES.has(mediaType)) {
+                sizeByExtension[ext] = (sizeByExtension[ext] || 0) + size;
+                countByExtension[ext] = (countByExtension[ext] || 0) + 1;
             }
         }
     } catch (error) {
@@ -158,6 +171,8 @@ async function fetchSinglePageSize(pageId: string): Promise<PageSizeInfo> {
         imageCount,
         diagramCount,
         otherCount,
+        sizeByExtension,
+        countByExtension,
     };
 }
 
@@ -187,6 +202,7 @@ export function calculateSizeEstimate(
 
     const filterSet = parseAttachmentFilter(options.attachmentFilter);
     const hasFilter = filterSet.size > 0;
+    const isWildcard = filterSet.has('*');
 
     for (const id of pageIds) {
         const info = sizeCache.get(id);
@@ -205,11 +221,29 @@ export function calculateSizeEstimate(
         }
 
         if (hasFilter) {
-            otherBytes += info.otherAttachmentSizeBytes;
-            otherAttachmentCount += info.otherCount;
-            // If filter is '*' (all), also count images as attachments when images are not enabled
-            if (filterSet.has('*') && !options.includeImages) {
-                imageBytes += info.imageSizeBytes;
+            if (isWildcard) {
+                // Wildcard: count all other attachments
+                otherBytes += info.otherAttachmentSizeBytes;
+                otherAttachmentCount += info.otherCount;
+                // Also count images as attachments when images checkbox is not enabled
+                if (!options.includeImages) {
+                    imageBytes += info.imageSizeBytes;
+                }
+            } else {
+                // Filtered: only count extensions that match the filter
+                for (const [ext, bytes] of Object.entries(info.sizeByExtension)) {
+                    if (filterSet.has(ext)) {
+                        // Image extensions go to imageBytes, others to otherBytes
+                        if (/^(png|jpe?g|gif|svg|webp|bmp|ico|tiff)$/.test(ext)) {
+                            if (!options.includeImages) {
+                                imageBytes += bytes;
+                            }
+                        } else {
+                            otherBytes += bytes;
+                            otherAttachmentCount += info.countByExtension[ext] || 0;
+                        }
+                    }
+                }
             }
         }
     }

@@ -135,6 +135,12 @@ export function updateObsidianSettingsUI(element: HTMLElement): void {
     const filterInput = element.querySelector('#setting-attachment-filter') as HTMLInputElement;
     if (filterInput) filterInput.value = currentObsidianSettings.attachmentFilter;
 
+    // Update max attachment size input
+    const maxSizeInput = element.querySelector('#setting-max-attachment-size') as HTMLInputElement;
+    if (maxSizeInput) maxSizeInput.value = String(currentObsidianSettings.maxAttachmentSizeMB);
+    const sizeHint = element.querySelector('.md-attachment-size-hint');
+    if (sizeHint) sizeHint.textContent = currentObsidianSettings.maxAttachmentSizeMB === 0 ? t('noLimit') : '';
+
     // Update category chip + extension chip checkboxes
     import('@/core/attachment-filter').then(({ parseAttachmentFilter, detectCategoriesFromFilter }) => {
         const filterSet = parseAttachmentFilter(currentObsidianSettings.attachmentFilter);
