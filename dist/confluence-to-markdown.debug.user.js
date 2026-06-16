@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Confluence to Markdown Exporter (Debug)
 // @namespace    https://github.com/WhiteBite/confluence-to-markdown
-// @version      3.2.7
+// @version      3.2.8
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown (debug build — readable, with console)
 // @icon         https://www.atlassian.com/favicon.ico
