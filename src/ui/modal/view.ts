@@ -62,34 +62,42 @@ export function countNodes(node: PageTreeNode): number {
   return count;
 }
 
+/** Pre-compute descendant counts for all nodes in O(N) using post-order traversal.
+ *  Returns a Map<nodeId, totalDescendantCount> (including the node itself). */
+export function precomputeNodeCounts(roots: PageTreeNode[]): Map<string, number> {
+  const map = new Map<string, number>();
+  function walk(node: PageTreeNode): number {
+    let count = 1;
+    for (const child of node.children) {
+      count += walk(child);
+    }
+    map.set(node.id, count);
+    return count;
+  }
+  for (const root of roots) walk(root);
+  return map;
+}
+
 
 // ============================================================================
 // Tree Rendering
 // ============================================================================
 
-/** Estimate page size in KB (rough heuristic: ~50KB per page) */
-function estimatePageSize(node: PageTreeNode): string {
-  const totalPages = countNodes(node);
-  const sizeKB = totalPages * 50;
-  if (sizeKB >= 1024) {
-    return `~${(sizeKB / 1024).toFixed(1)} MB`;
-  }
-  return `~${sizeKB} KB`;
-}
-
-/** Build tree HTML recursively */
-export function renderTree(nodes: PageTreeNode[], level = 0): string {
+/** Build tree HTML recursively. Pass countMap to avoid O(N²) re-counting. */
+export function renderTree(nodes: PageTreeNode[], level = 0, countMap?: Map<string, number>): string {
+  // Auto-compute counts on first call if not provided
+  const cmap = countMap ?? (level === 0 ? precomputeNodeCounts(nodes) : undefined);
   let html = `<ul${level === 0 ? '' : ''}>`;
 
   for (const node of nodes) {
     const hasChildren = node.children.length > 0;
-    const childCount = hasChildren ? countNodes(node) - 1 : 0;
+    const totalCount = cmap?.get(node.id) ?? countNodes(node);
+    const childCount = hasChildren ? totalCount - 1 : 0;
     const errorClass = node.error ? ' error' : '';
     const togglerClass = hasChildren ? 'md-tree-toggler expanded' : 'md-tree-toggler empty';
 
     const iconClass = 'md-tree-icon page';
     const icon = ICONS.page;
-    const sizeEstimate = estimatePageSize(node);
 
     html += `<li data-page-id="${node.id}" data-level="${level}">`;
     html += `<div class="md-tree-item" data-level="${level}">`;
@@ -97,7 +105,6 @@ export function renderTree(nodes: PageTreeNode[], level = 0): string {
     html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
     html += `<span class="${iconClass}">${icon}</span>`;
     html += `<span class="md-tree-label${errorClass}">${escapeHtml(node.title)}</span>`;
-    html += `<span class="md-tree-size">${sizeEstimate}</span>`;
     if (hasChildren) {
       html += `<span class="md-child-count">${childCount}</span>`;
     }
@@ -107,7 +114,7 @@ export function renderTree(nodes: PageTreeNode[], level = 0): string {
     html += `</div>`;
 
     if (hasChildren) {
-      html += renderTree(node.children, level + 1);
+      html += renderTree(node.children, level + 1, cmap);
     }
 
     html += '</li>';

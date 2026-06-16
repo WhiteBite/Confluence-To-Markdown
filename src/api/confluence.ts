@@ -315,8 +315,12 @@ export async function fetchAllPagesInSpace(
 
             ctmLog(`[API] fetchAllPagesInSpace progress: ${pages.length} pages loaded (this batch: ${response.results?.length || 0})`);
         } catch (error) {
-            if (!useFallback && (error as Error).message?.includes('400')) {
-                ctmWarn('[API] CQL search failed with 400, trying fallback endpoint');
+            // Fallback on 400 (bad CQL) or 404 (endpoint missing on older Server)
+            if (!useFallback && (
+                (error as Error).message?.includes('400') ||
+                (error as Error).message?.includes('404')
+            )) {
+                ctmWarn('[API] CQL search failed, trying fallback endpoint:', (error as Error).message);
                 useFallback = true;
                 // Retry with fallback (don't advance start, try same page)
                 continue;
