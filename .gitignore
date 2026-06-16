@@ -28,6 +28,8 @@ npm-debug.log*
 # Temp
 confluence-to-markdown-extension.zip
 test-zip-extract/
+test-export/
+.playwright-mcp/
 
 # Examples (test data, not for repo)
 example/

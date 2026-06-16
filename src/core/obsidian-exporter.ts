@@ -146,18 +146,13 @@ function buildPagePath(
     }
 
     // Hierarchical: build path from ancestors
-    const pathParts: string[] = [];
-    let current: PageTreeNode | undefined = node;
-
-    // Find ancestors
     const nodeMap = new Map(flatTree.map((n) => [n.id, n]));
 
+    // Step 1: Collect ALL ancestors (root → parent), NOT including node itself
+    const ancestors: PageTreeNode[] = [];
+    let current = node.parentId ? nodeMap.get(node.parentId) : undefined;
     while (current) {
-        if (current.children.length > 0 || current.parentId === null) {
-            // This node has children or is root - it becomes a folder
-            pathParts.unshift(sanitizeFilename(current.title));
-        }
-
+        ancestors.unshift(current);
         if (current.parentId) {
             current = nodeMap.get(current.parentId);
         } else {
@@ -165,12 +160,21 @@ function buildPagePath(
         }
     }
 
-    // If node has children, put the file inside its own folder
+    // Step 2: Build folder path from ancestors that are root or have children
+    const folderParts = ancestors
+        .filter(a => a.parentId === null || a.children.length > 0)
+        .map(a => sanitizeFilename(a.title));
+
+    // Step 3: Add file name
+    const fileName = sanitizeFilename(node.title) + '.md';
     let fullPath: string;
+
     if (node.children.length > 0) {
-        fullPath = [...pathParts, sanitizeFilename(node.title) + '.md'].join('/');
+        // Node has children → create its own subfolder
+        fullPath = [...folderParts, sanitizeFilename(node.title), fileName].join('/');
     } else {
-        fullPath = [...pathParts.slice(0, -1), sanitizeFilename(node.title) + '.md'].join('/').replace(/^\//, '');
+        // Leaf node → place inside parent folder
+        fullPath = [...folderParts, fileName].join('/');
     }
 
     // CRITICAL: Limit total path length to 240 chars (Windows MAX_PATH = 260,
@@ -178,7 +182,7 @@ function buildPagePath(
     if (fullPath.length > 240) {
         // Truncate middle segments, keep first folder + filename
         const filename = sanitizeFilename(node.title).substring(0, 80) + '.md';
-        const firstFolder = pathParts[0]?.substring(0, 60) || '';
+        const firstFolder = folderParts[0]?.substring(0, 60) || '';
         fullPath = firstFolder ? `${firstFolder}/${filename}` : filename;
     }
 

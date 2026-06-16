@@ -44,7 +44,7 @@ export const DEFAULT_OBSIDIAN_SETTINGS: ObsidianExportSettings = {
 
     // Attachments
     downloadAttachments: true,
-    exportAllAttachments: false,
+    exportAllAttachments: true,
     maxAttachmentSizeMB: 50,
 
     // Content

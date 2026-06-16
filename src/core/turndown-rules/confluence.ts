@@ -156,19 +156,43 @@ export function applyConfluenceRules(turndown: TurndownService, options?: Conver
     });
 
     // Rule: Code blocks with language
+    // Confluence wraps code in: <div class="code"><div class="codeContent"><pre>...</pre></div></div>
+    // We must only match the innermost element to avoid triple-wrapping in backticks.
     turndown.addRule('codeBlock', {
         filter: node => {
             if (!(node instanceof HTMLElement)) return false;
-            return (
-                node.tagName === 'PRE' ||
-                node.classList.contains('code') ||
-                node.classList.contains('codeContent')
-            );
+            if (node.tagName === 'PRE') {
+                // Skip if this <pre> is inside a .code/.codeContent container
+                // (the container will handle it)
+                return !node.closest('.code, .codeContent, .code-panel');
+            }
+            if (node.classList.contains('code') || node.classList.contains('codeContent')) {
+                // Only match if this element is the OUTERMOST code wrapper
+                // (no parent is also a .code/.codeContent)
+                const parent = node.parentElement;
+                return !parent || !(
+                    parent.classList.contains('code') ||
+                    parent.classList.contains('codeContent') ||
+                    parent.classList.contains('code-panel')
+                );
+            }
+            return false;
         },
         replacement: (content, node) => {
             const el = node as HTMLElement;
-            const lang = el.dataset.language || el.className.match(/language-(\w+)/)?.[1] || '';
-            const code = content.trim();
+            // Try to find language from the element or nested <pre>
+            const pre = el.tagName === 'PRE' ? el : el.querySelector('pre');
+            const lang = el.dataset.language
+                || pre?.dataset.language
+                || pre?.className.match(/language-(\w+)/)?.[1]
+                || el.className.match(/language-(\w+)/)?.[1]
+                || '';
+            // Strip any nested backticks that Turndown may have added for inner <pre>
+            const code = content.replace(/^```[\s\S]*?```$/gm, (match) => {
+                // Extract content from inner fences
+                const inner = match.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
+                return inner;
+            }).trim();
             return `\n\`\`\`${lang}\n${code}\n\`\`\`\n\n`;
         },
     });

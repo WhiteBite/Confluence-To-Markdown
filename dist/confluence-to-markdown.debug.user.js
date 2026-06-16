@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Confluence to Markdown Exporter (Debug)
 // @namespace    https://github.com/WhiteBite/confluence-to-markdown
-// @version      3.2.5
+// @version      3.2.6
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown (debug build — readable, with console)
 // @icon         https://www.atlassian.com/favicon.ico
@@ -18341,13 +18341,24 @@ ${content}
       turndown.addRule("codeBlock", {
         filter: (node) => {
           if (!(node instanceof HTMLElement)) return false;
-          return node.tagName === "PRE" || node.classList.contains("code") || node.classList.contains("codeContent");
+          if (node.tagName === "PRE") {
+            return !node.closest(".code, .codeContent, .code-panel");
+          }
+          if (node.classList.contains("code") || node.classList.contains("codeContent")) {
+            const parent = node.parentElement;
+            return !parent || !(parent.classList.contains("code") || parent.classList.contains("codeContent") || parent.classList.contains("code-panel"));
+          }
+          return false;
         },
         replacement: (content, node) => {
-          var _a3;
+          var _a3, _b2;
           const el = node;
-          const lang = el.dataset.language || ((_a3 = el.className.match(/language-(\w+)/)) == null ? void 0 : _a3[1]) || "";
-          const code = content.trim();
+          const pre = el.tagName === "PRE" ? el : el.querySelector("pre");
+          const lang = el.dataset.language || (pre == null ? void 0 : pre.dataset.language) || ((_a3 = pre == null ? void 0 : pre.className.match(/language-(\w+)/)) == null ? void 0 : _a3[1]) || ((_b2 = el.className.match(/language-(\w+)/)) == null ? void 0 : _b2[1]) || "";
+          const code = content.replace(/^```[\s\S]*?```$/gm, (match) => {
+            const inner = match.replace(/^```\w*\n?/, "").replace(/\n?```$/, "");
+            return inner;
+          }).trim();
           return `
 \`\`\`${lang}
 ${code}
@@ -20741,8 +20752,8 @@ ${converted.output}
     function getSpaceKey() {
       var _a3;
       const params = new URLSearchParams(window.location.search);
-      const spaceKey = params.get("spaceKey");
-      if (spaceKey) {
+      const spaceKey = params.get("spaceKey") || params.get("key");
+      if (spaceKey && /^[A-Z0-9]+$/.test(spaceKey)) {
         ctmLog("getSpaceKey from URL param:", spaceKey);
         return spaceKey;
       }
@@ -20751,7 +20762,7 @@ ${converted.output}
         ctmLog("getSpaceKey from /display/ path:", displayMatch[1]);
         return displayMatch[1];
       }
-      const spacesMatch = window.location.pathname.match(/\/spaces\/([^/]+)/);
+      const spacesMatch = window.location.pathname.match(/\/spaces\/([A-Z][A-Z0-9]+)(?:\/|$)/i);
       if (spacesMatch) {
         ctmLog("getSpaceKey from /spaces/ path:", spacesMatch[1]);
         return spacesMatch[1];
@@ -20862,28 +20873,28 @@ ${converted.output}
       if (settings.folderStructure === "flat") {
         return sanitizeFilename(node.title) + ".md";
       }
-      const pathParts = [];
-      let current = node;
       const nodeMap = new Map(flatTree.map((n) => [n.id, n]));
+      const ancestors = [];
+      let current = node.parentId ? nodeMap.get(node.parentId) : void 0;
       while (current) {
-        if (current.children.length > 0 || current.parentId === null) {
-          pathParts.unshift(sanitizeFilename(current.title));
-        }
+        ancestors.unshift(current);
         if (current.parentId) {
           current = nodeMap.get(current.parentId);
         } else {
           break;
         }
       }
+      const folderParts = ancestors.filter((a) => a.parentId === null || a.children.length > 0).map((a) => sanitizeFilename(a.title));
+      const fileName = sanitizeFilename(node.title) + ".md";
       let fullPath;
       if (node.children.length > 0) {
-        fullPath = [...pathParts, sanitizeFilename(node.title) + ".md"].join("/");
+        fullPath = [...folderParts, sanitizeFilename(node.title), fileName].join("/");
       } else {
-        fullPath = [...pathParts.slice(0, -1), sanitizeFilename(node.title) + ".md"].join("/").replace(/^\//, "");
+        fullPath = [...folderParts, fileName].join("/");
       }
       if (fullPath.length > 240) {
         const filename = sanitizeFilename(node.title).substring(0, 80) + ".md";
-        const firstFolder = ((_a3 = pathParts[0]) == null ? void 0 : _a3.substring(0, 60)) || "";
+        const firstFolder = ((_a3 = folderParts[0]) == null ? void 0 : _a3.substring(0, 60)) || "";
         fullPath = firstFolder ? `${firstFolder}/${filename}` : filename;
       }
       return fullPath;
@@ -22585,7 +22596,7 @@ ${converted.output}
       embedDiagramsAsCode: true,
       // Attachments
       downloadAttachments: true,
-      exportAllAttachments: false,
+      exportAllAttachments: true,
       maxAttachmentSizeMB: 50,
       // Content
       useObsidianCallouts: true,

@@ -107,10 +107,10 @@ export function findActionMenuContainer(): HTMLElement | null {
 
 /** Get current space key from URL or AJS.Meta */
 export function getSpaceKey(): string | null {
-    // Try URL query param
+    // Try URL query param `spaceKey` or `key` (Server space overview uses ?key=)
     const params = new URLSearchParams(window.location.search);
-    const spaceKey = params.get('spaceKey');
-    if (spaceKey) {
+    const spaceKey = params.get('spaceKey') || params.get('key');
+    if (spaceKey && /^[A-Z0-9]+$/.test(spaceKey)) {
         ctmLog('getSpaceKey from URL param:', spaceKey);
         return spaceKey;
     }
@@ -123,7 +123,8 @@ export function getSpaceKey(): string | null {
     }
 
     // Try URL path /wiki/spaces/SPACEKEY/... (Confluence Cloud)
-    const spacesMatch = window.location.pathname.match(/\/spaces\/([^/]+)/);
+    // Exclude .action URLs like /spaces/viewspace.action
+    const spacesMatch = window.location.pathname.match(/\/spaces\/([A-Z][A-Z0-9]+)(?:\/|$)/i);
     if (spacesMatch) {
         ctmLog('getSpaceKey from /spaces/ path:', spacesMatch[1]);
         return spacesMatch[1];
