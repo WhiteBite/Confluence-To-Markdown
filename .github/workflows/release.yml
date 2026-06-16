@@ -35,6 +35,9 @@ jobs:
       - name: Build Tampermonkey UserScript
         run: npm run build
 
+      - name: Build Debug (non-minified) UserScript
+        run: npm run build:debug
+
       - name: Build Chrome Extension
         run: npm run build:ext
 
@@ -57,12 +60,12 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      # Commit built userscript to repo for auto-update
+      # Commit built userscripts to repo for auto-update
       - name: Commit built UserScript
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add dist/confluence-to-markdown.user.js -f
+          git add dist/confluence-to-markdown.user.js dist/confluence-to-markdown.debug.user.js -f
           git diff --staged --quiet || git commit -m "chore: build userscript v${{ steps.version.outputs.version }}"
           git push
 
@@ -88,6 +91,7 @@ jobs:
             **Auto-updates enabled!** Tampermonkey will check for updates automatically.
           files: |
             dist/confluence-to-markdown.user.js
+            dist/confluence-to-markdown.debug.user.js
             confluence-to-markdown-extension.zip
           draft: false
           prerelease: false

@@ -1,11 +1,13 @@
 {
     "name": "confluence-to-markdown",
-    "version": "3.2.4",
+    "version": "3.2.5",
     "description": "Confluence pages to Markdown exporter with diagram conversion",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "node scripts/sync-version.js && vite build && echo Script ready at http://localhost:8765/confluence-to-markdown.user.js",
+        "build:debug": "vite build --config vite.config.debug.ts",
+        "build:all": "npm run build && npm run build:debug",
         "build:ext": "node scripts/sync-version.js && vite build --config vite.config.extension.ts && vite build --config vite.config.background.ts && node scripts/copy-assets.js",
         "preview": "vite preview",
         "serve": "http-server dist -p 8765 --cors -c-1",
