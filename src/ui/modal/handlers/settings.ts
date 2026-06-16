@@ -65,8 +65,6 @@ export function saveCurrentSettings(element: HTMLElement): void {
         includeMetadata: (element.querySelector('#setting-metadata') as HTMLInputElement)?.checked ?? true,
         includeComments: (element.querySelector('#setting-comments') as HTMLInputElement)?.checked ?? false,
         includeSourceLinks: (element.querySelector('#setting-links') as HTMLInputElement)?.checked ?? true,
-        exportAllAttachments:
-            (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false,
     };
     saveSettings(currentSettings);
 
@@ -99,7 +97,6 @@ export function updateObsidianSettingsUI(element: HTMLElement): void {
     setChecked('setting-embed-diagrams', currentObsidianSettings.embedDiagramsAsCode);
     setChecked('setting-diagram-source', currentObsidianSettings.includeDiagramSource);
     setChecked('setting-diagram-preview', currentObsidianSettings.includeDiagramPreview);
-    setChecked('setting-attachments', currentObsidianSettings.downloadAttachments);
     setChecked('setting-images', currentObsidianSettings.includeImages);
     setChecked('setting-links', currentObsidianSettings.includeSourceLinks);
     setChecked('setting-metadata', currentObsidianSettings.includeMetadata);
@@ -133,6 +130,35 @@ export function updateObsidianSettingsUI(element: HTMLElement): void {
 
     // Show/hide convert options based on export mode
     updateDiagramOptionsVisibility(element);
+
+    // Update attachment filter input
+    const filterInput = element.querySelector('#setting-attachment-filter') as HTMLInputElement;
+    if (filterInput) filterInput.value = currentObsidianSettings.attachmentFilter;
+
+    // Update category chip checkboxes
+    import('@/core/attachment-filter').then(({ parseAttachmentFilter, detectCategoriesFromFilter }) => {
+        const filterSet = parseAttachmentFilter(currentObsidianSettings.attachmentFilter);
+        const isAll = filterSet.has('*');
+        const activeCats = detectCategoriesFromFilter(filterSet);
+
+        element.querySelectorAll<HTMLInputElement>('.md-chip input[data-category]').forEach(cb => {
+            const cat = cb.getAttribute('data-category') || '';
+            cb.checked = isAll || activeCats.includes(cat);
+            cb.closest('.md-chip')?.classList.toggle('active', cb.checked);
+        });
+
+        const allChip = element.querySelector('#setting-attachments-all') as HTMLInputElement;
+        if (allChip) {
+            allChip.checked = isAll;
+            allChip.closest('.md-chip')?.classList.toggle('active', isAll);
+        }
+    });
+
+    // Show/hide attachment filter card based on format
+    const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
+    if (attachmentCard) {
+        attachmentCard.style.display = currentObsidianSettings.exportFormat === 'obsidian' ? 'block' : 'none';
+    }
 
     // Update format buttons (old style)
     element.querySelectorAll('.md-preset-btn').forEach((btn) => {

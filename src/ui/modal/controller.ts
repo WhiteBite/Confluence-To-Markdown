@@ -64,9 +64,7 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
     if (gen !== statsGeneration) return;
 
     const includeImages = (element.querySelector('#setting-images') as HTMLInputElement)?.checked ?? true;
-    const includeAttachments = (element.querySelector('#setting-attachments') as HTMLInputElement)?.checked ?? false;
-    const includeAllAttachments =
-        (element.querySelector('#setting-attachments-all') as HTMLInputElement)?.checked ?? false;
+    const attachmentFilter = (element.querySelector('#setting-attachment-filter') as HTMLInputElement)?.value ?? 'images,documents';
 
     // For Single MD format, attachments are NOT downloaded — don't count them in estimate
     const platformSelect = element.querySelector('#setting-platform') as HTMLSelectElement;
@@ -76,8 +74,7 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
 
     const estimate = calculateSizeEstimate(selectedIds, {
         includeImages: isSingleFormat ? false : includeImages, // Single MD doesn't download images as files
-        includeAttachments: isSingleFormat ? false : includeAttachments,
-        includeAllAttachments: isSingleFormat ? false : includeAllAttachments,
+        attachmentFilter: isSingleFormat ? '' : attachmentFilter,
     });
 
     // Check again after calculation
@@ -101,7 +98,7 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
         const breakdown = [
             `Text: ${estimate.textMB.toFixed(1)} MB`,
             includeImages ? `Images: ${estimate.imagesMB.toFixed(1)} MB` : null,
-            (includeAttachments || includeAllAttachments) ? `Attachments: ${estimate.otherMB.toFixed(1)} MB` : null,
+            attachmentFilter ? `Attachments: ${estimate.otherMB.toFixed(1)} MB` : null,
         ].filter(Boolean).join(' + ');
         sizeEl.parentElement?.setAttribute('title', breakdown);
 

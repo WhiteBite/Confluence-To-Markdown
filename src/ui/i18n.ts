@@ -103,6 +103,16 @@ export interface Translations {
     sectionDiagrams: string;
     sectionContent: string;
     sectionObsidian: string;
+    sectionAttachments: string;
+
+    // Attachment filter
+    catImages: string;
+    catDocuments: string;
+    catArchives: string;
+    catMedia: string;
+    catAll: string;
+    filterPlaceholder: string;
+    filterHint: string;
 
     // Footer
     pagesSelected: string;
@@ -209,6 +219,16 @@ const en: Translations = {
     sectionDiagrams: 'Diagrams',
     sectionContent: 'Content',
     sectionObsidian: 'Obsidian',
+    sectionAttachments: 'Attachments',
+
+    // Attachment filter
+    catImages: 'Images',
+    catDocuments: 'Documents',
+    catArchives: 'Archives',
+    catMedia: 'Media',
+    catAll: 'All',
+    filterPlaceholder: '.pdf, .csv, .json or * for all',
+    filterHint: 'Categories or custom extensions (comma-separated)',
 
     // Footer
     pagesSelected: 'pages selected',
@@ -315,6 +335,16 @@ const ru: Translations = {
     sectionDiagrams: 'Диаграммы',
     sectionContent: 'Контент',
     sectionObsidian: 'Obsidian',
+    sectionAttachments: 'Вложения',
+
+    // Attachment filter
+    catImages: 'Изображения',
+    catDocuments: 'Документы',
+    catArchives: 'Архивы',
+    catMedia: 'Медиа',
+    catAll: 'Все',
+    filterPlaceholder: '.pdf, .csv, .json или * для всех',
+    filterHint: 'Категории или свои расширения (через запятую)',
 
     // Footer
     pagesSelected: 'страниц выбрано',

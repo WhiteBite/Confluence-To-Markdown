@@ -24,6 +24,38 @@ import { updateSelectionCount } from '../view';
 import { shakeElement, isInputFocused, togglePanel, handleToggleTheme } from './interaction';
 
 // ============================================================================
+// Attachment Filter Sync Helpers
+// ============================================================================
+
+/** Sync category chip checkboxes from a filter string */
+function syncCategoryChips(element: HTMLElement, filter: string): void {
+    const parts = filter.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const isAll = parts.includes('*');
+    element.querySelectorAll<HTMLInputElement>('.md-chip input[data-category]').forEach(cb => {
+        const cat = cb.getAttribute('data-category') || '';
+        cb.checked = isAll || parts.includes(cat);
+        cb.closest('.md-chip')?.classList.toggle('active', cb.checked);
+    });
+}
+
+/** Sync the "All" chip checkbox from a filter string */
+function syncAllChip(element: HTMLElement, filter: string): void {
+    const parts = filter.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const isAll = parts.includes('*');
+    const allChip = element.querySelector('#setting-attachments-all') as HTMLInputElement;
+    if (allChip) {
+        allChip.checked = isAll;
+        allChip.closest('.md-chip')?.classList.toggle('active', isAll);
+    }
+}
+
+/** Sync the filter text input from a filter string */
+function syncFilterInput(element: HTMLElement, filter: string): void {
+    const input = element.querySelector('#setting-attachment-filter') as HTMLInputElement;
+    if (input) input.value = filter;
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -104,7 +136,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
 
             // Disable attachment/frontmatter/diagrams-toggle checkboxes for Single MD
             // (they only affect Obsidian Vault export)
-            const obsidianOnlyCheckboxes = ['setting-attachments', 'setting-attachments-all', 'setting-frontmatter'];
+            const obsidianOnlyCheckboxes = ['setting-frontmatter'];
             for (const id of obsidianOnlyCheckboxes) {
                 const cb = element.querySelector(`#${id}`) as HTMLInputElement;
                 const label = cb?.closest('.md-checkbox-compact');
@@ -113,6 +145,11 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                     label.classList.toggle('disabled', format === 'single');
                     label.setAttribute('title', format === 'single' ? 'Only available in Obsidian Vault mode' : '');
                 }
+            }
+            // Show/hide attachment filter card for obsidian format
+            const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
+            if (attachmentCard) {
+                attachmentCard.style.display = format === 'obsidian' ? 'block' : 'none';
             }
             // Diagrams toggle: in Single MD, inline conversion still works via diagramExportMode,
             // but the "export diagrams as files" toggle has no effect
@@ -815,11 +852,39 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             currentObsidianSettings.includeDiagramPreview = target.checked;
             settingsChanged = true;
         } else if (target.id === 'setting-attachments') {
-            currentObsidianSettings.downloadAttachments = target.checked;
-            settingsChanged = true;
+            // Legacy — ignore (replaced by attachmentFilter)
         } else if (target.id === 'setting-attachments-all') {
-            currentObsidianSettings.exportAllAttachments = target.checked;
-            currentSettings.exportAllAttachments = target.checked;
+            // "All" chip toggle
+            const currentObsidianSettings2 = getCurrentObsidianSettings();
+            if (target.checked) {
+                currentObsidianSettings2.attachmentFilter = '*';
+            } else {
+                currentObsidianSettings2.attachmentFilter = '';
+            }
+            // Sync category chips
+            syncCategoryChips(element, currentObsidianSettings2.attachmentFilter);
+            syncFilterInput(element, currentObsidianSettings2.attachmentFilter);
+            settingsChanged = true;
+        } else if (target.dataset.category) {
+            // Category chip toggle
+            const currentObsidianSettings2 = getCurrentObsidianSettings();
+            const category = target.dataset.category;
+            const filterParts = currentObsidianSettings2.attachmentFilter
+                .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+            if (target.checked) {
+                if (!filterParts.includes(category)) filterParts.push(category);
+            } else {
+                const idx = filterParts.indexOf(category);
+                if (idx >= 0) filterParts.splice(idx, 1);
+            }
+
+            currentObsidianSettings2.attachmentFilter = filterParts.join(',');
+            // Update chip active state
+            target.closest('.md-chip')?.classList.toggle('active', target.checked);
+            // Update "All" chip
+            syncAllChip(element, currentObsidianSettings2.attachmentFilter);
+            syncFilterInput(element, currentObsidianSettings2.attachmentFilter);
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;
@@ -843,6 +908,25 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
 
     element.addEventListener('change', handleSettingsChange);
     cleanups.push(() => element.removeEventListener('change', handleSettingsChange));
+
+    // -------------------------------------------------------------------------
+    // Attachment Filter Input Handler (text input)
+    // -------------------------------------------------------------------------
+    const filterInput = element.querySelector('#setting-attachment-filter') as HTMLInputElement;
+    const handleFilterInput = () => {
+        if (!filterInput) return;
+        const currentObsidianSettings = getCurrentObsidianSettings();
+        currentObsidianSettings.attachmentFilter = filterInput.value;
+        // Sync category chips based on new filter value
+        syncCategoryChips(element, filterInput.value);
+        syncAllChip(element, filterInput.value);
+        saveObsidianSettings(currentObsidianSettings);
+        updateStats();
+    };
+    if (filterInput) {
+        filterInput.addEventListener('input', handleFilterInput);
+        cleanups.push(() => filterInput.removeEventListener('input', handleFilterInput));
+    }
 
     // -------------------------------------------------------------------------
     // Return Cleanup Function
@@ -918,7 +1002,6 @@ export function updateLocalizedText(element: HTMLElement): void {
     // Content checkboxes
     const checkboxLabels: Record<string, keyof Translations> = {
         'setting-images': 'optionImages',
-        'setting-attachments': 'optionAttachments',
         'setting-metadata': 'optionMetadata',
         'setting-comments': 'optionComments',
         'setting-links': 'optionSourceLinks',
@@ -936,6 +1019,36 @@ export function updateLocalizedText(element: HTMLElement): void {
         const label = checkbox?.closest('.md-checkbox-compact')?.querySelector('span');
         if (label) label.textContent = t(key as keyof Translations);
     });
+
+    // Attachment filter section
+    const attachmentTitle = element.querySelector('#md-attachment-filter-card .md-section-card-title');
+    if (attachmentTitle) attachmentTitle.textContent = t('sectionAttachments');
+
+    const chipLabels: Record<string, keyof Translations> = {
+        'images': 'catImages',
+        'documents': 'catDocuments',
+        'archives': 'catArchives',
+        'media': 'catMedia',
+    };
+    Object.entries(chipLabels).forEach(([cat, key]) => {
+        const chip = element.querySelector(`.md-chip input[data-category="${cat}"]`)?.closest('.md-chip')?.querySelector('span');
+        if (chip) {
+            // Preserve emoji prefix
+            const emoji = chip.textContent?.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u)?.[0] || '';
+            chip.textContent = emoji ? `${emoji} ${t(key)}` : t(key);
+        }
+    });
+
+    const allChipSpan = element.querySelector('#setting-attachments-all')?.closest('.md-chip')?.querySelector('span');
+    if (allChipSpan) {
+        const emoji = allChipSpan.textContent?.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}✅]/u)?.[0] || '✅';
+        allChipSpan.textContent = `${emoji} ${t('catAll')}`;
+    }
+
+    const filterInput = element.querySelector('#setting-attachment-filter') as HTMLInputElement;
+    if (filterInput) filterInput.placeholder = t('filterPlaceholder');
+    const filterHint = element.querySelector('.md-attachment-hint');
+    if (filterHint) filterHint.textContent = t('filterHint');
 
     // Footer buttons
     const resetBtn = element.querySelector('[data-action="reset-defaults"]');

@@ -25,6 +25,7 @@ import {
     exportImageAttachment,
     exportAnyAttachment,
 } from './attachment-handler';
+import { parseAttachmentFilter, matchesAttachmentFilter } from './attachment-filter';
 
 export type ProgressCallback = (phase: string, current: number, total: number) => void;
 
@@ -326,7 +327,10 @@ export async function createObsidianVault(
     }
 
     // Phase 2: Download attachments and diagrams (PARALLEL)
-    if (settings.downloadAttachments || settings.exportDiagrams || settings.exportAllAttachments) {
+    const filterSet = parseAttachmentFilter(settings.attachmentFilter);
+    const shouldFetchAttachments = filterSet.size > 0 || settings.exportDiagrams;
+
+    if (shouldFetchAttachments) {
         // Step 1: Fetch attachment lists for all pages in parallel (with concurrency limit)
         onProgress?.('Fetching attachment lists...', 0, pages.length);
 
@@ -380,10 +384,9 @@ export async function createObsidianVault(
 
                 if (isDiagramPng && settings.exportDiagrams) {
                     downloadTasks.push({ att, pageId, type: 'diagram' });
-                } else if (isImageAttachment(att) && settings.downloadAttachments && settings.includeImages) {
-                    downloadTasks.push({ att, pageId, type: 'image' });
-                } else if (settings.exportAllAttachments) {
-                    downloadTasks.push({ att, pageId, type: 'file' });
+                } else if (matchesAttachmentFilter(att.filename, filterSet)) {
+                    const type = isImageAttachment(att) ? 'image' : 'file';
+                    downloadTasks.push({ att, pageId, type });
                 }
             }
         }

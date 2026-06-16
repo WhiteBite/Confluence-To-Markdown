@@ -139,7 +139,6 @@ export interface RenderModalOptions {
     readonly includeMetadata: boolean;
     readonly includeComments: boolean;
     readonly includeSourceLinks: boolean;
-    readonly exportAllAttachments: boolean;
   };
   readonly obsidianSettings: {
     readonly exportFormat: 'single' | 'obsidian';
@@ -154,8 +153,7 @@ export interface RenderModalOptions {
     readonly includeDiagramSource: boolean;
     readonly includeDiagramPreview: boolean;
     readonly diagramPreviewScale: 1 | 2 | 3;
-    readonly downloadAttachments: boolean;
-    readonly exportAllAttachments: boolean;
+    readonly attachmentFilter: string;
   };
 }
 
@@ -424,6 +422,31 @@ function renderContentSection(
   settings: RenderModalOptions['settings'],
   obsidianSettings: RenderModalOptions['obsidianSettings']
 ): string {
+  // Parse current filter to determine which categories are active
+  const filterParts = obsidianSettings.attachmentFilter
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+  const isAll = filterParts.includes('*');
+
+  const categories = [
+    { key: 'images', icon: '\uD83D\uDDBC\uFE0F', label: t('catImages') },
+    { key: 'documents', icon: '\uD83D\uDCC4', label: t('catDocuments') },
+    { key: 'archives', icon: '\uD83D\uDCE6', label: t('catArchives') },
+    { key: 'media', icon: '\uD83C\uDFAC', label: t('catMedia') },
+  ];
+
+  const categoryChips = categories.map(cat => {
+    const active = isAll || filterParts.includes(cat.key);
+    return `<label class="md-chip${active ? ' active' : ''}">
+      <input type="checkbox" data-category="${cat.key}" ${active ? 'checked' : ''}>
+      <span>${cat.icon} ${cat.label}</span>
+    </label>`;
+  }).join('');
+
+  // Show custom extensions (those not covered by categories)
+  const filterValue = obsidianSettings.attachmentFilter;
+
   return `
     <div class="md-section-card" id="md-content-card">
       <div class="md-section-card-title">${t('sectionContent')}</div>
@@ -431,10 +454,6 @@ function renderContentSection(
         <label class="md-checkbox-compact">
           <input type="checkbox" id="setting-images" ${settings.includeImages ? 'checked' : ''}>
           <span>${t('optionImages')}</span>
-        </label>
-        <label class="md-checkbox-compact">
-          <input type="checkbox" id="setting-attachments" ${obsidianSettings.downloadAttachments ? 'checked' : ''}>
-          <span>${t('optionAttachments')}</span>
         </label>
         <label class="md-checkbox-compact">
           <input type="checkbox" id="setting-metadata" ${settings.includeMetadata ? 'checked' : ''}>
@@ -449,13 +468,25 @@ function renderContentSection(
           <span>${t('optionSourceLinks')}</span>
         </label>
         <label class="md-checkbox-compact">
-          <input type="checkbox" id="setting-attachments-all" ${settings.exportAllAttachments ? 'checked' : ''}>
-          <span>${t('optionAllAttachments')}</span>
-        </label>
-        <label class="md-checkbox-compact">
           <input type="checkbox" id="setting-frontmatter" ${obsidianSettings.includeFrontmatter ? 'checked' : ''}>
           <span>${t('optionFrontmatter')}</span>
         </label>
+      </div>
+    </div>
+    <div class="md-section-card" id="md-attachment-filter-card" style="display: ${obsidianSettings.exportFormat === 'obsidian' ? 'block' : 'none'};">
+      <div class="md-section-card-title">${t('sectionAttachments')}</div>
+      <div class="md-attachment-categories">
+        <label class="md-chip md-chip-all${isAll ? ' active' : ''}">
+          <input type="checkbox" id="setting-attachments-all" ${isAll ? 'checked' : ''}>
+          <span>\u2705 ${t('catAll')}</span>
+        </label>
+        ${categoryChips}
+      </div>
+      <div class="md-attachment-custom">
+        <input type="text" id="setting-attachment-filter" 
+               value="${filterValue}"
+               placeholder="${t('filterPlaceholder')}">
+        <span class="md-attachment-hint">${t('filterHint')}</span>
       </div>
     </div>
   `;

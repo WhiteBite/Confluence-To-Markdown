@@ -9,6 +9,7 @@ import { getBaseUrl } from '@/api/confluence';
 import { fetchJson } from '@/utils/transport';
 import { runWithConcurrency } from '@/utils/queue';
 import { ctmLog, ctmError } from '@/utils/logger';
+import { parseAttachmentFilter } from '@/core/attachment-filter';
 
 // ============================================================================
 // Types
@@ -166,8 +167,7 @@ async function fetchSinglePageSize(pageId: string): Promise<PageSizeInfo> {
 
 export interface EstimateOptions {
     includeImages: boolean;
-    includeAttachments: boolean;
-    includeAllAttachments: boolean;
+    attachmentFilter: string;
 }
 
 /**
@@ -185,6 +185,9 @@ export function calculateSizeEstimate(
     let diagramCount = 0;
     let otherAttachmentCount = 0;
 
+    const filterSet = parseAttachmentFilter(options.attachmentFilter);
+    const hasFilter = filterSet.size > 0;
+
     for (const id of pageIds) {
         const info = sizeCache.get(id);
         if (!info) {
@@ -201,11 +204,11 @@ export function calculateSizeEstimate(
             imageBytes += info.imageSizeBytes;
         }
 
-        if (options.includeAttachments || options.includeAllAttachments) {
+        if (hasFilter) {
             otherBytes += info.otherAttachmentSizeBytes;
             otherAttachmentCount += info.otherCount;
-            // If includeAllAttachments, also count images as attachments
-            if (options.includeAllAttachments && !options.includeImages) {
+            // If filter is '*' (all), also count images as attachments when images are not enabled
+            if (filterSet.has('*') && !options.includeImages) {
                 imageBytes += info.imageSizeBytes;
             }
         }

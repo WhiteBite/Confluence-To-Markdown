@@ -144,8 +144,8 @@ export interface ObsidianExportSettings {
     embedDiagramsAsCode: boolean;
 
     // Attachments
-    downloadAttachments: boolean;
-    exportAllAttachments: boolean;
+    /** Comma-separated filter: category keywords (images,documents,archives,media) or extensions (.pdf,.csv). '*' = all, '' = none */
+    attachmentFilter: string;
     maxAttachmentSizeMB: number;
 
     // Content

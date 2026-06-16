@@ -6,7 +6,6 @@ export interface ExportSettings {
     includeMetadata: boolean;
     includeComments: boolean;
     includeSourceLinks: boolean;
-    exportAllAttachments: boolean;
 }
 
 /** Default settings */
@@ -15,7 +14,6 @@ export const DEFAULT_SETTINGS: ExportSettings = {
     includeMetadata: true,
     includeComments: false,
     includeSourceLinks: true,
-    exportAllAttachments: false,
 };
 
 /** Default Obsidian export settings */
@@ -43,8 +41,7 @@ export const DEFAULT_OBSIDIAN_SETTINGS: ObsidianExportSettings = {
     embedDiagramsAsCode: true,
 
     // Attachments
-    downloadAttachments: true,
-    exportAllAttachments: true,
+    attachmentFilter: 'images,documents',
     maxAttachmentSizeMB: 50,
 
     // Content
@@ -62,7 +59,7 @@ export const EXPORT_PRESETS: Record<ExportPreset, Partial<ObsidianExportSettings
     quick: {
         exportFormat: 'obsidian',
         folderStructure: 'flat',
-        downloadAttachments: false,
+        attachmentFilter: '',
         exportDiagrams: false,
         convertDiagrams: false,
         diagramExportMode: 'copy-as-is',
@@ -73,7 +70,7 @@ export const EXPORT_PRESETS: Record<ExportPreset, Partial<ObsidianExportSettings
     full: {
         exportFormat: 'obsidian',
         folderStructure: 'hierarchical',
-        downloadAttachments: true,
+        attachmentFilter: '*',
         exportDiagrams: true,
         includeDiagramSource: true,
         includeDiagramPreview: true,
@@ -89,7 +86,7 @@ export const EXPORT_PRESETS: Record<ExportPreset, Partial<ObsidianExportSettings
     documentation: {
         exportFormat: 'obsidian',
         folderStructure: 'flat',
-        downloadAttachments: true,
+        attachmentFilter: 'documents',
         exportDiagrams: true,
         includeDiagramSource: false,
         includeDiagramPreview: true,
@@ -105,7 +102,7 @@ export const EXPORT_PRESETS: Record<ExportPreset, Partial<ObsidianExportSettings
     sync: {
         exportFormat: 'obsidian',
         folderStructure: 'hierarchical',
-        downloadAttachments: true,
+        attachmentFilter: 'images,documents',
         exportDiagrams: true,
         includeDiagramSource: true,
         convertDiagrams: false,
