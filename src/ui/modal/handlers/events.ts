@@ -926,10 +926,18 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             syncFilterInput(element, currentObsidianSettings2.attachmentFilter);
             settingsChanged = true;
         } else if (target.id === 'setting-max-attachment-size') {
-            const val = parseInt(target.value);
+            const val = parseFloat(target.value);
             currentObsidianSettings.maxAttachmentSizeMB = isNaN(val) || val < 0 ? 0 : val;
             const hint = element.querySelector('.md-attachment-size-hint');
-            if (hint) hint.textContent = currentObsidianSettings.maxAttachmentSizeMB === 0 ? t('noLimit') : '';
+            if (hint) {
+                if (currentObsidianSettings.maxAttachmentSizeMB === 0) {
+                    hint.textContent = t('noLimit');
+                } else if (currentObsidianSettings.maxAttachmentSizeMB < 1) {
+                    hint.textContent = `(${Math.round(currentObsidianSettings.maxAttachmentSizeMB * 1024)} KB)`;
+                } else {
+                    hint.textContent = '';
+                }
+            }
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;

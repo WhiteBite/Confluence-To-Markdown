@@ -512,9 +512,9 @@ function renderContentSection(
         <div class="md-attachment-size-input">
           <input type="number" id="setting-max-attachment-size" 
                  value="${obsidianSettings.maxAttachmentSizeMB}" 
-                 min="0" max="500" step="5">
+                 min="0" max="1000" step="0.1">
           <span class="md-attachment-size-unit">MB</span>
-          <span class="md-attachment-size-hint">${obsidianSettings.maxAttachmentSizeMB === 0 ? t('noLimit') : ''}</span>
+          <span class="md-attachment-size-hint">${obsidianSettings.maxAttachmentSizeMB === 0 ? t('noLimit') : obsidianSettings.maxAttachmentSizeMB < 1 ? `(${Math.round(obsidianSettings.maxAttachmentSizeMB * 1024)} KB)` : ''}</span>
         </div>
       </div>
     </div>

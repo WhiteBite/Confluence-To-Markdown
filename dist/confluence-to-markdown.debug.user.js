@@ -22442,9 +22442,9 @@ ${converted.output}
         <div class="md-attachment-size-input">
           <input type="number" id="setting-max-attachment-size" 
                  value="${obsidianSettings.maxAttachmentSizeMB}" 
-                 min="0" max="500" step="5">
+                 min="0" max="1000" step="0.1">
           <span class="md-attachment-size-unit">MB</span>
-          <span class="md-attachment-size-hint">${obsidianSettings.maxAttachmentSizeMB === 0 ? t("noLimit") : ""}</span>
+          <span class="md-attachment-size-hint">${obsidianSettings.maxAttachmentSizeMB === 0 ? t("noLimit") : obsidianSettings.maxAttachmentSizeMB < 1 ? `(${Math.round(obsidianSettings.maxAttachmentSizeMB * 1024)} KB)` : ""}</span>
         </div>
       </div>
     </div>
@@ -23049,7 +23049,10 @@ ${converted.output}
       const maxSizeInput = element.querySelector("#setting-max-attachment-size");
       if (maxSizeInput) maxSizeInput.value = String(currentObsidianSettings.maxAttachmentSizeMB);
       const sizeHint = element.querySelector(".md-attachment-size-hint");
-      if (sizeHint) sizeHint.textContent = currentObsidianSettings.maxAttachmentSizeMB === 0 ? t("noLimit") : "";
+      if (sizeHint) {
+        const mb = currentObsidianSettings.maxAttachmentSizeMB;
+        sizeHint.textContent = mb === 0 ? t("noLimit") : mb < 1 ? `(${Math.round(mb * 1024)} KB)` : "";
+      }
       __vitePreload(async () => {
         const { parseAttachmentFilter: parseAttachmentFilter2, detectCategoriesFromFilter: detectCategoriesFromFilter2 } = await Promise.resolve().then(() => attachmentFilter);
         return { parseAttachmentFilter: parseAttachmentFilter2, detectCategoriesFromFilter: detectCategoriesFromFilter2 };
@@ -23877,10 +23880,18 @@ ${converted.output}
           syncFilterInput(element, currentObsidianSettings22.attachmentFilter);
           settingsChanged = true;
         } else if (target.id === "setting-max-attachment-size") {
-          const val = parseInt(target.value);
+          const val = parseFloat(target.value);
           currentObsidianSettings2.maxAttachmentSizeMB = isNaN(val) || val < 0 ? 0 : val;
           const hint = element.querySelector(".md-attachment-size-hint");
-          if (hint) hint.textContent = currentObsidianSettings2.maxAttachmentSizeMB === 0 ? t("noLimit") : "";
+          if (hint) {
+            if (currentObsidianSettings2.maxAttachmentSizeMB === 0) {
+              hint.textContent = t("noLimit");
+            } else if (currentObsidianSettings2.maxAttachmentSizeMB < 1) {
+              hint.textContent = `(${Math.round(currentObsidianSettings2.maxAttachmentSizeMB * 1024)} KB)`;
+            } else {
+              hint.textContent = "";
+            }
+          }
           settingsChanged = true;
         } else if (target.name === "diagram-scale") {
           currentObsidianSettings2.diagramPreviewScale = parseInt(target.value);
