@@ -55,6 +55,17 @@ function syncFilterInput(element: HTMLElement, filter: string): void {
     if (input) input.value = filter;
 }
 
+/** Sync popular extension chip checkboxes from a filter string */
+function syncExtensionChips(element: HTMLElement, filter: string): void {
+    const parts = filter.split(',').map(s => s.trim().toLowerCase().replace(/^\./, '')).filter(Boolean);
+    const isAll = parts.includes('*');
+    element.querySelectorAll<HTMLInputElement>('.md-chip-ext input[data-extension]').forEach(cb => {
+        const ext = cb.getAttribute('data-extension') || '';
+        cb.checked = isAll || parts.includes(ext);
+        cb.closest('.md-chip')?.classList.toggle('active', cb.checked);
+    });
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -885,6 +896,34 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             // Update "All" chip
             syncAllChip(element, currentObsidianSettings2.attachmentFilter);
             syncFilterInput(element, currentObsidianSettings2.attachmentFilter);
+            syncExtensionChips(element, currentObsidianSettings2.attachmentFilter);
+            settingsChanged = true;
+        } else if (target.dataset.extension) {
+            // Popular extension chip toggle
+            const currentObsidianSettings2 = getCurrentObsidianSettings();
+            const ext = target.dataset.extension;
+            // Parse current filter into parts, keeping categories and other extensions
+            const filterParts = currentObsidianSettings2.attachmentFilter
+                .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const extToken = ext; // store without dot in the filter
+
+            if (target.checked) {
+                // Add the extension if not already present (as literal or within a category)
+                if (!filterParts.includes(extToken) && !filterParts.includes('.' + extToken)) {
+                    filterParts.push('.' + extToken);
+                }
+            } else {
+                // Remove the extension (both with and without dot)
+                const idx1 = filterParts.indexOf(extToken);
+                if (idx1 >= 0) filterParts.splice(idx1, 1);
+                const idx2 = filterParts.indexOf('.' + extToken);
+                if (idx2 >= 0) filterParts.splice(idx2, 1);
+            }
+
+            currentObsidianSettings2.attachmentFilter = filterParts.join(',');
+            target.closest('.md-chip')?.classList.toggle('active', target.checked);
+            syncAllChip(element, currentObsidianSettings2.attachmentFilter);
+            syncFilterInput(element, currentObsidianSettings2.attachmentFilter);
             settingsChanged = true;
         } else if (target.name === 'diagram-scale') {
             currentObsidianSettings.diagramPreviewScale = parseInt(target.value) as 1 | 2 | 3;
@@ -920,6 +959,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         // Sync category chips based on new filter value
         syncCategoryChips(element, filterInput.value);
         syncAllChip(element, filterInput.value);
+        syncExtensionChips(element, filterInput.value);
         saveObsidianSettings(currentObsidianSettings);
         updateStats();
     };
@@ -1049,6 +1089,8 @@ export function updateLocalizedText(element: HTMLElement): void {
     if (filterInput) filterInput.placeholder = t('filterPlaceholder');
     const filterHint = element.querySelector('.md-attachment-hint');
     if (filterHint) filterHint.textContent = t('filterHint');
+    const popularLabel = element.querySelector('.md-attachment-label');
+    if (popularLabel) popularLabel.textContent = t('filterPopular');
 
     // Footer buttons
     const resetBtn = element.querySelector('[data-action="reset-defaults"]');

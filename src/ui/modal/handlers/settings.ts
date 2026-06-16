@@ -135,7 +135,7 @@ export function updateObsidianSettingsUI(element: HTMLElement): void {
     const filterInput = element.querySelector('#setting-attachment-filter') as HTMLInputElement;
     if (filterInput) filterInput.value = currentObsidianSettings.attachmentFilter;
 
-    // Update category chip checkboxes
+    // Update category chip + extension chip checkboxes
     import('@/core/attachment-filter').then(({ parseAttachmentFilter, detectCategoriesFromFilter }) => {
         const filterSet = parseAttachmentFilter(currentObsidianSettings.attachmentFilter);
         const isAll = filterSet.has('*');
@@ -144,6 +144,13 @@ export function updateObsidianSettingsUI(element: HTMLElement): void {
         element.querySelectorAll<HTMLInputElement>('.md-chip input[data-category]').forEach(cb => {
             const cat = cb.getAttribute('data-category') || '';
             cb.checked = isAll || activeCats.includes(cat);
+            cb.closest('.md-chip')?.classList.toggle('active', cb.checked);
+        });
+
+        // Sync popular extension chips
+        element.querySelectorAll<HTMLInputElement>('.md-chip-ext input[data-extension]').forEach(cb => {
+            const ext = cb.getAttribute('data-extension') || '';
+            cb.checked = isAll || filterSet.has(ext);
             cb.closest('.md-chip')?.classList.toggle('active', cb.checked);
         });
 

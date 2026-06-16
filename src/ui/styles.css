@@ -3066,6 +3066,33 @@
     border-style: dashed;
 }
 
+/* --- Popular Extension Chips --- */
+.md-attachment-popular {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+.md-attachment-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--md-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+.md-attachment-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+.md-chip-ext {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
 /* --- Attachment Custom Filter Input --- */
 .md-attachment-custom {
     display: flex;

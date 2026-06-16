@@ -37,6 +37,9 @@ export const ATTACHMENT_CATEGORIES: Record<string, { label: string; icon: string
 /** Wildcard extension that matches everything */
 const WILDCARD = '*';
 
+/** Popular individual extensions for quick-toggle chips */
+export const POPULAR_EXTENSIONS = ['pdf', 'csv', 'json', 'xlsx', 'docx', 'pptx', 'zip'];
+
 /** Extract file extension (lowercase, no dot) from filename */
 function getExtension(filename: string): string {
     const dot = filename.lastIndexOf('.');

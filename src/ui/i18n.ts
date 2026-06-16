@@ -113,6 +113,7 @@ export interface Translations {
     catAll: string;
     filterPlaceholder: string;
     filterHint: string;
+    filterPopular: string;
 
     // Footer
     pagesSelected: string;
@@ -229,6 +230,7 @@ const en: Translations = {
     catAll: 'All',
     filterPlaceholder: '.pdf, .csv, .json or * for all',
     filterHint: 'Categories or custom extensions (comma-separated)',
+    filterPopular: 'Popular:',
 
     // Footer
     pagesSelected: 'pages selected',
@@ -345,6 +347,7 @@ const ru: Translations = {
     catAll: 'Все',
     filterPlaceholder: '.pdf, .csv, .json или * для всех',
     filterHint: 'Категории или свои расширения (через запятую)',
+    filterPopular: 'Популярные:',
 
     // Footer
     pagesSelected: 'страниц выбрано',

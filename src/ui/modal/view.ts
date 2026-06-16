@@ -7,6 +7,7 @@
 import type { PageTreeNode } from '@/api/types';
 import type { ModalState } from './types';
 import { t, getLocale, type Translations } from '../i18n';
+import { POPULAR_EXTENSIONS, parseAttachmentFilter } from '@/core/attachment-filter';
 
 // ============================================================================
 // SVG Icons
@@ -429,6 +430,9 @@ function renderContentSection(
     .filter(Boolean);
   const isAll = filterParts.includes('*');
 
+  // Parse the filter to get active extension set (for popular extension chips)
+  const filterSet = parseAttachmentFilter(obsidianSettings.attachmentFilter);
+
   const categories = [
     { key: 'images', icon: '\uD83D\uDDBC\uFE0F', label: t('catImages') },
     { key: 'documents', icon: '\uD83D\uDCC4', label: t('catDocuments') },
@@ -444,7 +448,15 @@ function renderContentSection(
     </label>`;
   }).join('');
 
-  // Show custom extensions (those not covered by categories)
+  // Popular individual extension chips
+  const popularChips = POPULAR_EXTENSIONS.map(ext => {
+    const active = isAll || filterSet.has(ext);
+    return `<label class="md-chip md-chip-ext${active ? ' active' : ''}">
+      <input type="checkbox" data-extension="${ext}" ${active ? 'checked' : ''}>
+      <span>.${ext}</span>
+    </label>`;
+  }).join('');
+
   const filterValue = obsidianSettings.attachmentFilter;
 
   return `
@@ -481,6 +493,12 @@ function renderContentSection(
           <span>\u2705 ${t('catAll')}</span>
         </label>
         ${categoryChips}
+      </div>
+      <div class="md-attachment-popular">
+        <span class="md-attachment-label">${t('filterPopular')}</span>
+        <div class="md-attachment-chips">
+          ${popularChips}
+        </div>
       </div>
       <div class="md-attachment-custom">
         <input type="text" id="setting-attachment-filter" 
