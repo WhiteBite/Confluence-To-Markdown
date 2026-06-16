@@ -220,9 +220,14 @@ export async function buildSpaceTree(
         }
 
         // Filter to descendants of homepage (pages under homepage in hierarchy)
+        // Also include space-root-level pages (pages with no ancestors that aren't the homepage)
+        // so they don't get silently dropped from the export.
         const descendants = allPages.filter(p => {
             const ancestors = p.ancestors || [];
-            return ancestors.some(a => a.id === space.homepageId);
+            if (ancestors.some(a => a.id === space.homepageId)) return true;
+            // Include space-root-level pages (no ancestors, not the homepage itself)
+            if (ancestors.length === 0 && p.id !== space.homepageId) return true;
+            return false;
         });
 
         ctmLog(`[Tree] Homepage "${homepage.title}" has ${descendants.length} descendants`);

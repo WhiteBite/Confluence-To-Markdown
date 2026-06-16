@@ -153,6 +153,7 @@ interface CqlCatalogResponse {
     results: Array<{
         id: string;
         title: string;
+        status?: string;
         space?: { key: string };
         ancestors?: Array<{ id: string; title: string }>;
         version?: { when: string };
@@ -172,7 +173,10 @@ export async function fetchSpaceCatalog(spaceKey: string): Promise<HubCatalogPag
     let hasMore = true;
 
     while (hasMore) {
-        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page AND status=current`);
+        // NOTE: Do NOT add `status=current` to CQL — Confluence Server 8.5
+        // does not support the `status` field in CQL and returns HTTP 400.
+        // Server 8.5 CQL already excludes drafts by default.
+        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page`);
         const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,version,metadata.labels,space&limit=${limit}&start=${start}`;
 
         try {
@@ -180,6 +184,8 @@ export async function fetchSpaceCatalog(spaceKey: string): Promise<HubCatalogPag
 
             if (response.results?.length) {
                 for (const r of response.results) {
+                    // Client-side filter: skip non-current pages (safety net)
+                    if (r.status && r.status !== 'current') continue;
                     const labels = r.metadata?.labels?.results?.map(l => l.name) || [];
                     pages.push({
                         id: r.id,
@@ -231,6 +237,8 @@ interface SpacePagesResponse {
     results: Array<{
         id: string;
         title: string;
+        type?: string;
+        status?: string;
         space?: { key: string };
         ancestors?: Array<{ id: string; title: string }>;
     }>;
@@ -265,12 +273,16 @@ export async function fetchAllPagesInSpace(
         let url: string;
         
         if (!useFallback) {
-            // Try CQL search first (Confluence Cloud and newer Server)
+            // Try CQL search first (Confluence Cloud and newer Server).
+            // NOTE: Do NOT add `status=current` to CQL — Confluence Server 8.5
+            // does not support the `status` field in CQL and returns HTTP 400.
+            // Server 8.5 CQL already excludes drafts by default.
             const cql = encodeURIComponent(`space="${spaceKey}" AND type=page`);
             url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,space&limit=${limit}&start=${start}`;
         } else {
-            // Fallback: use space content endpoint (older Confluence Server)
-            url = `${baseUrl}/rest/api/space/${spaceKey}/content?type=page&expand=ancestors,space&limit=${limit}&start=${start}`;
+            // Fallback: use space content endpoint (older Confluence Server).
+            // `status=current` is valid on this REST endpoint (not CQL).
+            url = `${baseUrl}/rest/api/space/${spaceKey}/content?type=page&status=current&expand=ancestors,space&limit=${limit}&start=${start}`;
         }
 
         try {
@@ -280,11 +292,19 @@ export async function fetchAllPagesInSpace(
             if (response.results?.length) {
                 // Map raw response into PageWithAncestors (fill required fields with defaults
                 // since `/space/{key}/content` and `/content/search` return slightly different shapes).
+                // Client-side filter: skip drafts/archived pages (safety net for Confluence
+                // Cloud or newer Server versions that may return them). Server 8.5 CQL
+                // already excludes drafts, but this protects against edge cases.
                 for (const r of response.results) {
+                    const pageStatus = r.status || 'current';
+                    if (pageStatus !== 'current') {
+                        ctmLog(`[API] fetchAllPagesInSpace: skipping ${r.id} "${r.title}" (status=${pageStatus})`);
+                        continue;
+                    }
                     pages.push({
                         ...r,
-                        type: 'page',
-                        status: 'current',
+                        type: r.type || 'page',
+                        status: pageStatus,
                     } as PageWithAncestors);
                 }
                 onProgress?.(pages.length);

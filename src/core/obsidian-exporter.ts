@@ -3,6 +3,7 @@ import { getBaseUrl } from '@/api/confluence';
 import { ctmLog, ctmError } from '@/utils/logger';
 import { runWithConcurrency } from '@/utils/queue';
 import { MAX_DOWNLOAD_CONCURRENCY } from '@/config';
+import { normalizeZipEntries } from '@/utils/helpers';
 import type {
     PageContentData,
     PageTreeNode,
@@ -497,6 +498,11 @@ export async function createObsidianVault(
 
     ctmLog('[Export] Starting ZIP generation with fflate (async)...');
     ctmLog(`[Export] Total files in ZIP:`, Object.keys(safeZipFiles).length);
+
+    // Normalize all Uint8Array entries to current realm before passing to fflate.
+    // fflate uses `instanceof Uint8Array` to detect files; cross-realm arrays
+    // (from Tampermonkey/extension contexts) fail this check and produce garbled ZIPs.
+    normalizeZipEntries(safeZipFiles);
 
     let zipBlob: Blob;
     try {

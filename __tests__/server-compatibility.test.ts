@@ -4,7 +4,6 @@ import {
     getSpaceKey,
 } from '../src/utils/helpers';
 import { findActionMenuContainer } from '../src/utils/helpers';
-import type { HTMLElement as VitestHTMLElement } from 'vitest';
 
 describe('Confluence Server URL patterns', () => {
     beforeEach(() => {
@@ -35,10 +34,7 @@ describe('Confluence Server URL patterns', () => {
     });
 
     it('should detect pageId from /display/SPC/PageTitle with AJS.Meta', () => {
-        window.location.pathname = '/display/SPC/11111111';
-        window.location.href = 'http://localhost:8090/display/SPC/11111111';
-
-        vi.stubGlobal('AJS', {
+        const mockAJS = {
             Meta: {
                 get: vi.fn((key: string) => {
                     if (key === 'page-id') return '12345';
@@ -46,7 +42,16 @@ describe('Confluence Server URL patterns', () => {
                     return null;
                 }),
             },
+        };
+        vi.stubGlobal('window', {
+            location: {
+                href: 'http://localhost:8090/display/SPC/11111111',
+                pathname: '/display/SPC/11111111',
+                search: '',
+            },
+            AJS: mockAJS,
         });
+        vi.stubGlobal('AJS', mockAJS);
 
         expect(getCurrentPageId()).toBe('12345');
         expect(getSpaceKey()).toBe('SPC');

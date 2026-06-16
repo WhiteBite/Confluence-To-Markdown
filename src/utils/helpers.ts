@@ -157,3 +157,49 @@ export function getErrorMessage(error: unknown): string {
     if (typeof error === 'string') return error;
     return 'Unknown error';
 }
+
+/**
+ * Ensure a Uint8Array is from the current JS realm.
+ *
+ * fflate uses `instanceof Uint8Array` to detect file data vs nested folders
+ * (see fflate source: `fltn` function). When a Uint8Array originates from a
+ * different realm (e.g. Tampermonkey GM_xmlhttpRequest response, background
+ * script message, or iframe), the instanceof check fails and fflate treats
+ * the data as a directory — producing a garbled ZIP that Windows Explorer
+ * refuses to open.
+ *
+ * This function always creates a fresh copy in the current realm's ArrayBuffer.
+ */
+export function ensureOwnRealmU8(data: Uint8Array): Uint8Array {
+    if (data instanceof Uint8Array && data.buffer instanceof ArrayBuffer) {
+        // Already in own realm — still copy to avoid shared-buffer issues
+        const buf = new ArrayBuffer(data.byteLength);
+        new Uint8Array(buf).set(data);
+        return new Uint8Array(buf);
+    }
+    // Cross-realm fallback: iterate bytes manually
+    const buf = new ArrayBuffer(data.length);
+    const copy = new Uint8Array(buf);
+    for (let i = 0; i < data.length; i++) copy[i] = data[i];
+    return copy;
+}
+
+/**
+ * Normalize all values in a fflate Zippable record to ensure they are
+ * current-realm Uint8Arrays. Prevents cross-realm instanceof failures
+ * that corrupt the ZIP structure.
+ */
+export function normalizeZipEntries(
+    files: Record<string, Uint8Array | [Uint8Array, unknown]>
+): void {
+    for (const key of Object.keys(files)) {
+        const entry = files[key];
+        if (Array.isArray(entry)) {
+            // Tuple form: [Uint8Array, ZipOptions]
+            entry[0] = ensureOwnRealmU8(entry[0]);
+        } else {
+            // Plain form: Uint8Array
+            files[key] = ensureOwnRealmU8(entry);
+        }
+    }
+}

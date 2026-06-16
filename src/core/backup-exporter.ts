@@ -18,6 +18,7 @@ import { runWithConcurrency } from '@/utils/queue';
 import { MAX_CONCURRENCY, MAX_DOWNLOAD_CONCURRENCY } from '@/config';
 import { ctmLog, ctmError } from '@/utils/logger';
 import { sanitizeAttachmentFilename } from './link-resolver';
+import { normalizeZipEntries } from '@/utils/helpers';
 import {
     fetchPageAttachments,
     exportAnyAttachment,
@@ -293,6 +294,11 @@ export async function createConfluenceBackup(
     for (const file of attachmentFiles) {
         zipFiles[file.path] = [file.data, { mtime: now }];
     }
+
+    // Normalize all Uint8Array entries to current realm before passing to fflate.
+    // fflate uses `instanceof Uint8Array` to detect files; cross-realm arrays
+    // (from Tampermonkey/extension contexts) fail this check and produce garbled ZIPs.
+    normalizeZipEntries(zipFiles);
 
     // Generate ZIP (async — non-blocking)
     const zipData = await new Promise<Uint8Array>((resolve, reject) => {
