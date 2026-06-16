@@ -2379,6 +2379,29 @@
     background: rgba(76, 154, 255, 0.15);
 }
 
+/* Dark theme: chip contrast boost */
+#md-export-modal[data-theme="dark"] .md-chip {
+    background: #2A2F35;
+    border-color: #4A4A4A;
+    color: #C8C8C8;
+}
+#md-export-modal[data-theme="dark"] .md-chip:hover {
+    background: #333840;
+    border-color: var(--md-primary);
+}
+#md-export-modal[data-theme="dark"] .md-chip.active {
+    background: rgba(76, 154, 255, 0.15);
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+#md-export-modal[data-theme="dark"] .md-chip-all {
+    border-color: #555;
+}
+#md-export-modal[data-theme="dark"] .md-chip-all.active {
+    border-color: var(--md-primary);
+    background: rgba(76, 154, 255, 0.1);
+}
+
 /* Status bar - monochrome icons (no emoji, use text) */
 .md-status-bar {
     color: var(--md-text-muted);
@@ -3041,8 +3064,8 @@
     padding: 0.25rem 0.625rem;
     border-radius: 1rem;
     border: 1px solid var(--md-border);
-    background: var(--md-surface);
-    color: var(--md-text-secondary);
+    background: var(--md-bg-subtle);
+    color: var(--md-text-subtle);
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -3053,7 +3076,7 @@
     background: var(--md-primary-lighter, rgba(99, 102, 241, 0.06));
 }
 .md-chip.active {
-    background: var(--md-primary-lighter, rgba(99, 102, 241, 0.1));
+    background: var(--md-primary-light);
     border-color: var(--md-primary);
     color: var(--md-primary);
     font-weight: 500;
@@ -3105,7 +3128,7 @@
     border: 1px solid var(--md-border);
     border-radius: var(--md-radius);
     font-size: 0.75rem;
-    background: var(--md-surface);
+    background: var(--md-bg-subtle);
     color: var(--md-text);
     outline: none;
     transition: border-color 0.15s;
