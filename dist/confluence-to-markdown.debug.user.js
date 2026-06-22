@@ -218,7 +218,11 @@
               statusText: response.statusText,
               headers: parsedHeaders,
               text: async () => responseText,
-              blob: async () => responseBlob ?? new Blob([responseText]),
+              blob: async () => {
+                if (responseBlob) return responseBlob;
+                const bytes = Uint8Array.from(responseText, (c) => c.charCodeAt(0));
+                return new Blob([bytes]);
+              },
               json: async () => JSON.parse(responseText)
             });
           },
@@ -263,6 +267,22 @@
         return backgroundRequest(args, error);
       }
     }
+    function decodeBinaryResponse(data) {
+      if (typeof data !== "object" || data === null || !("__binary_base64" in data)) {
+        return null;
+      }
+      const record = data;
+      const base64 = record["__binary_base64"];
+      const mimeType = typeof record["mimeType"] === "string" ? record["mimeType"] : "application/octet-stream";
+      if (typeof base64 !== "string") return null;
+      try {
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+        return new Blob([bytes], { type: mimeType });
+      } catch {
+        return null;
+      }
+    }
     async function backgroundRequest(args, originalError) {
       const hasChromeRuntime = typeof chrome !== "undefined" && !!chrome.runtime && typeof chrome.runtime.sendMessage === "function";
       if (!hasChromeRuntime) {
@@ -276,6 +296,7 @@
         method: args.method,
         body: serializedBody,
         isMultipart,
+        responseType: args.responseType,
         options: { method: args.method, headers: args.headers }
       });
       return wrapBackgroundResponse(result, args.url);
@@ -285,12 +306,13 @@
         const data = result.data;
         const status2 = result.status ?? 200;
         const json2 = JSON.stringify(data ?? null);
+        const binaryBlob = decodeBinaryResponse(data);
         return {
           status: status2,
           statusText: "OK",
           headers: {},
           text: async () => json2,
-          blob: async () => new Blob([json2], { type: "application/json" }),
+          blob: async () => binaryBlob ?? new Blob([json2], { type: "application/json" }),
           json: async () => data
         };
       }
@@ -312,7 +334,7 @@
         statusText: errMsg,
         headers: retryHeaders,
         text: async () => errMsg,
-        blob: async () => new Blob([errMsg]),
+        blob: async () => new Blob([errMsg], { type: "text/plain" }),
         json: async () => ({ error: errMsg })
       };
     }
@@ -489,20 +511,21 @@
       let completed = 0;
       let currentIndex = 0;
       let aborted = false;
+      let hasFailed = false;
       if (signal == null ? void 0 : signal.aborted) throw makeAbortError();
       const onAbort = () => {
         aborted = true;
       };
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
       async function worker() {
-        while (currentIndex < items.length) {
-          if (aborted) return;
+        while (currentIndex < items.length && !aborted && !hasFailed) {
           const index = currentIndex++;
           const item = items[index];
           try {
             results[index] = await fn(item, index);
           } catch (err2) {
             if (bailOnError) {
+              hasFailed = true;
               throw err2;
             }
             results[index] = err2 instanceof Error ? err2 : new Error(String(err2));
@@ -604,7 +627,7 @@
     }
     function computeRetryDelay(error, attempt, baseDelayMs, maxDelayMs) {
       if (error instanceof ConfluenceApiError && typeof error.retryAfterMs === "number" && Number.isFinite(error.retryAfterMs) && error.retryAfterMs >= 0) {
-        return Math.min(error.retryAfterMs, maxDelayMs);
+        return error.retryAfterMs;
       }
       const exp = baseDelayMs * Math.pow(2, attempt);
       return Math.min(exp, maxDelayMs);
@@ -17946,7 +17969,7 @@ ${header}${code.trim()}
         case "drawio":
           return "drawio";
         case "mermaid":
-          return "md";
+          return "mmd";
         case "plantuml":
           return "puml";
         case "excalidraw":
@@ -18558,9 +18581,11 @@ ${result.join("\n")}
           contentElement == null ? void 0 : contentElement.querySelectorAll(selector).forEach((el) => el.remove());
         });
       }
-      const cleanDoc = parser.parseFromString("<html><body></body></html>", "text/html");
-      cleanDoc.body.innerHTML = contentElement.innerHTML;
-      cleanDoc.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
+      const cleanBody = doc.createElement("body");
+      Array.from(contentElement.childNodes).forEach((node) => {
+        cleanBody.appendChild(node.cloneNode(true));
+      });
+      cleanBody.querySelectorAll(".aui-expander-content, .expand-content").forEach((el) => {
         el.style.display = "block";
         el.removeAttribute("aria-hidden");
         const expander = el.closest(".aui-expander-container, .expand-container");
@@ -18569,7 +18594,7 @@ ${result.join("\n")}
           expander.classList.add("expanded");
         }
       });
-      cleanDoc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
+      cleanBody.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
         const htmlEl = el;
         let name = htmlEl.dataset.diagramName || htmlEl.getAttribute("data-diagram-name") || htmlEl.getAttribute("data-extracted-diagram-name") || "";
         if (!name) {
@@ -18583,26 +18608,26 @@ ${result.join("\n")}
         if (img == null ? void 0 : img.src) {
           htmlEl.setAttribute("data-original-image-url", img.src);
         }
-        const marker = cleanDoc.createElement("span");
+        const marker = doc.createElement("span");
         marker.style.display = "none";
         marker.setAttribute("data-diagram-marker", "true");
         marker.textContent = `DIAGRAM:${name || `diagram-${index + 1}`}`;
         htmlEl.appendChild(marker);
       });
       BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
-        cleanDoc.querySelectorAll(selector).forEach((el) => el.remove());
+        cleanBody.querySelectorAll(selector).forEach((el) => el.remove());
       });
       if (!options.includeComments) {
-        cleanDoc.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
+        cleanBody.querySelectorAll("#comments-section, .comment-thread, .inline-comment").forEach((el) => {
           el.remove();
         });
       }
       if (!options.includeImages) {
-        cleanDoc.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
+        cleanBody.querySelectorAll("img, .confluence-embedded-image, .image-wrap").forEach((el) => {
           el.remove();
         });
       } else {
-        cleanDoc.querySelectorAll("img").forEach((img) => {
+        cleanBody.querySelectorAll("img").forEach((img) => {
           var _a3, _b2;
           if (!((_a3 = img.alt) == null ? void 0 : _a3.trim())) {
             const src = img.src || "";
@@ -18611,7 +18636,7 @@ ${result.join("\n")}
           }
         });
       }
-      return cleanDoc.body.innerHTML;
+      return cleanBody.innerHTML;
     }
     let turndownInstance = null;
     let obsidianTurndownInstance = null;
@@ -21353,64 +21378,77 @@ ${converted.output}
         }
       );
       pages.push(...pageResults);
-      {
-        onProgress == null ? void 0 : onProgress("attachments", 0, pageIds.length);
-        ctmLog(`[Backup] Fetching attachments for ${pageIds.length} pages`);
-        const attachmentLists = await runWithConcurrency(
-          pageIds,
-          async (pageId) => {
-            const atts = await fetchPageAttachments(pageId);
-            return { pageId, attachments: atts };
-          },
-          {
-            concurrency: MAX_CONCURRENCY,
-            signal,
-            onProgress: (completed, total) => onProgress == null ? void 0 : onProgress("attachments", completed, total)
-          }
-        );
-        const downloadTasks = [];
-        for (const { pageId, attachments } of attachmentLists) {
-          const page = pages.find((p) => p.id === pageId);
-          if (page) {
-            page.attachments = attachments.map((a) => ({
-              filename: a.filename,
-              mediaType: a.mediaType,
-              size: a.fileSize
-            }));
-          }
-          for (const att of attachments) {
-            if (att.downloadUrl) {
-              downloadTasks.push({ att, pageId });
-            }
-          }
-        }
-        if (downloadTasks.length > 0) {
-          onProgress == null ? void 0 : onProgress("Downloading attachments...", 0, downloadTasks.length);
-          ctmLog(`[Backup] Downloading ${downloadTasks.length} attachments`);
-          const downloaded = await runWithConcurrency(
-            downloadTasks,
-            async (task) => {
-              const exported = await exportAnyAttachment(task.att);
-              if (!exported) return null;
-              return { pageId: task.pageId, filename: exported.filename, blob: exported.blob };
+      if (options.includeAttachments) {
+        const filterSet = parseAttachmentFilter(options.attachmentFilter);
+        if (filterSet.size > 0) {
+          onProgress == null ? void 0 : onProgress("attachments", 0, pageIds.length);
+          ctmLog(`[Backup] Fetching attachments for ${pageIds.length} pages`);
+          const attachmentLists = await runWithConcurrency(
+            pageIds,
+            async (pageId) => {
+              const atts = await fetchPageAttachments(pageId);
+              return { pageId, attachments: atts };
             },
             {
-              concurrency: MAX_DOWNLOAD_CONCURRENCY,
-              bailOnError: false,
+              concurrency: MAX_CONCURRENCY,
               signal,
-              onProgress: (completed, total) => onProgress == null ? void 0 : onProgress("Downloading attachments...", completed, total)
+              onProgress: (completed, total) => onProgress == null ? void 0 : onProgress("attachments", completed, total)
             }
           );
-          for (const result of downloaded) {
-            if (!result || result instanceof Error) continue;
-            const safeName = sanitizeAttachmentFilename(result.filename);
-            const path = `attachments/${result.pageId}/${safeName}`;
-            try {
-              const arrayBuf = await result.blob.arrayBuffer();
-              attachmentFiles.push({ path, data: new Uint8Array(arrayBuf) });
-              attachmentCount++;
-            } catch (err2) {
-              ctmError(`[Backup] Failed to read blob for ${result.filename}:`, err2);
+          const downloadTasks = [];
+          for (const { pageId, attachments } of attachmentLists) {
+            const page = pages.find((p) => p.id === pageId);
+            const accepted = [];
+            for (const att of attachments) {
+              if (options.maxAttachmentSizeMB > 0 && att.fileSize > options.maxAttachmentSizeMB * 1024 * 1024) {
+                ctmLog(`[Backup] Skipping ${att.filename} - too large`);
+                continue;
+              }
+              if (!matchesAttachmentFilter(att.filename, filterSet)) {
+                ctmLog(`[Backup] Skipping ${att.filename} - no match`);
+                continue;
+              }
+              accepted.push(att);
+              if (att.downloadUrl) {
+                downloadTasks.push({ att, pageId });
+              }
+            }
+            if (page) {
+              page.attachments = accepted.map((a) => ({
+                filename: a.filename,
+                mediaType: a.mediaType,
+                size: a.fileSize
+              }));
+            }
+          }
+          if (downloadTasks.length > 0) {
+            onProgress == null ? void 0 : onProgress("Downloading attachments...", 0, downloadTasks.length);
+            ctmLog(`[Backup] Downloading ${downloadTasks.length} attachments`);
+            const downloaded = await runWithConcurrency(
+              downloadTasks,
+              async (task) => {
+                const exported = await exportAnyAttachment(task.att);
+                if (!exported) return null;
+                return { pageId: task.pageId, filename: exported.filename, blob: exported.blob };
+              },
+              {
+                concurrency: MAX_DOWNLOAD_CONCURRENCY,
+                bailOnError: false,
+                signal,
+                onProgress: (completed, total) => onProgress == null ? void 0 : onProgress("Downloading attachments...", completed, total)
+              }
+            );
+            for (const result of downloaded) {
+              if (!result || result instanceof Error) continue;
+              const safeName = sanitizeAttachmentFilename(result.filename);
+              const path = `attachments/${result.pageId}/${safeName}`;
+              try {
+                const arrayBuf = await result.blob.arrayBuffer();
+                attachmentFiles.push({ path, data: new Uint8Array(arrayBuf) });
+                attachmentCount++;
+              } catch (err2) {
+                ctmError(`[Backup] Failed to read blob for ${result.filename}:`, err2);
+              }
             }
           }
         }
@@ -21643,15 +21681,21 @@ ${converted.output}
     }
     async function finalizeBackup(controller, ctx, rootTree, rootTitle, signal) {
       const spaceKey = getSpaceKey();
+      const filterSet = parseAttachmentFilter(ctx.obsidianSettings.attachmentFilter);
       const result = await createConfluenceBackup(
         ctx.selectedIds,
         rootTree,
         rootTitle,
         spaceKey,
-        rootTitle,
+        // spaceName is a display-only manifest field; we don't have it at this
+        // call site (only spaceKey is available from URL/AJS.Meta). The importer
+        // uses spaceKey, not spaceName, for the actual restore.
+        null,
         {
-          includeAttachments: true,
-          includeViewHtml: false
+          includeAttachments: filterSet.size > 0,
+          includeViewHtml: false,
+          attachmentFilter: ctx.obsidianSettings.attachmentFilter,
+          maxAttachmentSizeMB: ctx.obsidianSettings.maxAttachmentSizeMB
         },
         (phase, current, total) => {
           var _a3;
@@ -22651,33 +22695,31 @@ ${converted.output}
     }
     function updateSelectionCount(element) {
       var _a3;
-      const checkboxes = element.querySelectorAll(".md-tree-checkbox:checked");
-      let count = 0;
-      checkboxes.forEach((cb) => {
-        var _a4;
-        if (!((_a4 = cb.closest("li")) == null ? void 0 : _a4.classList.contains("hidden"))) count++;
-      });
+      const visibleCount = getVisibleSelectedIds(element).length;
+      const totalSelected = getSelectedIds(element).length;
+      const searchInput = element.querySelector("#md-search-input");
+      const hasSearch = (((_a3 = searchInput == null ? void 0 : searchInput.value) == null ? void 0 : _a3.trim().length) ?? 0) > 0;
+      const activeTab = element.querySelector(".md-filter-tab.active");
+      const hasFilterTab = !!((activeTab == null ? void 0 : activeTab.dataset.filter) && activeTab.dataset.filter !== "all");
+      const isFiltering = hasSearch || hasFilterTab;
       const badge = element.querySelector("#md-download-badge");
       if (badge) {
-        badge.textContent = String(count);
-        badge.classList.toggle("has-count", count > 0);
+        badge.textContent = String(totalSelected);
+        badge.classList.toggle("has-count", totalSelected > 0);
       }
-      const searchInput = element.querySelector("#md-search-input");
-      const isSearchActive = ((_a3 = searchInput == null ? void 0 : searchInput.value) == null ? void 0 : _a3.trim().length) > 0;
-      const totalChecked = element.querySelectorAll(".md-tree-checkbox:checked").length;
       const hint = element.querySelector("#md-selection-hint");
       if (hint) {
-        if (isSearchActive && totalChecked > count) {
-          hint.textContent = `⚠️ ${count} of ${totalChecked} pages visible (search active)`;
+        if (isFiltering && totalSelected > visibleCount) {
+          hint.textContent = `⚠️ Search active: all ${totalSelected} pages will be exported`;
           hint.classList.add("md-hint-warning");
           hint.classList.remove("md-hint-empty");
-        } else if (count === 0) {
+        } else if (totalSelected === 0) {
           hint.textContent = t("selectPagesHint") ?? "Select pages to export";
           hint.classList.add("md-hint-empty");
           hint.classList.remove("md-hint-warning");
         } else {
           const total = element.querySelectorAll(".md-tree-checkbox").length;
-          hint.textContent = count === total ? `All ${count} pages selected` : `${count} pages selected`;
+          hint.textContent = totalSelected === total ? `All ${totalSelected} pages selected` : `${totalSelected} pages selected`;
           hint.classList.remove("md-hint-empty");
           hint.classList.remove("md-hint-warning");
         }
@@ -22686,22 +22728,31 @@ ${converted.output}
         '[data-action="copy"], [data-action="download"], [data-action="pdf"]'
       );
       actionBtns.forEach((btn) => {
-        btn.disabled = count === 0;
-        btn.title = count === 0 ? t("selectPagesHint") ?? "Select pages to export" : btn.getAttribute("data-original-title") ?? "";
+        btn.disabled = totalSelected === 0;
+        btn.title = totalSelected === 0 ? t("selectPagesHint") ?? "Select pages to export" : btn.getAttribute("data-original-title") ?? "";
       });
       const pagesStat = element.querySelector("#stat-pages");
       if (pagesStat) {
-        pagesStat.textContent = String(count);
+        pagesStat.textContent = String(visibleCount);
         const locale = getLocale();
         const labelEl = pagesStat.parentElement;
         if (labelEl && locale === "ru") {
-          labelEl.innerHTML = `<span id="stat-pages">${count}</span> ${pluralize(count, "Страница", "Страницы", "Страниц")}`;
+          labelEl.innerHTML = `<span id="stat-pages">${visibleCount}</span> ${pluralize(visibleCount, "Страница", "Страницы", "Страниц")}`;
         } else if (labelEl && locale === "en") {
-          labelEl.innerHTML = `<span id="stat-pages">${count}</span> ${count === 1 ? "Page" : "Pages"}`;
+          labelEl.innerHTML = `<span id="stat-pages">${visibleCount}</span> ${visibleCount === 1 ? "Page" : "Pages"}`;
         }
       }
     }
     function getSelectedIds(element) {
+      const ids = [];
+      element.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
+        if (cb.dataset.pageId) {
+          ids.push(cb.dataset.pageId);
+        }
+      });
+      return ids;
+    }
+    function getVisibleSelectedIds(element) {
       const ids = [];
       element.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
         const li = cb.closest("li");
@@ -23292,6 +23343,8 @@ ${converted.output}
           if (contentCard) contentCard.style.display = "none";
           if (diagramsCard) diagramsCard.style.display = "none";
           if (obsidianSection) obsidianSection.style.display = "none";
+          const attachmentCard = element.querySelector("#md-attachment-filter-card");
+          if (attachmentCard) attachmentCard.style.display = "block";
           const downloadBtn = element.querySelector("#md-download-btn");
           if (downloadBtn) {
             downloadBtn.setAttribute("data-action", "backup");
@@ -23379,6 +23432,7 @@ ${converted.output}
           return;
         }
         if (element.querySelector("[data-processing]")) {
+          shakeElement(element.querySelector(".md-selection-count"));
           return;
         }
         if (btn.hasAttribute("data-processing")) {
@@ -23510,8 +23564,7 @@ ${converted.output}
         }
         if (action === "select-all") {
           element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-            var _a3;
-            if (!((_a3 = cb.closest("li")) == null ? void 0 : _a3.classList.contains("hidden"))) cb.checked = true;
+            cb.checked = true;
           });
           updateSelectionCount(element);
           updateStats2();
@@ -23527,8 +23580,7 @@ ${converted.output}
         }
         if (action === "invert") {
           element.querySelectorAll(".md-tree-checkbox").forEach((cb) => {
-            var _a3;
-            if (!((_a3 = cb.closest("li")) == null ? void 0 : _a3.classList.contains("hidden"))) cb.checked = !cb.checked;
+            cb.checked = !cb.checked;
           });
           updateSelectionCount(element);
           updateStats2();
@@ -23681,6 +23733,10 @@ ${converted.output}
           if (obsidianOptions) {
             obsidianOptions.style.display = preset === "obsidian" ? "block" : "none";
           }
+          const attachmentCard = element.querySelector("#md-attachment-filter-card");
+          if (attachmentCard) {
+            attachmentCard.style.display = preset === "obsidian" ? "block" : "none";
+          }
           saveObsidianSettings(currentObsidianSettings2);
           return;
         }
@@ -23743,6 +23799,10 @@ ${converted.output}
           if (obsidianOptions) {
             obsidianOptions.style.display = value === "obsidian" ? "block" : "none";
           }
+          const attachmentCard = element.querySelector("#md-attachment-filter-card");
+          if (attachmentCard) {
+            attachmentCard.style.display = value === "obsidian" ? "block" : "none";
+          }
           const hintEl = element.querySelector("#platform-hint");
           if (hintEl) {
             const hints = {
@@ -23779,6 +23839,10 @@ ${converted.output}
             hintEl.textContent = hints[value] || "";
           }
           updateCopyButtonState(element);
+          const attachmentCard = element.querySelector("#md-attachment-filter-card");
+          if (attachmentCard) {
+            attachmentCard.style.display = value === "obsidian" ? "block" : "none";
+          }
           saveObsidianSettings(currentObsidianSettings2);
         };
         platformSelect.addEventListener("change", handlePlatformChange);
@@ -24110,14 +24174,7 @@ ${converted.output}
       }
     }
     function getSelectedIdsFromElement(element) {
-      const ids = [];
-      element.querySelectorAll(".md-tree-checkbox:checked").forEach((cb) => {
-        const li = cb.closest("li");
-        if (cb.dataset.pageId && !(li == null ? void 0 : li.classList.contains("hidden"))) {
-          ids.push(cb.dataset.pageId);
-        }
-      });
-      return ids;
+      return getSelectedIds(element);
     }
     function flattenTreeIds(node) {
       const ids = [node.id];
@@ -24704,6 +24761,7 @@ ${converted.output}
         }
       });
     }
+    const RETRY_DELAY_MS = 2e3;
     async function importConfluenceBackup(zipBlob, options, onProgress) {
       const baseUrl = getBaseUrl();
       onProgress == null ? void 0 : onProgress("Parsing backup...", 0, 1);
@@ -24756,7 +24814,8 @@ ${converted.output}
             options.targetSpaceKey,
             page.title,
             page.body.storage,
-            ancestorId
+            ancestorId,
+            options.maxPageCreateRetries ?? 1
           );
           idMapping.set(page.id, newId);
           result.created++;
@@ -24774,28 +24833,9 @@ ${converted.output}
           (k) => k.startsWith("attachments/") && !k.endsWith("/")
         );
         if (attachmentEntries.length > 0) {
-          onProgress == null ? void 0 : onProgress("Uploading attachments...", 0, attachmentEntries.length);
-          ctmLog(`[Import] Uploading ${attachmentEntries.length} attachments`);
-          let uploaded = 0;
-          for (const path of attachmentEntries) {
-            const parts = path.split("/");
-            if (parts.length < 3) continue;
-            const originalPageId = parts[1];
-            const filename = parts.slice(2).join("/");
-            const newPageId = idMapping.get(originalPageId);
-            if (!newPageId) {
-              continue;
-            }
-            try {
-              const data = entries[path];
-              const ab = new ArrayBuffer(data.byteLength);
-              new Uint8Array(ab).set(data);
-              await uploadAttachment(baseUrl, newPageId, filename, ab);
-              uploaded++;
-            } catch (error) {
-              ctmError(`[Import] Failed to upload ${filename} to ${newPageId}:`, error);
-            }
-            onProgress == null ? void 0 : onProgress("Uploading attachments...", ++uploaded, attachmentEntries.length);
+          const attFailures = await uploadPageAttachments(baseUrl, attachmentEntries, entries, idMapping, onProgress);
+          for (const f of attFailures) {
+            result.errors.push({ pageTitle: `Attachment: ${f.filename}`, error: f.error });
           }
         }
       }
@@ -24803,7 +24843,36 @@ ${converted.output}
       ctmLog(`[Import] Complete: ${result.created} created, ${result.skipped} skipped, ${result.failed} failed`);
       return result;
     }
-    async function createPage(baseUrl, spaceKey, title, storageBody, parentId) {
+    async function uploadPageAttachments(baseUrl, attachmentEntries, entries, idMapping, onProgress) {
+      onProgress == null ? void 0 : onProgress("Uploading attachments...", 0, attachmentEntries.length);
+      ctmLog(`[Import] Uploading ${attachmentEntries.length} attachments`);
+      let uploaded = 0;
+      const failures = [];
+      for (const path of attachmentEntries) {
+        const parts = path.split("/");
+        if (parts.length < 3) continue;
+        const originalPageId = parts[1];
+        const filename = parts.slice(2).join("/");
+        const newPageId = idMapping.get(originalPageId);
+        if (!newPageId) {
+          continue;
+        }
+        try {
+          const data = entries[path];
+          const ab = new ArrayBuffer(data.byteLength);
+          new Uint8Array(ab).set(data);
+          await uploadAttachment(baseUrl, newPageId, filename, ab);
+          uploaded++;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          ctmError(`[Import] Failed to upload ${filename} to ${newPageId}:`, error);
+          failures.push({ filename, pageId: newPageId, error: msg });
+        }
+        onProgress == null ? void 0 : onProgress("Uploading attachments...", uploaded, attachmentEntries.length);
+      }
+      return failures;
+    }
+    async function createPage(baseUrl, spaceKey, title, storageBody, parentId, retries = 1) {
       const body = {
         type: "page",
         title,
@@ -24818,26 +24887,46 @@ ${converted.output}
       if (parentId) {
         body.ancestors = [{ id: parentId }];
       }
-      const result = await transportRequest({
-        url: `${baseUrl}/rest/api/content`,
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      return result.id;
+      try {
+        const result = await transportRequest({
+          url: `${baseUrl}/rest/api/content`,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        return result.id;
+      } catch (error) {
+        if (retries > 0 && isRateLimited(error)) {
+          const delay2 = getRetryDelay(error);
+          ctmLog(`[Import] Rate limited creating "${title}", retrying in ${delay2}ms`);
+          await sleep(delay2);
+          return createPage(baseUrl, spaceKey, title, storageBody, parentId, retries - 1);
+        }
+        throw error;
+      }
     }
     async function uploadAttachment(baseUrl, pageId, filename, data) {
       const formData = new FormData();
       const blob = new Blob([data]);
       formData.append("file", blob, filename);
-      await transportRequest({
-        url: `${baseUrl}/rest/api/content/${pageId}/child/attachment`,
-        method: "POST",
-        headers: { "X-Atlassian-Token": "nocheck" },
-        body: formData
-      });
+      try {
+        await transportRequest({
+          url: `${baseUrl}/rest/api/content/${pageId}/child/attachment`,
+          method: "POST",
+          headers: { "X-Atlassian-Token": "nocheck" },
+          body: formData
+        });
+      } catch (error) {
+        if (error instanceof ConfluenceApiError && error.status === 409) {
+          throw new Error(
+            `Attachment "${filename}" already exists on page ${pageId} (conflict 409)`
+          );
+        }
+        throw error;
+      }
     }
     async function fetchExistingTitles(baseUrl, spaceKey) {
+      var _a3;
       const titles = /* @__PURE__ */ new Set();
       let start = 0;
       const limit = 200;
@@ -24850,7 +24939,7 @@ ${converted.output}
           for (const r of response.results) {
             titles.add(r.title);
           }
-          hasMore = response.results.length === limit;
+          hasMore = !!((_a3 = response._links) == null ? void 0 : _a3.next);
           start += limit;
         } catch {
           break;
@@ -24889,6 +24978,18 @@ ${converted.output}
       } catch {
         return null;
       }
+    }
+    function isRateLimited(error) {
+      return error instanceof ConfluenceApiError && error.category === "rate_limited";
+    }
+    function getRetryDelay(error) {
+      if (error instanceof ConfluenceApiError && error.retryAfterMs !== void 0) {
+        return error.retryAfterMs;
+      }
+      return RETRY_DELAY_MS;
+    }
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
     }
     const MODAL_ID = "md-import-modal";
     let state = createInitialState();
@@ -25432,15 +25533,16 @@ ${converted.output}
       onImport: startImport,
       onHubSettings: showHubSettingsPanel
     });
+    const DEFAULT_TEXT_SIZE_BYTES = 5 * 1024;
+    const MAX_ATTACHMENT_PAGES = 10;
     const sizeCache = /* @__PURE__ */ new Map();
-    let fetchInProgress = false;
+    const inProgressIds = /* @__PURE__ */ new Set();
     const IMAGE_TYPES = /* @__PURE__ */ new Set(["image/png", "image/jpeg", "image/gif", "image/svg+xml", "image/webp"]);
     const DIAGRAM_TYPES = /* @__PURE__ */ new Set(["application/vnd.jgraph.mxfile", "application/gliffy+json"]);
     async function fetchPageSizes(pageIds, onProgress) {
-      const uncached = pageIds.filter((id) => !sizeCache.has(id));
+      const uncached = pageIds.filter((id) => !sizeCache.has(id) && !inProgressIds.has(id));
       if (uncached.length === 0) return;
-      if (fetchInProgress) return;
-      fetchInProgress = true;
+      for (const id of uncached) inProgressIds.add(id);
       ctmLog(`[SizeEstimator] Fetching sizes for ${uncached.length} pages`);
       try {
         await runWithConcurrency(
@@ -25457,14 +25559,14 @@ ${converted.output}
           }
         );
       } finally {
-        fetchInProgress = false;
+        for (const id of uncached) inProgressIds.delete(id);
       }
       ctmLog(`[SizeEstimator] Cache now has ${sizeCache.size} entries`);
     }
     async function fetchSinglePageSize(pageId) {
       var _a3, _b2, _c, _d;
       const baseUrl = getBaseUrl();
-      const url = `${baseUrl}/rest/api/content/${pageId}/child/attachment?expand=extensions&limit=200`;
+      const limit = 200;
       let imageSizeBytes = 0;
       let otherAttachmentSizeBytes = 0;
       let imageCount = 0;
@@ -25472,34 +25574,44 @@ ${converted.output}
       let otherCount = 0;
       const sizeByExtension = {};
       const countByExtension = {};
+      let start = 0;
+      let hasMore = true;
+      let pages = 0;
       try {
-        const response = await fetchJson$1(url);
-        for (const att of response.results || []) {
-          const size = ((_a3 = att.extensions) == null ? void 0 : _a3.fileSize) ?? 0;
-          const mediaType = ((_b2 = att.extensions) == null ? void 0 : _b2.mediaType) ?? ((_c = att.metadata) == null ? void 0 : _c.mediaType) ?? "";
-          const ext = ((_d = (att.title.match(/\.([^.]+)$/) || [])[1]) == null ? void 0 : _d.toLowerCase()) || "";
-          if (DIAGRAM_TYPES.has(mediaType)) {
-            diagramCount++;
-            otherAttachmentSizeBytes += size;
-          } else if (IMAGE_TYPES.has(mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(att.title)) {
-            imageCount++;
-            imageSizeBytes += size;
-          } else {
-            otherCount++;
-            otherAttachmentSizeBytes += size;
+        while (hasMore && pages < MAX_ATTACHMENT_PAGES) {
+          const url = `${baseUrl}/rest/api/content/${pageId}/child/attachment?expand=extensions&limit=${limit}&start=${start}`;
+          const response = await fetchJson$1(url);
+          for (const att of response.results || []) {
+            const size = ((_a3 = att.extensions) == null ? void 0 : _a3.fileSize) ?? 0;
+            const mediaType = ((_b2 = att.extensions) == null ? void 0 : _b2.mediaType) ?? ((_c = att.metadata) == null ? void 0 : _c.mediaType) ?? "";
+            const ext = ((_d = (att.title.match(/\.([^.]+)$/) || [])[1]) == null ? void 0 : _d.toLowerCase()) || "";
+            if (DIAGRAM_TYPES.has(mediaType)) {
+              diagramCount++;
+              otherAttachmentSizeBytes += size;
+            } else if (IMAGE_TYPES.has(mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(att.title)) {
+              imageCount++;
+              imageSizeBytes += size;
+            } else {
+              otherCount++;
+              otherAttachmentSizeBytes += size;
+            }
+            if (ext && !DIAGRAM_TYPES.has(mediaType)) {
+              sizeByExtension[ext] = (sizeByExtension[ext] || 0) + size;
+              countByExtension[ext] = (countByExtension[ext] || 0) + 1;
+            }
           }
-          if (ext && !DIAGRAM_TYPES.has(mediaType)) {
-            sizeByExtension[ext] = (sizeByExtension[ext] || 0) + size;
-            countByExtension[ext] = (countByExtension[ext] || 0) + 1;
-          }
+          hasMore = response.results.length === limit;
+          start += limit;
+          pages++;
         }
       } catch (error) {
         ctmError(`[SizeEstimator] Failed for page ${pageId}:`, error);
       }
-      const textSizeBytes = 5 * 1024;
       return {
         pageId,
-        textSizeBytes,
+        // Fallback estimate: ~5 KB per page (actual HTML is usually 2–20 KB).
+        // Used when body content is not fetched; sufficient for order-of-magnitude estimates.
+        textSizeBytes: DEFAULT_TEXT_SIZE_BYTES,
         imageSizeBytes,
         otherAttachmentSizeBytes,
         imageCount,
@@ -25522,7 +25634,7 @@ ${converted.output}
       for (const id of pageIds) {
         const info = sizeCache.get(id);
         if (!info) {
-          textBytes += 5 * 1024;
+          textBytes += DEFAULT_TEXT_SIZE_BYTES;
           continue;
         }
         textBytes += info.textSizeBytes;
