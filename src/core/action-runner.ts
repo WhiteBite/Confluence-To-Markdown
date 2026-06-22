@@ -20,6 +20,7 @@ import {
 import { exportToPdf } from './pdf-exporter';
 import { createObsidianVault, downloadVaultZip } from './obsidian-exporter';
 import { createConfluenceBackup, downloadBackupZip } from './backup-exporter';
+import { parseAttachmentFilter } from '@/core/attachment-filter';
 
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import type { PageTreeNode } from '@/api/types';
@@ -224,15 +225,21 @@ async function finalizeBackup(
     // the pre-fetched pagesContent. It has its own fetch pipeline.
     const spaceKey = getSpaceKey();
 
+    const filterSet = parseAttachmentFilter(ctx.obsidianSettings.attachmentFilter);
     const result = await createConfluenceBackup(
         ctx.selectedIds,
         rootTree,
         rootTitle,
         spaceKey,
-        rootTitle,
+        // spaceName is a display-only manifest field; we don't have it at this
+        // call site (only spaceKey is available from URL/AJS.Meta). The importer
+        // uses spaceKey, not spaceName, for the actual restore.
+        null,
         {
-            includeAttachments: true,
+            includeAttachments: filterSet.size > 0,
             includeViewHtml: false,
+            attachmentFilter: ctx.obsidianSettings.attachmentFilter,
+            maxAttachmentSizeMB: ctx.obsidianSettings.maxAttachmentSizeMB,
         },
         (phase, current, total) => {
             controller?.showProgress?.(phase, current, total);

@@ -14,10 +14,16 @@
 
 import { unzipSync } from 'fflate';
 import { getBaseUrl } from '@/api/confluence';
-import { fetchJson } from '@/utils/transport';
-import { transportRequest } from '@/utils/transport';
+import { fetchJson, transportRequest } from '@/utils/transport';
 import { ctmLog, ctmError } from '@/utils/logger';
+import { ConfluenceApiError } from '@/api/errors';
 import type { BackupManifest, BackupPageData } from './backup-exporter';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const RETRY_DELAY_MS = 2_000;
 
 // ============================================================================
 // Types
@@ -25,20 +31,26 @@ import type { BackupManifest, BackupPageData } from './backup-exporter';
 
 export interface ImportOptions {
     /** Target space key where pages will be created */
-    targetSpaceKey: string;
+    readonly targetSpaceKey: string;
     /** Parent page ID under which to create the tree (null = space root) */
-    parentPageId: string | null;
+    readonly parentPageId: string | null;
     /** Whether to upload attachments */
-    includeAttachments: boolean;
+    readonly includeAttachments: boolean;
     /** Skip pages that already exist (match by title) */
-    skipExisting: boolean;
+    readonly skipExisting: boolean;
+    /**
+     * Max retry attempts for page creation on rate-limit (429).
+     * Each retry waits for the server's Retry-After hint.
+     * Default: 1 (2 total attempts).
+     */
+    readonly maxPageCreateRetries?: number;
 }
 
 export interface ImportResult {
     created: number;
     skipped: number;
     failed: number;
-    errors: Array<{ pageTitle: string; error: string }>;
+    errors: Array<{ readonly pageTitle: string; readonly error: string }>;
 }
 
 export type ImportProgressCallback = (phase: string, current: number, total: number) => void;
@@ -125,7 +137,8 @@ export async function importConfluenceBackup(
                 options.targetSpaceKey,
                 page.title,
                 page.body.storage,
-                ancestorId
+                ancestorId,
+                options.maxPageCreateRetries ?? 1
             );
             idMapping.set(page.id, newId);
             result.created++;
@@ -147,34 +160,11 @@ export async function importConfluenceBackup(
         );
 
         if (attachmentEntries.length > 0) {
-            onProgress?.('Uploading attachments...', 0, attachmentEntries.length);
-            ctmLog(`[Import] Uploading ${attachmentEntries.length} attachments`);
-
-            let uploaded = 0;
-            for (const path of attachmentEntries) {
-                // path: attachments/{originalPageId}/{filename}
-                const parts = path.split('/');
-                if (parts.length < 3) continue;
-                const originalPageId = parts[1];
-                const filename = parts.slice(2).join('/');
-                const newPageId = idMapping.get(originalPageId);
-
-                if (!newPageId) {
-                    // Page wasn't created (skipped or failed) — skip attachment
-                    continue;
-                }
-
-                try {
-                    const data = entries[path];
-                    const ab = new ArrayBuffer(data.byteLength);
-                    new Uint8Array(ab).set(data);
-                    await uploadAttachment(baseUrl, newPageId, filename, ab);
-                    uploaded++;
-                } catch (error) {
-                    ctmError(`[Import] Failed to upload ${filename} to ${newPageId}:`, error);
-                }
-
-                onProgress?.('Uploading attachments...', ++uploaded, attachmentEntries.length);
+            const attFailures = await uploadPageAttachments(baseUrl, attachmentEntries, entries, idMapping, onProgress);
+            for (const f of attFailures) {
+                // Surface attachment upload failures alongside page errors so the
+                // import-modal can display them to the user.
+                result.errors.push({ pageTitle: `Attachment: ${f.filename}`, error: f.error });
             }
         }
     }
@@ -182,6 +172,63 @@ export async function importConfluenceBackup(
     onProgress?.('Done!', 1, 1);
     ctmLog(`[Import] Complete: ${result.created} created, ${result.skipped} skipped, ${result.failed} failed`);
     return result;
+}
+
+// ============================================================================
+// Phase 5: Attachment upload (extracted for clarity and testability)
+// ============================================================================
+
+/** Describes a single failed attachment upload. */
+export interface AttachmentUploadFailure {
+    readonly filename: string;
+    readonly pageId: string;
+    readonly error: string;
+}
+
+/** @internal Exported for testing */
+export async function uploadPageAttachments(
+    baseUrl: string,
+    attachmentEntries: readonly string[],
+    entries: Readonly<Record<string, Uint8Array>>,
+    idMapping: ReadonlyMap<string, string>,
+    onProgress?: ImportProgressCallback
+): Promise<AttachmentUploadFailure[]> {
+    onProgress?.('Uploading attachments...', 0, attachmentEntries.length);
+    ctmLog(`[Import] Uploading ${attachmentEntries.length} attachments`);
+
+    let uploaded = 0;
+    const failures: AttachmentUploadFailure[] = [];
+
+    for (const path of attachmentEntries) {
+        // path: attachments/{originalPageId}/{filename}
+        const parts = path.split('/');
+        if (parts.length < 3) continue;
+        const originalPageId = parts[1];
+        const filename = parts.slice(2).join('/');
+        const newPageId = idMapping.get(originalPageId);
+
+        if (!newPageId) {
+            // Page wasn't created (skipped or failed) — skip attachment
+            continue;
+        }
+
+        try {
+            const data = entries[path];
+            const ab = new ArrayBuffer(data.byteLength);
+            new Uint8Array(ab).set(data);
+            await uploadAttachment(baseUrl, newPageId, filename, ab);
+            uploaded++;
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            ctmError(`[Import] Failed to upload ${filename} to ${newPageId}:`, error);
+            failures.push({ filename, pageId: newPageId, error: msg });
+        }
+
+        // ✅ Bug fix: no ++ here — uploaded is only incremented on success above
+        onProgress?.('Uploading attachments...', uploaded, attachmentEntries.length);
+    }
+
+    return failures;
 }
 
 // ============================================================================
@@ -193,7 +240,8 @@ async function createPage(
     spaceKey: string,
     title: string,
     storageBody: string,
-    parentId: string | null
+    parentId: string | null,
+    retries = 1
 ): Promise<string> {
     const body: Record<string, unknown> = {
         type: 'page',
@@ -211,14 +259,24 @@ async function createPage(
         body.ancestors = [{ id: parentId }];
     }
 
-    const result = await transportRequest<{ id: string }>({
-        url: `${baseUrl}/rest/api/content`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
+    try {
+        const result = await transportRequest<{ id: string }>({
+            url: `${baseUrl}/rest/api/content`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
 
-    return result.id;
+        return result.id;
+    } catch (error) {
+        if (retries > 0 && isRateLimited(error)) {
+            const delay = getRetryDelay(error);
+            ctmLog(`[Import] Rate limited creating "${title}", retrying in ${delay}ms`);
+            await sleep(delay);
+            return createPage(baseUrl, spaceKey, title, storageBody, parentId, retries - 1);
+        }
+        throw error;
+    }
 }
 
 async function uploadAttachment(
@@ -231,15 +289,25 @@ async function uploadAttachment(
     const blob = new Blob([data]);
     formData.append('file', blob, filename);
 
-    await transportRequest<unknown>({
-        url: `${baseUrl}/rest/api/content/${pageId}/child/attachment`,
-        method: 'POST',
-        headers: { 'X-Atlassian-Token': 'nocheck' },
-        body: formData,
-    });
+    try {
+        await transportRequest<unknown>({
+            url: `${baseUrl}/rest/api/content/${pageId}/child/attachment`,
+            method: 'POST',
+            headers: { 'X-Atlassian-Token': 'nocheck' },
+            body: formData,
+        });
+    } catch (error) {
+        if (error instanceof ConfluenceApiError && error.status === 409) {
+            throw new Error(
+                `Attachment "${filename}" already exists on page ${pageId} (conflict 409)`
+            );
+        }
+        throw error;
+    }
 }
 
-async function fetchExistingTitles(baseUrl: string, spaceKey: string): Promise<Set<string>> {
+/** @internal Exported for testing */
+export async function fetchExistingTitles(baseUrl: string, spaceKey: string): Promise<Set<string>> {
     const titles = new Set<string>();
     let start = 0;
     const limit = 200;
@@ -249,13 +317,21 @@ async function fetchExistingTitles(baseUrl: string, spaceKey: string): Promise<S
         try {
             const cql = encodeURIComponent(`space="${spaceKey}" AND type=page`);
             const url = `${baseUrl}/rest/api/content/search?cql=${cql}&limit=${limit}&start=${start}`;
-            const response = await fetchJson<{ results: Array<{ title: string }>; size: number }>(url);
+            const response = await fetchJson<{
+                results: Array<{ title: string }>;
+                size: number;
+                /** Present when more results are available (Confluence REST API pagination). */
+                _links?: { next?: string };
+            }>(url);
 
             for (const r of response.results) {
                 titles.add(r.title);
             }
 
-            hasMore = response.results.length === limit;
+            // Use _links.next (Confluence's canonical pagination signal) rather than
+            // comparing results.length === limit — avoids one spurious request when the
+            // total count is an exact multiple of `limit`.
+            hasMore = !!response._links?.next;
             start += limit;
         } catch {
             break;
@@ -275,8 +351,8 @@ interface TreeNode {
     children: TreeNode[];
 }
 
-/** Flatten tree in BFS order (parents before children) */
-function orderByTree(pages: BackupPageData[], tree: TreeNode): BackupPageData[] {
+/** Flatten tree in BFS order (parents before children). @internal Exported for testing */
+export function orderByTree(pages: BackupPageData[], tree: TreeNode): BackupPageData[] {
     const order: string[] = [];
     const queue: TreeNode[] = [tree];
 
@@ -309,7 +385,8 @@ function orderByTree(pages: BackupPageData[], tree: TreeNode): BackupPageData[] 
 // Helpers
 // ============================================================================
 
-function parseJsonEntry<T>(entries: Record<string, Uint8Array>, path: string): T | null {
+/** @internal Exported for testing */
+export function parseJsonEntry<T>(entries: Record<string, Uint8Array>, path: string): T | null {
     const data = entries[path];
     if (!data || data.length === 0) return null;
     try {
@@ -318,4 +395,19 @@ function parseJsonEntry<T>(entries: Record<string, Uint8Array>, path: string): T
     } catch {
         return null;
     }
+}
+
+function isRateLimited(error: unknown): boolean {
+    return error instanceof ConfluenceApiError && error.category === 'rate_limited';
+}
+
+function getRetryDelay(error: unknown): number {
+    if (error instanceof ConfluenceApiError && error.retryAfterMs !== undefined) {
+        return error.retryAfterMs;
+    }
+    return RETRY_DELAY_MS;
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

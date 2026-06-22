@@ -130,6 +130,11 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             if (diagramsCard) diagramsCard.style.display = 'none';
             if (obsidianSection) obsidianSection.style.display = 'none';
 
+            // WP2: Backup mode always shows the attachment filter card —
+            // visibility must not depend on what the previous mode was.
+            const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
+            if (attachmentCard) attachmentCard.style.display = 'block';
+
             // Update download button to indicate backup
             const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
             if (downloadBtn) {
@@ -245,8 +250,11 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             return;
         }
 
-        // Block ALL export actions if any is already processing
+        // Block ALL export actions if any is already processing.
+        // WP6: Shake the selection counter as visual feedback so the user
+        // knows the click was received but rejected.
         if (element.querySelector('[data-processing]')) {
+            shakeElement(element.querySelector('.md-selection-count'));
             return;
         }
 
@@ -422,9 +430,13 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         }
 
         // Selection controls
+        // All three operate on ALL items regardless of search/filter visibility —
+        // consistent with getSelectedIds (export set) which also ignores hidden state.
+        // The status bar warning "⚠️ Search active: N pages will be exported" informs
+        // the user when hidden items are included in the selection.
         if (action === 'select-all') {
             element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').forEach((cb) => {
-                if (!cb.closest('li')?.classList.contains('hidden')) cb.checked = true;
+                cb.checked = true;
             });
             updateSelectionCount(element);
             updateStats();
@@ -442,7 +454,7 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
 
         if (action === 'invert') {
             element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').forEach((cb) => {
-                if (!cb.closest('li')?.classList.contains('hidden')) cb.checked = !cb.checked;
+                cb.checked = !cb.checked;
             });
             updateSelectionCount(element);
             updateStats();
@@ -661,6 +673,12 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                 obsidianOptions.style.display = preset === 'obsidian' ? 'block' : 'none';
             }
 
+            // Sync attachment filter card (only visible in obsidian mode)
+            const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
+            if (attachmentCard) {
+                attachmentCard.style.display = preset === 'obsidian' ? 'block' : 'none';
+            }
+
             saveObsidianSettings(currentObsidianSettings);
             return;
         }
@@ -752,6 +770,12 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
                 obsidianOptions.style.display = value === 'obsidian' ? 'block' : 'none';
             }
 
+            // Sync attachment filter card (only visible in obsidian mode)
+            const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
+            if (attachmentCard) {
+                attachmentCard.style.display = value === 'obsidian' ? 'block' : 'none';
+            }
+
             // Update hint text
             const hintEl = element.querySelector('#platform-hint');
             if (hintEl) {
@@ -800,6 +824,12 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
 
             // Update Copy button state
             updateCopyButtonState(element);
+
+            // Sync attachment filter card (only visible in obsidian mode)
+            const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
+            if (attachmentCard) {
+                attachmentCard.style.display = value === 'obsidian' ? 'block' : 'none';
+            }
 
             // Auto-save
             saveObsidianSettings(currentObsidianSettings);

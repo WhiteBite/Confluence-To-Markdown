@@ -23,6 +23,7 @@ import {
     fetchPageAttachments,
     exportAnyAttachment,
 } from './attachment-handler';
+import { parseAttachmentFilter, matchesAttachmentFilter } from './attachment-filter';
 import type {
     PageTreeNode,
     AttachmentInfo,
@@ -116,8 +117,10 @@ export async function createConfluenceBackup(
     spaceKey: string | null,
     spaceName: string | null,
     options: {
-        includeAttachments: boolean;
-        includeViewHtml: boolean;
+        readonly includeAttachments: boolean;
+        readonly includeViewHtml: boolean;
+        readonly attachmentFilter: string;
+        readonly maxAttachmentSizeMB: number;
     },
     onProgress?: BackupProgressCallback,
     signal?: AbortSignal
@@ -183,75 +186,93 @@ export async function createConfluenceBackup(
 
     // ── Phase 2: Fetch and download attachments ──────────────────
     if (options.includeAttachments) {
-        onProgress?.('attachments', 0, pageIds.length);
-        ctmLog(`[Backup] Fetching attachments for ${pageIds.length} pages`);
+        const filterSet = parseAttachmentFilter(options.attachmentFilter);
 
-        const attachmentLists = await runWithConcurrency(
-            pageIds,
-            async (pageId) => {
-                const atts = await fetchPageAttachments(pageId);
-                return { pageId, attachments: atts };
-            },
-            {
-                concurrency: MAX_CONCURRENCY,
-                signal,
-                onProgress: (completed, total) =>
-                    onProgress?.('attachments', completed, total),
-            }
-        );
+        if (filterSet.size > 0) {
+            onProgress?.('attachments', 0, pageIds.length);
+            ctmLog(`[Backup] Fetching attachments for ${pageIds.length} pages`);
 
-        // Build download queue
-        interface DownloadTask { att: AttachmentInfo; pageId: string }
-        const downloadTasks: DownloadTask[] = [];
-
-        for (const { pageId, attachments } of attachmentLists) {
-            // Update page's attachment metadata
-            const page = pages.find(p => p.id === pageId);
-            if (page) {
-                page.attachments = attachments.map(a => ({
-                    filename: a.filename,
-                    mediaType: a.mediaType,
-                    size: a.fileSize,
-                }));
-            }
-            for (const att of attachments) {
-                if (att.downloadUrl) {
-                    downloadTasks.push({ att, pageId });
-                }
-            }
-        }
-
-        // Download all
-        if (downloadTasks.length > 0) {
-            onProgress?.('Downloading attachments...', 0, downloadTasks.length);
-            ctmLog(`[Backup] Downloading ${downloadTasks.length} attachments`);
-
-            const downloaded = await runWithConcurrency(
-                downloadTasks,
-                async (task) => {
-                    const exported = await exportAnyAttachment(task.att);
-                    if (!exported) return null;
-                    return { pageId: task.pageId, filename: exported.filename, blob: exported.blob };
+            const attachmentLists = await runWithConcurrency(
+                pageIds,
+                async (pageId) => {
+                    const atts = await fetchPageAttachments(pageId);
+                    return { pageId, attachments: atts };
                 },
                 {
-                    concurrency: MAX_DOWNLOAD_CONCURRENCY,
-                    bailOnError: false,
+                    concurrency: MAX_CONCURRENCY,
                     signal,
                     onProgress: (completed, total) =>
-                        onProgress?.('Downloading attachments...', completed, total),
+                        onProgress?.('attachments', completed, total),
                 }
             );
 
-            for (const result of downloaded) {
-                if (!result || result instanceof Error) continue;
-                const safeName = sanitizeAttachmentFilename(result.filename);
-                const path = `attachments/${result.pageId}/${safeName}`;
-                try {
-                    const arrayBuf = await result.blob.arrayBuffer();
-                    attachmentFiles.push({ path, data: new Uint8Array(arrayBuf) });
-                    attachmentCount++;
-                } catch (err) {
-                    ctmError(`[Backup] Failed to read blob for ${result.filename}:`, err);
+            // Build download queue with filtering
+            interface DownloadTask { att: AttachmentInfo; pageId: string }
+            const downloadTasks: DownloadTask[] = [];
+
+            for (const { pageId, attachments } of attachmentLists) {
+                const page = pages.find(p => p.id === pageId);
+                const accepted: AttachmentInfo[] = [];
+
+                for (const att of attachments) {
+                    // Size filter
+                    if (options.maxAttachmentSizeMB > 0 && att.fileSize > options.maxAttachmentSizeMB * 1024 * 1024) {
+                        ctmLog(`[Backup] Skipping ${att.filename} - too large`);
+                        continue;
+                    }
+                    // Type filter
+                    if (!matchesAttachmentFilter(att.filename, filterSet)) {
+                        ctmLog(`[Backup] Skipping ${att.filename} - no match`);
+                        continue;
+                    }
+                    accepted.push(att);
+                    if (att.downloadUrl) {
+                        downloadTasks.push({ att, pageId });
+                    }
+                }
+
+                // Update page metadata with only filtered attachments
+                if (page) {
+                    page.attachments = accepted.map(a => ({
+                        filename: a.filename,
+                        mediaType: a.mediaType,
+                        size: a.fileSize,
+                    }));
+                }
+            }
+
+            // Download filtered attachments
+            if (downloadTasks.length > 0) {
+                onProgress?.('Downloading attachments...', 0, downloadTasks.length);
+                ctmLog(`[Backup] Downloading ${downloadTasks.length} attachments`);
+
+                const downloaded = await runWithConcurrency(
+                    downloadTasks,
+                    async (task) => {
+                        const exported = await exportAnyAttachment(task.att);
+                        if (!exported) return null;
+                        return { pageId: task.pageId, filename: exported.filename, blob: exported.blob };
+                    },
+                    {
+                        concurrency: MAX_DOWNLOAD_CONCURRENCY,
+                        bailOnError: false,
+                        signal,
+                        onProgress: (completed, total) =>
+                            onProgress?.('Downloading attachments...', completed, total),
+                    }
+                );
+
+                for (const result of downloaded) {
+                    if (!result || result instanceof Error) continue;
+                    const safeName = sanitizeAttachmentFilename(result.filename);
+                    const path = `attachments/${result.pageId}/${safeName}`;
+                    try {
+                        const arrayBuf = await result.blob.arrayBuffer();
+                        attachmentFiles.push({ path, data: new Uint8Array(arrayBuf) });
+                        attachmentCount++;
+                    } catch (err) {
+                        ctmError(`[Backup] Failed to read blob for ${result.filename}:`, err);
+                    }
                 }
             }
         }

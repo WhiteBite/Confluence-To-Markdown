@@ -83,16 +83,11 @@ export function detectDiagramFormat(content: string): DiagramFormat {
         return 'plantuml';
     }
 
-    // Gliffy JSON
-    if (trimmed.startsWith('{') && trimmed.includes('"stage"')) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (parsed.stage || parsed.contentType?.includes('gliffy')) {
-                return 'gliffy';
-            }
-        } catch {
-            // Not valid JSON
-        }
+    // Gliffy JSON — string-only check avoids full JSON.parse on potentially large content.
+    // Gliffy always has a top-level "stage" key or a "contentType" containing "gliffy".
+    if (trimmed.startsWith('{') &&
+        (trimmed.includes('"stage":') || (trimmed.includes('"contentType"') && trimmed.includes('gliffy')))) {
+        return 'gliffy';
     }
 
     return 'unknown';
@@ -348,7 +343,11 @@ export function generateDiagramReference(
 }
 
 /**
- * Generate markdown with SVG preview and source reference
+ * Generate markdown with SVG preview and source reference.
+ *
+ * @security The inlined SVG comes from Confluence and may contain scripts.
+ * Obsidian strips scripts from SVG; other markdown renderers may not.
+ * Callers that render to HTML should sanitize the SVG before use.
  */
 export function generateDiagramWithSvgPreview(
     diagram: ProcessedDiagram,
@@ -399,10 +398,10 @@ export function parseDrawioDiagram(xmlContent: string): Diagram | null {
 // Helpers
 // ============================================================================
 
-function getFileExtension(format: DiagramFormat | TargetFormat): string {
+export function getFileExtension(format: DiagramFormat | TargetFormat): string {
     switch (format) {
         case 'drawio': return 'drawio';
-        case 'mermaid': return 'md';
+        case 'mermaid': return 'mmd';
         case 'plantuml': return 'puml';
         case 'excalidraw': return 'excalidraw';
         case 'gliffy': return 'gliffy';

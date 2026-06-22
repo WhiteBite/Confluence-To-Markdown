@@ -117,10 +117,6 @@ export function extractDiagramInfoFromHtml(html: string): DiagramInfo[] {
             type,
             macroId: `diagram-${index}`,
         });
-
-        // Add data attribute to element for later matching in Turndown
-        htmlEl.setAttribute('data-extracted-diagram-name', name);
-        htmlEl.setAttribute('data-diagram-index', String(index));
     });
 
     if (diagrams.length > 0) {
@@ -176,12 +172,15 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
         });
     }
 
-    // Create a new document with only the content
-    const cleanDoc = parser.parseFromString('<html><body></body></html>', 'text/html');
-    cleanDoc.body.innerHTML = contentElement.innerHTML;
+    // Clone content element's children into a fresh body — avoids a second
+    // parseFromString and the implicit serialization/deserialization of innerHTML.
+    const cleanBody = doc.createElement('body');
+    Array.from(contentElement.childNodes).forEach(node => {
+        cleanBody.appendChild(node.cloneNode(true));
+    });
 
     // Expand collapsed content
-    cleanDoc.querySelectorAll('.aui-expander-content, .expand-content').forEach((el) => {
+    cleanBody.querySelectorAll('.aui-expander-content, .expand-content').forEach((el) => {
         (el as HTMLElement).style.display = 'block';
         el.removeAttribute('aria-hidden');
         const expander = el.closest('.aui-expander-container, .expand-container');
@@ -192,7 +191,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
     });
 
     // IMPORTANT: Extract diagram names from scripts BEFORE removing scripts
-    cleanDoc.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
+    cleanBody.querySelectorAll(DIAGRAM_SELECTORS).forEach((el, index) => {
         const htmlEl = el as HTMLElement;
 
         // Check if already has name
@@ -220,7 +219,7 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
         // Add a text marker that Turndown will see (hidden from display)
         // This ensures Turndown doesn't skip empty diagram containers
-        const marker = cleanDoc.createElement('span');
+        const marker = doc.createElement('span');
         marker.style.display = 'none';
         marker.setAttribute('data-diagram-marker', 'true');
         marker.textContent = `DIAGRAM:${name || `diagram-${index + 1}`}`;
@@ -229,24 +228,24 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
     // Remove base selectors (including scripts - but diagram names are now preserved)
     BASE_SELECTORS_TO_REMOVE.forEach((selector) => {
-        cleanDoc.querySelectorAll(selector).forEach((el) => el.remove());
+        cleanBody.querySelectorAll(selector).forEach((el) => el.remove());
     });
 
     // Conditionally remove comments
     if (!options.includeComments) {
-        cleanDoc.querySelectorAll('#comments-section, .comment-thread, .inline-comment').forEach((el) => {
+        cleanBody.querySelectorAll('#comments-section, .comment-thread, .inline-comment').forEach((el) => {
             el.remove();
         });
     }
 
     // Conditionally remove images
     if (!options.includeImages) {
-        cleanDoc.querySelectorAll('img, .confluence-embedded-image, .image-wrap').forEach((el) => {
+        cleanBody.querySelectorAll('img, .confluence-embedded-image, .image-wrap').forEach((el) => {
             el.remove();
         });
     } else {
         // Add alt text to images without it
-        cleanDoc.querySelectorAll('img').forEach((img) => {
+        cleanBody.querySelectorAll('img').forEach((img) => {
             if (!img.alt?.trim()) {
                 const src = img.src || '';
                 const filename = src.split('/').pop()?.split('?')[0] || 'image';
@@ -257,5 +256,5 @@ export function sanitizeHtml(html: string, options: SanitizeOptions, pageId?: st
 
     if (DEBUG) ctmLog();
 
-    return cleanDoc.body.innerHTML;
+    return cleanBody.innerHTML;
 }

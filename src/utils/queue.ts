@@ -51,6 +51,7 @@ export async function runWithConcurrency<T, R>(
     let completed = 0;
     let currentIndex = 0;
     let aborted = false;
+    let hasFailed = false;
 
     if (signal?.aborted) throw makeAbortError();
 
@@ -60,8 +61,7 @@ export async function runWithConcurrency<T, R>(
     if (signal) signal.addEventListener('abort', onAbort, { once: true });
 
     async function worker(): Promise<void> {
-        while (currentIndex < items.length) {
-            if (aborted) return;
+        while (currentIndex < items.length && !aborted && !hasFailed) {
             const index = currentIndex++;
             const item = items[index];
 
@@ -69,6 +69,9 @@ export async function runWithConcurrency<T, R>(
                 results[index] = await fn(item, index);
             } catch (err) {
                 if (bailOnError) {
+                    // Set before throw to ensure other workers see it immediately
+                    // (hasFailed is checked at the top of each worker's loop)
+                    hasFailed = true;
                     throw err;
                 }
                 results[index] = err instanceof Error ? err : new Error(String(err));
@@ -239,7 +242,9 @@ function computeRetryDelay(
         Number.isFinite(error.retryAfterMs) &&
         error.retryAfterMs >= 0
     ) {
-        return Math.min(error.retryAfterMs, maxDelayMs);
+        // Respect the server's Retry-After hint without a cap — capping it
+        // would cause premature retries and waste attempts on another 429.
+        return error.retryAfterMs;
     }
     const exp = baseDelayMs * Math.pow(2, attempt);
     return Math.min(exp, maxDelayMs);

@@ -52,11 +52,27 @@ export interface SizeEstimate {
 }
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+/** Fallback text size per page when body is unavailable (~5 KB). */
+const DEFAULT_TEXT_SIZE_BYTES = 5 * 1024;
+
+/** Maximum attachment pages to fetch per page (guards against infinite loops). */
+const MAX_ATTACHMENT_PAGES = 10;
+
+// ============================================================================
 // Cache
 // ============================================================================
 
 const sizeCache = new Map<string, PageSizeInfo>();
-let fetchInProgress = false;
+
+/**
+ * Tracks page IDs currently being fetched to prevent duplicate parallel requests
+ * for the same page. Unlike a simple boolean flag, this allows concurrent calls
+ * for different page ID sets to proceed independently.
+ */
+const inProgressIds = new Set<string>();
 
 /** Clear cache (e.g., on tree refresh) */
 export function clearSizeCache(): void {
@@ -78,6 +94,10 @@ interface AttachmentResponse {
         extensions?: { fileSize?: number; mediaType?: string };
         metadata?: { mediaType?: string };
     }>;
+    /** Offset of the first result in this page. */
+    start?: number;
+    /** Total number of attachments (may differ from results.length). */
+    size?: number;
 }
 
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/webp']);
@@ -87,17 +107,20 @@ const DIAGRAM_TYPES = new Set(['application/vnd.jgraph.mxfile', 'application/gli
  * Fetch real attachment sizes for a list of page IDs.
  * Results are cached — subsequent calls for same IDs are instant.
  * Concurrency-limited to avoid 429.
+ *
+ * Multiple concurrent calls with different page ID sets proceed independently;
+ * IDs already being fetched by another in-flight call are skipped to avoid
+ * duplicate requests.
  */
 export async function fetchPageSizes(
     pageIds: string[],
     onProgress?: (done: number, total: number) => void
 ): Promise<void> {
-    // Filter out already-cached
-    const uncached = pageIds.filter(id => !sizeCache.has(id));
+    // Filter out already-cached and currently-in-flight IDs
+    const uncached = pageIds.filter(id => !sizeCache.has(id) && !inProgressIds.has(id));
     if (uncached.length === 0) return;
-    if (fetchInProgress) return; // avoid parallel fetches
 
-    fetchInProgress = true;
+    for (const id of uncached) inProgressIds.add(id);
     ctmLog(`[SizeEstimator] Fetching sizes for ${uncached.length} pages`);
 
     try {
@@ -114,7 +137,7 @@ export async function fetchPageSizes(
             }
         );
     } finally {
-        fetchInProgress = false;
+        for (const id of uncached) inProgressIds.delete(id);
     }
 
     ctmLog(`[SizeEstimator] Cache now has ${sizeCache.size} entries`);
@@ -122,7 +145,7 @@ export async function fetchPageSizes(
 
 async function fetchSinglePageSize(pageId: string): Promise<PageSizeInfo> {
     const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/rest/api/content/${pageId}/child/attachment?expand=extensions&limit=200`;
+    const limit = 200;
 
     let imageSizeBytes = 0;
     let otherAttachmentSizeBytes = 0;
@@ -132,40 +155,51 @@ async function fetchSinglePageSize(pageId: string): Promise<PageSizeInfo> {
     const sizeByExtension: Record<string, number> = {};
     const countByExtension: Record<string, number> = {};
 
+    let start = 0;
+    let hasMore = true;
+    let pages = 0;
+
     try {
-        const response = await fetchJson<AttachmentResponse>(url);
-        for (const att of response.results || []) {
-            const size = att.extensions?.fileSize ?? 0;
-            const mediaType = att.extensions?.mediaType ?? att.metadata?.mediaType ?? '';
-            const ext = (att.title.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
+        while (hasMore && pages < MAX_ATTACHMENT_PAGES) {
+            const url = `${baseUrl}/rest/api/content/${pageId}/child/attachment?expand=extensions&limit=${limit}&start=${start}`;
+            const response = await fetchJson<AttachmentResponse>(url);
 
-            if (DIAGRAM_TYPES.has(mediaType)) {
-                diagramCount++;
-                otherAttachmentSizeBytes += size;
-            } else if (IMAGE_TYPES.has(mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(att.title)) {
-                imageCount++;
-                imageSizeBytes += size;
-            } else {
-                otherCount++;
-                otherAttachmentSizeBytes += size;
+            for (const att of response.results || []) {
+                const size = att.extensions?.fileSize ?? 0;
+                const mediaType = att.extensions?.mediaType ?? att.metadata?.mediaType ?? '';
+                const ext = (att.title.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
+
+                if (DIAGRAM_TYPES.has(mediaType)) {
+                    diagramCount++;
+                    otherAttachmentSizeBytes += size;
+                } else if (IMAGE_TYPES.has(mediaType) || /\.(png|jpe?g|gif|svg|webp)$/i.test(att.title)) {
+                    imageCount++;
+                    imageSizeBytes += size;
+                } else {
+                    otherCount++;
+                    otherAttachmentSizeBytes += size;
+                }
+
+                // Track per-extension breakdown for all non-diagram attachments
+                if (ext && !DIAGRAM_TYPES.has(mediaType)) {
+                    sizeByExtension[ext] = (sizeByExtension[ext] || 0) + size;
+                    countByExtension[ext] = (countByExtension[ext] || 0) + 1;
+                }
             }
 
-            // Track per-extension breakdown for all non-diagram attachments
-            if (ext && !DIAGRAM_TYPES.has(mediaType)) {
-                sizeByExtension[ext] = (sizeByExtension[ext] || 0) + size;
-                countByExtension[ext] = (countByExtension[ext] || 0) + 1;
-            }
+            hasMore = response.results.length === limit;
+            start += limit;
+            pages++;
         }
     } catch (error) {
         ctmError(`[SizeEstimator] Failed for page ${pageId}:`, error);
     }
 
-    // Text size: rough estimate ~5KB per page (actual HTML is usually 2-20KB)
-    const textSizeBytes = 5 * 1024;
-
     return {
         pageId,
-        textSizeBytes,
+        // Fallback estimate: ~5 KB per page (actual HTML is usually 2–20 KB).
+        // Used when body content is not fetched; sufficient for order-of-magnitude estimates.
+        textSizeBytes: DEFAULT_TEXT_SIZE_BYTES,
         imageSizeBytes,
         otherAttachmentSizeBytes,
         imageCount,
@@ -207,8 +241,8 @@ export function calculateSizeEstimate(
     for (const id of pageIds) {
         const info = sizeCache.get(id);
         if (!info) {
-            // Fallback: estimate 5KB text per page
-            textBytes += 5 * 1024;
+            // Fallback: estimate DEFAULT_TEXT_SIZE_BYTES text per page
+            textBytes += DEFAULT_TEXT_SIZE_BYTES;
             continue;
         }
 

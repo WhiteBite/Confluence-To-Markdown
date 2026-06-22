@@ -788,71 +788,81 @@ export function showToast(
 
 /** Update selection count */
 export function updateSelectionCount(element: HTMLElement): void {
-  const checkboxes = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked');
-  let count = 0;
-  checkboxes.forEach((cb) => {
-    if (!cb.closest('li')?.classList.contains('hidden')) count++;
-  });
+  const visibleCount = getVisibleSelectedIds(element).length;
+  const totalSelected = getSelectedIds(element).length;
 
-  // Update badge on download button
+  // Determine if search or filter tab is active (either causes items to be hidden)
+  const searchInput = element.querySelector('#md-search-input') as HTMLInputElement;
+  const hasSearch = (searchInput?.value?.trim().length ?? 0) > 0;
+  const activeTab = element.querySelector('.md-filter-tab.active') as HTMLElement;
+  const hasFilterTab = !!(activeTab?.dataset.filter && activeTab.dataset.filter !== 'all');
+  const isFiltering = hasSearch || hasFilterTab;
+
+  // Update badge on download button — shows total pages that will actually be exported
   const badge = element.querySelector('#md-download-badge');
   if (badge) {
-    badge.textContent = String(count);
-    badge.classList.toggle('has-count', count > 0);
+    badge.textContent = String(totalSelected);
+    badge.classList.toggle('has-count', totalSelected > 0);
   }
-
-  // Check if search is filtering results
-  const searchInput = element.querySelector('#md-search-input') as HTMLInputElement;
-  const isSearchActive = searchInput?.value?.trim().length > 0;
-  const totalChecked = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked').length;
 
   // Update selection hint in footer
   const hint = element.querySelector('#md-selection-hint');
   if (hint) {
-    if (isSearchActive && totalChecked > count) {
-      hint.textContent = `⚠️ ${count} of ${totalChecked} pages visible (search active)`;
+    if (isFiltering && totalSelected > visibleCount) {
+      hint.textContent = `⚠️ Search active: all ${totalSelected} pages will be exported`;
       hint.classList.add('md-hint-warning');
       hint.classList.remove('md-hint-empty');
-    } else if (count === 0) {
+    } else if (totalSelected === 0) {
       hint.textContent = t('selectPagesHint') ?? 'Select pages to export';
       hint.classList.add('md-hint-empty');
       hint.classList.remove('md-hint-warning');
     } else {
       const total = element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox').length;
-      hint.textContent = count === total
-        ? `All ${count} pages selected`
-        : `${count} pages selected`;
+      hint.textContent = totalSelected === total
+        ? `All ${totalSelected} pages selected`
+        : `${totalSelected} pages selected`;
       hint.classList.remove('md-hint-empty');
       hint.classList.remove('md-hint-warning');
     }
   }
 
-  // Disable/enable action buttons based on selection
+  // Disable/enable action buttons based on TOTAL selection (including hidden items)
   const actionBtns = element.querySelectorAll<HTMLButtonElement>(
     '[data-action="copy"], [data-action="download"], [data-action="pdf"]'
   );
   actionBtns.forEach(btn => {
-    btn.disabled = count === 0;
-    btn.title = count === 0 ? (t('selectPagesHint') ?? 'Select pages to export') : btn.getAttribute('data-original-title') ?? '';
+    btn.disabled = totalSelected === 0;
+    btn.title = totalSelected === 0 ? (t('selectPagesHint') ?? 'Select pages to export') : btn.getAttribute('data-original-title') ?? '';
   });
 
-  // Update pages stat
+  // Update pages stat (visible selected count in tree status bar)
   const pagesStat = element.querySelector('#stat-pages');
   if (pagesStat) {
-    pagesStat.textContent = String(count);
+    pagesStat.textContent = String(visibleCount);
     // Update label with proper pluralization for Russian
     const locale = getLocale();
     const labelEl = pagesStat.parentElement;
     if (labelEl && locale === 'ru') {
-      labelEl.innerHTML = `<span id="stat-pages">${count}</span> ${pluralize(count, 'Страница', 'Страницы', 'Страниц')}`;
+      labelEl.innerHTML = `<span id="stat-pages">${visibleCount}</span> ${pluralize(visibleCount, 'Страница', 'Страницы', 'Страниц')}`;
     } else if (labelEl && locale === 'en') {
-      labelEl.innerHTML = `<span id="stat-pages">${count}</span> ${count === 1 ? 'Page' : 'Pages'}`;
+      labelEl.innerHTML = `<span id="stat-pages">${visibleCount}</span> ${visibleCount === 1 ? 'Page' : 'Pages'}`;
     }
   }
 }
 
-/** Get selected page IDs */
+/** Get all selected page IDs (for export) — ignores hidden state */
 export function getSelectedIds(element: HTMLElement): string[] {
+  const ids: string[] = [];
+  element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked').forEach((cb) => {
+    if (cb.dataset.pageId) {
+      ids.push(cb.dataset.pageId);
+    }
+  });
+  return ids;
+}
+
+/** Get visible selected page IDs (for UI display) — excludes items inside hidden list elements */
+export function getVisibleSelectedIds(element: HTMLElement): string[] {
   const ids: string[] = [];
   element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked').forEach((cb) => {
     const li = cb.closest('li');

@@ -10,7 +10,7 @@ import type {
     ModalState,
 } from './types';
 import { ModalStateMachine } from './state';
-import { renderModal, renderTree, updateModalUI, showProgress, hideProgress, showToast, updateSelectionCount, countNodes, ICONS } from './view';
+import { renderModal, renderTree, updateModalUI, showProgress, hideProgress, showToast, updateSelectionCount, getSelectedIds, countNodes, ICONS } from './view';
 import type { RenderModalOptions } from './view';
 import { setupEventListeners, initSettings, getSettings, setRootNode, enableModalInteraction } from './handlers';
 import { calculateTreeStats } from '@/core/export-stats';
@@ -118,16 +118,13 @@ async function updateStats(element: HTMLElement, rootNode: PageTreeNode): Promis
     }
 }
 
-/** Get selected IDs from element */
+/**
+ * Get selected IDs from element for stats calculation.
+ * Delegates to view.getSelectedIds which includes hidden items —
+ * stats should reflect the actual export set, not just visible items.
+ */
 function getSelectedIdsFromElement(element: HTMLElement): string[] {
-    const ids: string[] = [];
-    element.querySelectorAll<HTMLInputElement>('.md-tree-checkbox:checked').forEach((cb) => {
-        const li = cb.closest('li');
-        if (cb.dataset.pageId && !li?.classList.contains('hidden')) {
-            ids.push(cb.dataset.pageId);
-        }
-    });
-    return ids;
+    return getSelectedIds(element);
 }
 
 /** Get all page IDs from tree (for pre-fetching sizes) */

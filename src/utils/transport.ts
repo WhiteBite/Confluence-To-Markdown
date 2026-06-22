@@ -192,7 +192,14 @@ function gmRequest(args: BackendArgs): Promise<RawResponse> {
                     statusText: response.statusText,
                     headers: parsedHeaders,
                     text: async () => responseText,
-                    blob: async () => responseBlob ?? new Blob([responseText]),
+                    blob: async () => {
+                        if (responseBlob) return responseBlob;
+                        // Fallback for old TM: responseText may be a binary string
+                        // (latin1-encoded). Using charCodeAt preserves correct byte
+                        // values instead of producing a garbled UTF-16 blob.
+                        const bytes = Uint8Array.from(responseText, c => c.charCodeAt(0));
+                        return new Blob([bytes]);
+                    },
                     json: async <T>() => JSON.parse(responseText) as T,
                 });
             },
@@ -203,9 +210,8 @@ function gmRequest(args: BackendArgs): Promise<RawResponse> {
                         category: 'cors_network',
                         status: response.status || undefined,
                         url,
-                        technicalMessage: `GM_xmlhttpRequest network error: ${
-                            response.statusText || response.error || 'Unknown'
-                        }`,
+                        technicalMessage: `GM_xmlhttpRequest network error: ${response.statusText || response.error || 'Unknown'
+                            }`,
                     })
                 );
             },
@@ -250,6 +256,45 @@ interface BgFetchSuccess { success: true; data: unknown; status?: number; retryA
 interface BgFetchFailure { success: false; error?: string; status?: number; retryAfterMs?: number }
 type BgFetchResult = BgFetchSuccess | BgFetchFailure;
 
+/**
+ * Binary payload contract used when the background script serialises a blob response.
+ * The background script encodes the raw bytes as Base64 and sets the MIME type so
+ * `wrapBackgroundResponse` can reconstruct the original `Blob`.
+ * @internal
+ */
+export interface BinaryBase64Payload {
+    /** Base64-encoded binary data. */
+    __binary_base64: string;
+    /** MIME type of the original blob. */
+    mimeType: string;
+}
+
+/**
+ * Decode a binary response from the background script.
+ *
+ * Returns a `Blob` when `data` matches the {@link BinaryBase64Payload} contract,
+ * or `null` when the format is not recognised (caller falls back to legacy behaviour).
+ *
+ * @internal Exported for unit-testing only.
+ */
+export function decodeBinaryResponse(data: unknown): Blob | null {
+    if (typeof data !== 'object' || data === null || !('__binary_base64' in data)) {
+        return null;
+    }
+    const record = data as Record<string, unknown>;
+    const base64 = record['__binary_base64'];
+    const mimeType =
+        typeof record['mimeType'] === 'string' ? record['mimeType'] : 'application/octet-stream';
+    if (typeof base64 !== 'string') return null;
+    try {
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        return new Blob([bytes], { type: mimeType });
+    } catch {
+        return null;
+    }
+}
+
 async function backgroundRequest(args: BackendArgs, originalError: unknown): Promise<RawResponse> {
     const hasChromeRuntime =
         typeof chrome !== 'undefined' &&
@@ -269,23 +314,38 @@ async function backgroundRequest(args: BackendArgs, originalError: unknown): Pro
         method: args.method,
         body: serializedBody,
         isMultipart,
+        responseType: args.responseType,
         options: { method: args.method, headers: args.headers },
     });
 
     return wrapBackgroundResponse(result, args.url);
 }
 
-function wrapBackgroundResponse(result: BgFetchResult, url: string): RawResponse {
+/**
+ * Wrap a background-script fetch result as a {@link RawResponse}.
+ *
+ * ### Binary contract
+ * When the background script handles a `responseType: 'blob'` request it encodes
+ * the response as `{ __binary_base64: string; mimeType: string }` in `data`.
+ * `wrapBackgroundResponse` detects this shape via {@link decodeBinaryResponse} and
+ * reconstructs the original `Blob`.  If decoding fails or the payload does not match
+ * the contract, `blob()` falls back to returning the JSON-stringified `data` wrapped
+ * in an `application/json` blob (legacy behaviour preserved for JSON API responses).
+ *
+ * @internal Exported for unit-testing only.
+ */
+export function wrapBackgroundResponse(result: BgFetchResult, url: string): RawResponse {
     if (result?.success) {
         const data = result.data;
         const status = result.status ?? 200;
         const json = JSON.stringify(data ?? null);
+        const binaryBlob = decodeBinaryResponse(data);
         return {
             status,
             statusText: 'OK',
             headers: {},
             text: async () => json,
-            blob: async () => new Blob([json], { type: 'application/json' }),
+            blob: async () => binaryBlob ?? new Blob([json], { type: 'application/json' }),
             json: async <T>() => data as T,
         };
     }
@@ -312,7 +372,7 @@ function wrapBackgroundResponse(result: BgFetchResult, url: string): RawResponse
         statusText: errMsg,
         headers: retryHeaders,
         text: async () => errMsg,
-        blob: async () => new Blob([errMsg]),
+        blob: async () => new Blob([errMsg], { type: 'text/plain' }),
         json: async <T>() => ({ error: errMsg }) as unknown as T,
     };
 }
@@ -434,9 +494,8 @@ async function parseJsonResponse<T>(res: RawResponse, url: string): Promise<T> {
                 category: 'unknown',
                 status: res.status,
                 url,
-                technicalMessage: `JSON parse error: ${
-                    parseError instanceof Error ? parseError.message : String(parseError)
-                }`,
+                technicalMessage: `JSON parse error: ${parseError instanceof Error ? parseError.message : String(parseError)
+                    }`,
             },
             { cause: parseError }
         );
