@@ -264,9 +264,10 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
         }
 
         // Export actions
-        if (action === 'download' || action === 'copy' || action === 'pdf' || action === 'backup') {
+        if (action === 'download' || action === 'copy' || action === 'pdf' || action === 'backup' || action === 'links') {
             const selectedIds = getSelectedIds(element);
-            if (selectedIds.length === 0) {
+            // Links manifest covers the whole tree — no selection required
+            if (action !== 'links' && selectedIds.length === 0) {
                 shakeElement(element.querySelector('.md-selection-count'));
                 return;
             }

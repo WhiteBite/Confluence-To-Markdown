@@ -20,6 +20,10 @@ import {
 import { exportToPdf } from './pdf-exporter';
 import { createObsidianVault, downloadVaultZip } from './obsidian-exporter';
 import { createConfluenceBackup, downloadBackupZip } from './backup-exporter';
+import {
+    buildLinksManifest,
+    downloadLinksManifest,
+} from './links-manifest';
 import { parseAttachmentFilter } from '@/core/attachment-filter';
 
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
@@ -60,6 +64,11 @@ export async function runExportAction(
     // Backup has its own fetch pipeline — skip fetchPagesContent
     if (action === 'backup') {
         return finalizeBackup(controller, ctx, rootTree, rootTitle, signal);
+    }
+
+    // Links manifest needs no page bodies — flatten the tree only
+    if (action === 'links') {
+        return finalizeLinks(rootTree, rootTitle);
     }
 
     // ── Phase 1: fetch page contents ─────────────────────────────
@@ -252,5 +261,18 @@ async function finalizeBackup(
         action: 'backup',
         pageCount: result.pageCount,
         status: `Backup downloaded: ${result.pageCount} pages, ${result.attachmentCount} attachments`,
+    };
+}
+
+async function finalizeLinks(
+    rootTree: PageTreeNode,
+    rootTitle: string
+): Promise<ActionResult> {
+    const manifest = buildLinksManifest(rootTree, rootTitle, getSpaceKey());
+    downloadLinksManifest(manifest);
+    return {
+        action: 'links',
+        pageCount: manifest.count,
+        status: `Links manifest downloaded: ${manifest.count} pages`,
     };
 }

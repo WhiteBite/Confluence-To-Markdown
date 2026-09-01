@@ -69,6 +69,7 @@ export interface Translations {
     copyDisabledFormat: string;
     pdf: string;
     download: string;
+    linksManifest: string;
     processing: string;
 
     // Progress
@@ -188,6 +189,7 @@ const en: Translations = {
     copyDisabledFormat: 'Copy is available only for Single File mode',
     pdf: 'PDF',
     download: 'Download',
+    linksManifest: 'Links',
     processing: 'Processing',
 
     // Progress
@@ -307,6 +309,7 @@ const ru: Translations = {
     copyDisabledFormat: 'Копирование доступно только в режиме Single File',
     pdf: 'PDF',
     download: 'Скачать',
+    linksManifest: 'Ссылки',
     processing: 'Обработка',
 
     // Progress

@@ -28,6 +28,8 @@ import { updateStatus, setButtonLoading } from '@/ui/components';
 import { bootstrap } from '@/ui/bootstrap';
 import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
 import { showImportModal } from '@/ui/import-modal';
+import { showSyncModal } from '@/ui/sync-modal';
+import { showJiraModal } from '@/ui/jira-modal';
 
 import { getCurrentPageId, getErrorMessage, getSpaceKey } from '@/utils/helpers';
 import { ctmLog } from '@/utils/logger';
@@ -231,6 +233,24 @@ function startImport(): void {
 }
 
 // ============================================================================
+// Sync
+// ============================================================================
+
+function startSync(): void {
+    ctmLog('startSync called');
+    showSyncModal();
+}
+
+// ============================================================================
+// Jira Sync
+// ============================================================================
+
+function startJiraSync(): void {
+    ctmLog('startJiraSync called');
+    showJiraModal();
+}
+
+// ============================================================================
 // Boot
 // ============================================================================
 
@@ -241,5 +261,7 @@ ctmLog(`Confluence To Markdown v${SCRIPT_VERSION} initialized`);
 bootstrap({
     onPageExport: startExport,
     onImport: startImport,
+    onSync: startSync,
+    onJiraSync: startJiraSync,
     onHubSettings: showHubSettingsPanel,
 });

@@ -29,6 +29,17 @@ export default defineConfig({
                     'http://*/display/*',
                     'http://*/pages/*',
                     'http://*/confluence/*',
+                    // Jira — generic path patterns (no hardcoded host; the
+                    // runtime /rest/api/2/myself probe in bootstrap decides
+                    // whether this is actually Jira before injecting anything).
+                    'https://*/browse/*',
+                    'https://*/projects/*',
+                    'https://*/secure/*',
+                    'https://*/issues/*',
+                    'http://*/browse/*',
+                    'http://*/projects/*',
+                    'http://*/secure/*',
+                    'http://*/issues/*',
                 ],
                 icon: 'https://www.atlassian.com/favicon.ico',
                 grant: ['GM_xmlhttpRequest', 'GM_addStyle', 'GM_download', 'GM_setValue', 'GM_getValue'],
