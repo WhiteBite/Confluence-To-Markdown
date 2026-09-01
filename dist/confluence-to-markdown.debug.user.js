@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Confluence to Markdown Exporter (Debug)
 // @namespace    https://github.com/WhiteBite/confluence-to-markdown
-// @version      3.3.0
+// @version      3.4.0
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown (debug build — readable, with console)
 // @icon         https://www.atlassian.com/favicon.ico
@@ -19145,7 +19145,7 @@ ${converted.output}
       let content = "";
       content += `
     <div class="title-page">
-      <h1>${escapeHtml$2(exportTitle)}</h1>
+      <h1>${escapeHtml$4(exportTitle)}</h1>
       <div class="meta">
         <p><strong>Всего страниц:</strong> ${pages.length}</p>
         <p><strong>Дата экспорта:</strong> ${(/* @__PURE__ */ new Date()).toLocaleDateString("ru-RU")}</p>
@@ -19163,7 +19163,7 @@ ${converted.output}
         const node = treeMap.get(page.id);
         const relativeLevel = node ? node.level - baseLevel : 0;
         const indent = relativeLevel * 20;
-        content += `<li style="margin-left: ${indent}px;"><a href="#page-${page.id}">${escapeHtml$2(page.title)}</a></li>`;
+        content += `<li style="margin-left: ${indent}px;"><a href="#page-${page.id}">${escapeHtml$4(page.title)}</a></li>`;
       }
       content += `
       </ul>
@@ -19176,7 +19176,7 @@ ${converted.output}
         const headingTag = `h${Math.min(relativeLevel + 1, 6)}`;
         const pageUrl = `${baseUrl}/pages/viewpage.action?pageId=${page.id}`;
         content += `<article class="page-content" id="page-${page.id}">`;
-        content += `<${headingTag} class="page-title">${escapeHtml$2(page.title)}</${headingTag}>`;
+        content += `<${headingTag} class="page-title">${escapeHtml$4(page.title)}</${headingTag}>`;
         if (settings.includeSourceLinks) {
           content += `<p class="source-link">Источник: <a href="${pageUrl}">${pageUrl}</a></p>`;
         }
@@ -19198,7 +19198,7 @@ ${converted.output}
   <meta charset="UTF-8">
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml$2(exportTitle)} - PDF Export</title>
+  <title>${escapeHtml$4(exportTitle)} - PDF Export</title>
   <style>${styles}</style>
 </head>
 <body>
@@ -19621,7 +19621,7 @@ ${converted.output}
     }
   `;
     }
-    function escapeHtml$2(text) {
+    function escapeHtml$4(text) {
       const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
@@ -21574,11 +21574,48 @@ ${converted.output}
         children: node.children.map(serializeTree)
       };
     }
+    function buildLinksManifest(rootTree, rootTitle, spaceKey) {
+      const baseUrl = getBaseUrl();
+      const flat = flattenTree(rootTree);
+      const pages = flat.map((node) => ({
+        title: node.title,
+        pageId: node.id,
+        url: `${baseUrl}/pages/viewpage.action?pageId=${node.id}`,
+        level: node.level,
+        parentId: node.parentId
+      }));
+      return {
+        source: "confluence",
+        baseUrl,
+        rootTitle,
+        spaceKey,
+        generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        count: pages.length,
+        pages
+      };
+    }
+    function downloadLinksManifest(manifest) {
+      const json2 = JSON.stringify(manifest, null, 2);
+      const blob = new Blob([json2], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const filename = `${sanitizeFilename(manifest.rootTitle)}_links.json`;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
     async function runExportAction(action, ctx, deps) {
       var _a3;
       const { controller, rootTree, rootTitle, signal } = deps;
       if (action === "backup") {
         return finalizeBackup(controller, ctx, rootTree, rootTitle, signal);
+      }
+      if (action === "links") {
+        return finalizeLinks(rootTree, rootTitle);
       }
       (_a3 = controller == null ? void 0 : controller.showProgress) == null ? void 0 : _a3.call(controller, "content", 0, ctx.selectedIds.length);
       const pagesContent = await fetchPagesContent(
@@ -21708,6 +21745,15 @@ ${converted.output}
         action: "backup",
         pageCount: result.pageCount,
         status: `Backup downloaded: ${result.pageCount} pages, ${result.attachmentCount} attachments`
+      };
+    }
+    async function finalizeLinks(rootTree, rootTitle) {
+      const manifest = buildLinksManifest(rootTree, rootTitle, getSpaceKey());
+      downloadLinksManifest(manifest);
+      return {
+        action: "links",
+        pageCount: manifest.count,
+        status: `Links manifest downloaded: ${manifest.count} pages`
       };
     }
     const VALID_TRANSITIONS = {
@@ -21930,6 +21976,7 @@ ${converted.output}
       copyDisabledFormat: "Copy is available only for Single File mode",
       pdf: "PDF",
       download: "Download",
+      linksManifest: "Links",
       processing: "Processing",
       // Progress
       progressPreparing: "Preparing...",
@@ -22033,6 +22080,7 @@ ${converted.output}
       copyDisabledFormat: "Копирование доступно только в режиме Single File",
       pdf: "PDF",
       download: "Скачать",
+      linksManifest: "Ссылки",
       processing: "Обработка",
       // Progress
       progressPreparing: "Подготовка...",
@@ -22126,9 +22174,10 @@ ${converted.output}
       moon: `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>`,
       expand: `<svg viewBox="0 0 24 24"><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg>`,
       collapse: `<svg viewBox="0 0 24 24"><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></svg>`,
-      reset: `<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`
+      reset: `<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`,
+      link: `<svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`
     };
-    function escapeHtml$1(text) {
+    function escapeHtml$3(text) {
       const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
@@ -22177,7 +22226,7 @@ ${converted.output}
         html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
         html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
         html += `<span class="${iconClass}">${icon}</span>`;
-        html += `<span class="md-tree-label${errorClass}">${escapeHtml$1(node.title)}</span>`;
+        html += `<span class="md-tree-label${errorClass}">${escapeHtml$3(node.title)}</span>`;
         if (hasChildren) {
           html += `<span class="md-child-count">${childCount}</span>`;
         }
@@ -22231,7 +22280,7 @@ ${converted.output}
       </div>
       <p class="md-header-subtitle">
         ${ICONS.folder.replace("<svg", '<svg class="icon"')}
-        <span>${escapeHtml$1(rootTitle)}</span>
+        <span>${escapeHtml$3(rootTitle)}</span>
       </p>
     </div>
   `;
@@ -22569,6 +22618,12 @@ ${converted.output}
         <div class="md-footer-btn-group">
           <button class="md-btn md-btn-secondary" data-action="pdf" id="md-pdf-btn" title="${t("pdf")}">
             <span>${t("pdf")}</span>
+          </button>
+        </div>
+        <div class="md-footer-btn-group">
+          <button class="md-btn md-btn-secondary" data-action="links" id="md-links-btn" title="${t("linksManifest")}">
+            ${ICONS.link}
+            <span>${t("linksManifest")}</span>
           </button>
         </div>
         <div class="md-footer-btn-group">
@@ -23438,9 +23493,9 @@ ${converted.output}
         if (btn.hasAttribute("data-processing")) {
           return;
         }
-        if (action === "download" || action === "copy" || action === "pdf" || action === "backup") {
+        if (action === "download" || action === "copy" || action === "pdf" || action === "backup" || action === "links") {
           const selectedIds = getSelectedIds(element);
-          if (selectedIds.length === 0) {
+          if (action !== "links" && selectedIds.length === 0) {
             shakeElement(element.querySelector(".md-selection-count"));
             return;
           }
@@ -24381,8 +24436,10 @@ ${converted.output}
     }
     const EXPORT_BUTTON_ID = "md-export-trigger";
     const IMPORT_BUTTON_ID = "md-import-trigger";
+    const SYNC_BUTTON_ID = "md-sync-trigger";
     const HUB_SETTINGS_ID = "md-hub-settings-trigger";
     const STATUS_ID = "md-export-status";
+    const JIRA_BUTTON_ID = "md-jira-sync-trigger";
     const RETRY_INTERVAL_MS = 1e3;
     const MAX_RETRIES = 5;
     let activeCallbacks = null;
@@ -24400,6 +24457,7 @@ ${converted.output}
       scheduleRetry();
       setupSpaWatcher();
       triggerHubSyncCheck();
+      detectAndInjectJiraButton();
     }
     function scheduleRetry() {
       let retries = 0;
@@ -24472,6 +24530,7 @@ ${converted.output}
         injectExportButton(container);
       }
       injectImportButton(container);
+      injectSyncButton(container);
       injectHubSettingsButton(container);
     }
     function injectExportButton(container) {
@@ -24507,6 +24566,25 @@ ${converted.output}
       }
       ctmLog("addExportButtons: IMPORT button added");
     }
+    function injectSyncButton(container) {
+      var _a3;
+      if (!activeCallbacks) return;
+      if (document.getElementById(SYNC_BUTTON_ID)) return;
+      const btn = createButton(
+        "🔄 Sync",
+        "aui-button aui-button-secondary",
+        activeCallbacks.onSync
+      );
+      btn.id = SYNC_BUTTON_ID;
+      btn.style.marginLeft = "8px";
+      const importBtn = document.getElementById(IMPORT_BUTTON_ID);
+      if (importBtn) {
+        (_a3 = importBtn.parentElement) == null ? void 0 : _a3.insertBefore(btn, importBtn.nextSibling);
+      } else {
+        container.appendChild(btn);
+      }
+      ctmLog("addExportButtons: SYNC button added");
+    }
     function injectHubSettingsButton(container) {
       if (!activeCallbacks) return;
       if (document.getElementById(HUB_SETTINGS_ID)) return;
@@ -24518,6 +24596,51 @@ ${converted.output}
       btn.style.cssText = "margin-left:4px;padding:0 6px;min-width:auto;font-size:0.85em;";
       btn.addEventListener("click", activeCallbacks.onHubSettings);
       container.appendChild(btn);
+    }
+    async function detectJira() {
+      const { protocol, host } = window.location;
+      const url = `${protocol}//${host}/rest/api/2/myself`;
+      try {
+        await fetchJson$1(url);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    function isAtlassianProduct() {
+      return typeof window.AJS !== "undefined" || !!document.querySelector('meta[name="ajs-version"]');
+    }
+    function detectAndInjectJiraButton() {
+      if (!isAtlassianProduct()) return;
+      void detectJira().then((isJira) => {
+        if (isJira) {
+          injectJiraButton();
+        }
+      });
+    }
+    function injectJiraButton() {
+      if (!activeCallbacks) return;
+      if (document.getElementById(JIRA_BUTTON_ID)) return;
+      const btn = document.createElement("button");
+      btn.id = JIRA_BUTTON_ID;
+      btn.textContent = "🔄 Jira Sync";
+      btn.style.cssText = `
+        position:fixed;bottom:1.5rem;right:1.5rem;z-index:10000;
+        padding:0.625rem 1.25rem;border:none;border-radius:var(--md-radius);
+        background:var(--md-primary);color:#fff;
+        font-size:0.875rem;font-weight:500;font-family:var(--md-font);
+        cursor:pointer;box-shadow:var(--md-shadow);
+        transition:background-color var(--md-transition);
+    `;
+      btn.addEventListener("mouseenter", () => {
+        btn.style.background = "var(--md-primary-hover)";
+      });
+      btn.addEventListener("mouseleave", () => {
+        btn.style.background = "var(--md-primary)";
+      });
+      btn.addEventListener("click", activeCallbacks.onJiraSync);
+      document.body.appendChild(btn);
+      ctmLog("injectJiraButton: Jira Sync floating button added");
     }
     class HubClient {
       constructor(settings) {
@@ -24663,15 +24786,15 @@ ${converted.output}
                     <div class="md-settings-title">Подключение</div>
                     <div class="md-hub-field">
                         <label class="md-config-label">Hub URL</label>
-                        <input type="url" id="md-hub-url" class="md-hub-input" value="${escapeHtml$1(settings.url)}" placeholder="https://your-midas.ai">
+                        <input type="url" id="md-hub-url" class="md-hub-input" value="${escapeHtml$3(settings.url)}" placeholder="https://your-midas.ai">
                     </div>
                     <div class="md-hub-field">
                         <label class="md-config-label">API Token</label>
-                        <input type="password" id="md-hub-token" class="md-hub-input" value="${escapeHtml$1(settings.apiToken)}" placeholder="hub_xxxxxxxx">
+                        <input type="password" id="md-hub-token" class="md-hub-input" value="${escapeHtml$3(settings.apiToken)}" placeholder="hub_xxxxxxxx">
                     </div>
                     <div class="md-hub-field">
                         <label class="md-config-label">Source Alias</label>
-                        <input type="text" id="md-hub-alias" class="md-hub-input" value="${escapeHtml$1(settings.alias)}" placeholder="acme-wiki">
+                        <input type="text" id="md-hub-alias" class="md-hub-input" value="${escapeHtml$3(settings.alias)}" placeholder="acme-wiki">
                     </div>
                     <div class="md-hub-test-row">
                         <button class="md-btn md-btn-secondary md-hub-test-btn">Проверить связь</button>
@@ -24761,7 +24884,7 @@ ${converted.output}
         }
       });
     }
-    const RETRY_DELAY_MS = 2e3;
+    const RETRY_DELAY_MS$2 = 2e3;
     async function importConfluenceBackup(zipBlob, options, onProgress) {
       const baseUrl = getBaseUrl();
       onProgress == null ? void 0 : onProgress("Parsing backup...", 0, 1);
@@ -24809,7 +24932,7 @@ ${converted.output}
           ancestorId = idMapping.get(page.parentId);
         }
         try {
-          const newId = await createPage(
+          const newId = await createPage$1(
             baseUrl,
             options.targetSpaceKey,
             page.title,
@@ -24872,7 +24995,7 @@ ${converted.output}
       }
       return failures;
     }
-    async function createPage(baseUrl, spaceKey, title, storageBody, parentId, retries = 1) {
+    async function createPage$1(baseUrl, spaceKey, title, storageBody, parentId, retries = 1) {
       const body = {
         type: "page",
         title,
@@ -24896,11 +25019,11 @@ ${converted.output}
         });
         return result.id;
       } catch (error) {
-        if (retries > 0 && isRateLimited(error)) {
-          const delay2 = getRetryDelay(error);
+        if (retries > 0 && isRateLimited$2(error)) {
+          const delay2 = getRetryDelay$2(error);
           ctmLog(`[Import] Rate limited creating "${title}", retrying in ${delay2}ms`);
-          await sleep(delay2);
-          return createPage(baseUrl, spaceKey, title, storageBody, parentId, retries - 1);
+          await sleep$2(delay2);
+          return createPage$1(baseUrl, spaceKey, title, storageBody, parentId, retries - 1);
         }
         throw error;
       }
@@ -24979,35 +25102,35 @@ ${converted.output}
         return null;
       }
     }
-    function isRateLimited(error) {
+    function isRateLimited$2(error) {
       return error instanceof ConfluenceApiError && error.category === "rate_limited";
     }
-    function getRetryDelay(error) {
+    function getRetryDelay$2(error) {
       if (error instanceof ConfluenceApiError && error.retryAfterMs !== void 0) {
         return error.retryAfterMs;
       }
-      return RETRY_DELAY_MS;
+      return RETRY_DELAY_MS$2;
     }
-    function sleep(ms) {
+    function sleep$2(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
-    const MODAL_ID = "md-import-modal";
-    let state = createInitialState();
-    function createInitialState() {
+    const MODAL_ID$2 = "md-import-modal";
+    let state$2 = createInitialState$2();
+    function createInitialState$2() {
       return { file: null, manifest: null, phase: "pick", result: null };
     }
     function showImportModal() {
-      state = createInitialState();
+      state$2 = createInitialState$2();
       renderImportModal();
     }
     function closeImportModal() {
-      const el = document.getElementById(MODAL_ID);
+      const el = document.getElementById(MODAL_ID$2);
       if (el) el.remove();
     }
     function renderImportModal() {
       closeImportModal();
       const overlay = document.createElement("div");
-      overlay.id = MODAL_ID;
+      overlay.id = MODAL_ID$2;
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
       overlay.setAttribute("aria-label", "Import Backup");
@@ -25018,27 +25141,27 @@ ${converted.output}
         box-sizing:border-box;font-family:var(--md-font);
         animation:fadeIn 0.2s ease;
     `;
-      applyTheme(overlay);
+      applyTheme$2(overlay);
       const content = document.createElement("div");
       content.className = "md-modal-content";
       content.style.cssText = `
         width:32rem;max-width:95vw;height:auto;max-height:90vh;
         display:flex;flex-direction:column;overflow:hidden;
     `;
-      content.innerHTML = buildHeader();
-      content.innerHTML += buildBody();
+      content.innerHTML = buildHeader$2();
+      content.innerHTML += buildBody$2();
       overlay.appendChild(content);
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) closeImportModal();
       });
       document.body.appendChild(overlay);
-      attachEventListeners();
+      attachEventListeners$2();
     }
-    function applyTheme(overlay) {
+    function applyTheme$2(overlay) {
       const isDark = document.documentElement.getAttribute("data-color-mode") === "dark" || document.body.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches;
       if (isDark) overlay.setAttribute("data-theme", "dark");
     }
-    function buildHeader() {
+    function buildHeader$2() {
       return `
         <div class="md-modal-header">
             <div class="md-header-title">
@@ -25052,19 +25175,19 @@ ${converted.output}
         </div>
     `;
     }
-    function buildBody() {
-      switch (state.phase) {
+    function buildBody$2() {
+      switch (state$2.phase) {
         case "pick":
-          return buildFilePicker();
+          return buildFilePicker$2();
         case "configure":
           return buildConfigForm();
         case "importing":
-          return buildProgress();
+          return buildProgress$2();
         case "done":
-          return buildResult();
+          return buildResult$2();
       }
     }
-    function buildFilePicker() {
+    function buildFilePicker$2() {
       return `
         <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
             <p style="font-size:0.8125rem;color:var(--md-text-subtle);margin:0;line-height:1.4;">
@@ -25090,7 +25213,7 @@ ${converted.output}
     `;
     }
     function buildConfigForm() {
-      const m = state.manifest;
+      const m = state$2.manifest;
       const currentSpace = getSpaceKey() ?? m.spaceKey ?? "";
       const dateStr = new Date(m.exportDate).toLocaleString();
       return `
@@ -25103,7 +25226,7 @@ ${converted.output}
                     <span style="color:var(--md-text-subtle);">Pages:</span>
                     <span style="color:var(--md-text);font-weight:500;">${m.pageCount}</span>
                     <span style="color:var(--md-text-subtle);">Space:</span>
-                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml(m.spaceName ?? m.spaceKey ?? "—")}</span>
+                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml$2(m.spaceName ?? m.spaceKey ?? "—")}</span>
                     <span style="color:var(--md-text-subtle);">Date:</span>
                     <span style="color:var(--md-text);font-weight:500;">${dateStr}</span>
                     <span style="color:var(--md-text-subtle);">Attachments:</span>
@@ -25116,7 +25239,7 @@ ${converted.output}
                 <div style="display:flex;flex-direction:column;gap:0.5rem;">
                     <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
                         Space Key
-                        <input id="md-import-space" type="text" value="${escapeHtml(currentSpace)}"
+                        <input id="md-import-space" type="text" value="${escapeHtml$2(currentSpace)}"
                             style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
                             border:1px solid var(--md-border);border-radius:var(--md-radius);
                             font-size:0.8125rem;font-family:var(--md-font);
@@ -25152,7 +25275,7 @@ ${converted.output}
         </div>
     `;
     }
-    function buildProgress() {
+    function buildProgress$2() {
       return `
         <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
             <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-import-phase-label">
@@ -25169,12 +25292,12 @@ ${converted.output}
         </div>
     `;
     }
-    function buildResult() {
-      const r = state.result;
+    function buildResult$2() {
+      const r = state$2.result;
       const hasErrors = r.errors.length > 0;
       let errorList = "";
       if (hasErrors) {
-        const items = r.errors.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml(e.pageTitle)}</strong>: ${escapeHtml(e.error)}</li>`).join("");
+        const items = r.errors.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$2(e.pageTitle)}</strong>: ${escapeHtml$2(e.error)}</li>`).join("");
         const moreNote = r.errors.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.errors.length - 20} more</li>` : "";
         errorList = `
             <div style="margin-top:0.75rem;max-height:10rem;overflow-y:auto;
@@ -25200,9 +25323,9 @@ ${converted.output}
         </div>
     `;
     }
-    function attachEventListeners() {
+    function attachEventListeners$2() {
       var _a3;
-      const modal = document.getElementById(MODAL_ID);
+      const modal = document.getElementById(MODAL_ID$2);
       if (!modal) return;
       (_a3 = modal.querySelector("#md-import-close")) == null ? void 0 : _a3.addEventListener("click", closeImportModal);
       const onKeyDown = (e) => {
@@ -25212,19 +25335,19 @@ ${converted.output}
         }
       };
       document.addEventListener("keydown", onKeyDown);
-      switch (state.phase) {
+      switch (state$2.phase) {
         case "pick":
-          attachFilePickerListeners(modal);
+          attachFilePickerListeners$2(modal);
           break;
         case "configure":
           attachConfigListeners(modal);
           break;
         case "done":
-          attachResultListeners(modal);
+          attachResultListeners$2(modal);
           break;
       }
     }
-    function attachFilePickerListeners(modal) {
+    function attachFilePickerListeners$2(modal) {
       const dropzone = modal.querySelector("#md-import-dropzone");
       const fileInput = modal.querySelector("#md-import-file-input");
       if (!dropzone || !fileInput) return;
@@ -25244,31 +25367,31 @@ ${converted.output}
         dropzone.style.borderColor = "var(--md-border)";
         dropzone.style.background = "";
         const file = (_a3 = e.dataTransfer) == null ? void 0 : _a3.files[0];
-        if (file) handleFileSelected(file);
+        if (file) handleFileSelected$2(file);
       });
       fileInput.addEventListener("change", () => {
         var _a3;
         const file = (_a3 = fileInput.files) == null ? void 0 : _a3[0];
-        if (file) handleFileSelected(file);
+        if (file) handleFileSelected$2(file);
       });
     }
     function attachConfigListeners(modal) {
       var _a3, _b2;
       (_a3 = modal.querySelector("#md-import-back")) == null ? void 0 : _a3.addEventListener("click", () => {
-        state.phase = "pick";
-        state.file = null;
-        state.manifest = null;
+        state$2.phase = "pick";
+        state$2.file = null;
+        state$2.manifest = null;
         renderImportModal();
       });
       (_b2 = modal.querySelector("#md-import-start")) == null ? void 0 : _b2.addEventListener("click", () => {
         void startImportProcess();
       });
     }
-    function attachResultListeners(modal) {
+    function attachResultListeners$2(modal) {
       var _a3;
       (_a3 = modal.querySelector("#md-import-done")) == null ? void 0 : _a3.addEventListener("click", closeImportModal);
     }
-    async function handleFileSelected(file) {
+    async function handleFileSelected$2(file) {
       ctmLog("[ImportModal] File selected:", file.name, file.size);
       try {
         const buffer = await file.arrayBuffer();
@@ -25280,9 +25403,9 @@ ${converted.output}
         }
         const text = new TextDecoder().decode(manifestData);
         const manifest = JSON.parse(text);
-        state.file = file;
-        state.manifest = manifest;
-        state.phase = "configure";
+        state$2.file = file;
+        state$2.manifest = manifest;
+        state$2.phase = "configure";
         renderImportModal();
       } catch (error) {
         ctmError("[ImportModal] Failed to parse file:", error);
@@ -25290,8 +25413,8 @@ ${converted.output}
       }
     }
     async function startImportProcess() {
-      const modal = document.getElementById(MODAL_ID);
-      if (!modal || !state.file) return;
+      const modal = document.getElementById(MODAL_ID$2);
+      if (!modal || !state$2.file) return;
       const spaceInput = modal.querySelector("#md-import-space");
       const parentInput = modal.querySelector("#md-import-parent");
       const skipCheckbox = modal.querySelector("#md-import-skip-existing");
@@ -25307,32 +25430,32 @@ ${converted.output}
         skipExisting: (skipCheckbox == null ? void 0 : skipCheckbox.checked) ?? true,
         includeAttachments: (attachCheckbox == null ? void 0 : attachCheckbox.checked) ?? true
       };
-      state.phase = "importing";
+      state$2.phase = "importing";
       renderImportModal();
       try {
         const result = await importConfluenceBackup(
-          state.file,
+          state$2.file,
           options,
           (phase, current, total) => {
-            updateProgress(phase, current, total);
+            updateProgress$2(phase, current, total);
           }
         );
-        state.result = result;
-        state.phase = "done";
+        state$2.result = result;
+        state$2.phase = "done";
         renderImportModal();
       } catch (error) {
         ctmError("[ImportModal] Import failed:", error);
-        state.result = {
+        state$2.result = {
           created: 0,
           skipped: 0,
           failed: 1,
           errors: [{ pageTitle: "(import)", error: error instanceof Error ? error.message : String(error) }]
         };
-        state.phase = "done";
+        state$2.phase = "done";
         renderImportModal();
       }
     }
-    function updateProgress(phase, current, total) {
+    function updateProgress$2(phase, current, total) {
       const label = document.getElementById("md-import-phase-label");
       const fill = document.getElementById("md-import-progress-fill");
       const detail = document.getElementById("md-import-progress-detail");
@@ -25342,6 +25465,2392 @@ ${converted.output}
         const pct = total > 0 ? Math.round(current / total * 100) : 0;
         fill.style.width = `${pct}%`;
       }
+    }
+    function escapeHtml$2(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    const SYNC_MARKER_LABEL = "onyx-sync";
+    const SYNC_PAYLOAD_FORMAT = "onyx-sync/confluence-pages";
+    const SYNC_PAYLOAD_VERSION = 1;
+    function parseSyncPayload(raw) {
+      const errors = [];
+      if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+        return { ok: false, errors: ["Payload must be a JSON object."] };
+      }
+      const obj = raw;
+      const format = obj["format"];
+      if (format !== SYNC_PAYLOAD_FORMAT) {
+        errors.push(
+          `Invalid "format": expected "${SYNC_PAYLOAD_FORMAT}", got ${JSON.stringify(format)}.`
+        );
+      }
+      const version2 = obj["version"];
+      if (typeof version2 !== "number" || version2 !== SYNC_PAYLOAD_VERSION) {
+        errors.push(
+          `Invalid "version": expected ${SYNC_PAYLOAD_VERSION}, got ${JSON.stringify(version2)}.`
+        );
+      }
+      const space = obj["space"];
+      if (typeof space !== "string" || space.trim().length === 0) {
+        errors.push('Missing or empty "space" key.');
+      }
+      const generatedAt = obj["generatedAt"];
+      if (generatedAt !== void 0 && typeof generatedAt !== "string") {
+        errors.push('Invalid "generatedAt": expected a string.');
+      }
+      const pagesRaw = obj["pages"];
+      if (!Array.isArray(pagesRaw)) {
+        errors.push('Missing or invalid "pages": expected an array.');
+        return { ok: false, errors };
+      }
+      const ids = /* @__PURE__ */ new Set();
+      const pageMap = /* @__PURE__ */ new Map();
+      for (let i2 = 0; i2 < pagesRaw.length; i2++) {
+        const p = pagesRaw[i2];
+        const ctx = `pages[${i2}]`;
+        if (typeof p !== "object" || p === null || Array.isArray(p)) {
+          errors.push(`${ctx}: must be a JSON object.`);
+          continue;
+        }
+        const rec = p;
+        const id = rec["id"];
+        if (typeof id !== "string" || id.length === 0) {
+          errors.push(`${ctx}: missing or empty "id".`);
+          continue;
+        }
+        if (ids.has(id)) {
+          errors.push(`${ctx}: duplicate id "${id}".`);
+          continue;
+        }
+        ids.add(id);
+        const title = rec["title"];
+        if (typeof title !== "string" || title.trim().length === 0) {
+          errors.push(`${ctx} (id="${id}"): missing or empty "title".`);
+        }
+        const storage = rec["storage"];
+        if (typeof storage !== "string" || storage.trim().length === 0) {
+          errors.push(`${ctx} (id="${id}"): missing or empty "storage".`);
+        }
+        const parent = rec["parent"];
+        if (parent !== null && typeof parent !== "string") {
+          errors.push(`${ctx} (id="${id}"): "parent" must be a string or null.`);
+        } else if (typeof parent === "string" && parent.length === 0) {
+          errors.push(
+            `${ctx} (id="${id}"): "parent" must not be an empty string (use null for space root).`
+          );
+        }
+        const labels = rec["labels"];
+        if (labels !== void 0) {
+          if (!Array.isArray(labels) || labels.some((l) => typeof l !== "string")) {
+            errors.push(`${ctx} (id="${id}"): "labels" must be an array of strings.`);
+          }
+        }
+        pageMap.set(id, {
+          id,
+          title: typeof title === "string" ? title : "",
+          parent: typeof parent === "string" ? parent : null,
+          labels: Array.isArray(labels) ? labels.filter((l) => typeof l === "string") : void 0,
+          storage: typeof storage === "string" ? storage : ""
+        });
+      }
+      if (pageMap.size > 0) {
+        for (const page of pageMap.values()) {
+          if (page.parent === null) continue;
+          if (!pageMap.has(page.parent)) {
+            errors.push(
+              `Page "${page.id}": parent "${page.parent}" does not exist in payload.`
+            );
+          }
+        }
+        for (const page of pageMap.values()) {
+          const cycle = detectCycle(page.id, pageMap);
+          if (cycle) {
+            errors.push(
+              `Page "${page.id}": cycle in parent chain (${cycle.join(" → ")}).`
+            );
+          }
+        }
+      }
+      if (errors.length > 0) {
+        return { ok: false, errors };
+      }
+      const payload = {
+        format: SYNC_PAYLOAD_FORMAT,
+        version: SYNC_PAYLOAD_VERSION,
+        space,
+        generatedAt: typeof generatedAt === "string" ? generatedAt : (/* @__PURE__ */ new Date()).toISOString(),
+        pages: Array.from(pageMap.values())
+      };
+      return { ok: true, payload };
+    }
+    function detectCycle(startId, pageMap) {
+      const visited = /* @__PURE__ */ new Set();
+      const path = [];
+      let current = startId;
+      while (current !== null) {
+        if (visited.has(current)) {
+          const cycleStart = path.indexOf(current);
+          return path.slice(cycleStart).concat(current);
+        }
+        visited.add(current);
+        path.push(current);
+        const page = pageMap.get(current);
+        if (!page) break;
+        current = page.parent;
+      }
+      return null;
+    }
+    function normalizeBody(body) {
+      const stripped = body.replace(/\s+ac:schema-version="[^"]*"/g, "").replace(/\s+ac:macro-id="[^"]*"/g, "");
+      return canonicalizeStorage(stripped);
+    }
+    function canonicalizeStorage(body) {
+      if (typeof DOMParser === "undefined") {
+        return body.replace(/\s+/g, " ").trim();
+      }
+      try {
+        const wrapped = `<root xmlns:ac="http://atlassian.com/macros" xmlns:ri="http://atlassian.com/resource-identifier">${body}</root>`;
+        const doc = new DOMParser().parseFromString(wrapped, "text/xml");
+        if (doc.querySelector("parsererror")) {
+          return body.replace(/\s+/g, " ").trim();
+        }
+        return Array.from(doc.documentElement.childNodes).map(serializeCanonical).join("").replace(/\s+/g, " ").trim();
+      } catch {
+        return body.replace(/\s+/g, " ").trim();
+      }
+    }
+    function serializeCanonical(node) {
+      if (node.nodeType === 3 || node.nodeType === 4) {
+        return node.textContent ?? "";
+      }
+      if (node.nodeType !== 1) return "";
+      const el = node;
+      const attrs = Array.from(el.attributes).map((a) => `${a.name}=${a.value}`).sort().join(" ");
+      let children = Array.from(el.childNodes);
+      if (el.tagName === "ac:structured-macro") {
+        const isParam = (n) => n.nodeType === 1 && n.tagName === "ac:parameter";
+        const params = children.filter(isParam).sort(
+          (a, b) => (a.getAttribute("ac:name") ?? "").localeCompare(
+            b.getAttribute("ac:name") ?? ""
+          )
+        );
+        const rest = children.filter((n) => !isParam(n));
+        children = [...params, ...rest];
+      }
+      const inner = children.map(serializeCanonical).join("");
+      return `<${el.tagName} ${attrs}>${inner}</${el.tagName}>`;
+    }
+    const RETRY_DELAY_MS$1 = 2e3;
+    async function planSync(payload, onProgress) {
+      const baseUrl = getBaseUrl();
+      const existingPages = await fetchExistingPages(baseUrl, payload.space);
+      const existingByTitle = /* @__PURE__ */ new Map();
+      for (const p of existingPages) {
+        if (!existingByTitle.has(p.title)) {
+          existingByTitle.set(p.title, p);
+        }
+      }
+      const ordered = orderPagesParentsFirst(payload.pages);
+      const rows = [];
+      for (const page of ordered) {
+        const existing = existingByTitle.get(page.title);
+        if (!existing) {
+          rows.push({
+            localId: page.id,
+            title: page.title,
+            parentLocalId: page.parent,
+            action: "create"
+          });
+          continue;
+        }
+        const sameBody = normalizeBody(page.storage) === normalizeBody(existing.body);
+        if (sameBody) {
+          rows.push({
+            localId: page.id,
+            title: page.title,
+            parentLocalId: page.parent,
+            action: "skip",
+            existingId: existing.id,
+            existingVersion: existing.version
+          });
+        } else {
+          rows.push({
+            localId: page.id,
+            title: page.title,
+            parentLocalId: page.parent,
+            action: "update",
+            existingId: existing.id,
+            existingVersion: existing.version
+          });
+        }
+      }
+      return { space: payload.space, rows };
+    }
+    async function applySync(payload, plan, selectedLocalIds, onProgress) {
+      const baseUrl = getBaseUrl();
+      const space = payload.space;
+      const created = [];
+      const updated = [];
+      const failed = [];
+      const warnings = [];
+      const idMapping = /* @__PURE__ */ new Map();
+      for (const row of plan.rows) {
+        if ((row.action === "skip" || row.action === "update") && row.existingId) {
+          idMapping.set(row.localId, row.existingId);
+        }
+      }
+      const pageMap = /* @__PURE__ */ new Map();
+      for (const p of payload.pages) {
+        pageMap.set(p.id, p);
+      }
+      const orderedRows = orderRowsParentsFirst(plan.rows);
+      const applicableRows = orderedRows.filter(
+        (r) => selectedLocalIds.has(r.localId) && (r.action === "create" || r.action === "update")
+      );
+      onProgress == null ? void 0 : onProgress("Applying changes...", 0, applicableRows.length);
+      let processed = 0;
+      for (const row of applicableRows) {
+        onProgress == null ? void 0 : onProgress("Applying changes...", processed, applicableRows.length);
+        processed++;
+        const page = pageMap.get(row.localId);
+        if (!page) {
+          failed.push({
+            localId: row.localId,
+            title: row.title,
+            error: "Page not found in payload."
+          });
+          continue;
+        }
+        let ancestorId = null;
+        if (row.parentLocalId !== null) {
+          const resolved = idMapping.get(row.parentLocalId);
+          if (!resolved) {
+            failed.push({
+              localId: row.localId,
+              title: row.title,
+              error: `Parent "${row.parentLocalId}" was not applied or resolved.`
+            });
+            continue;
+          }
+          ancestorId = resolved;
+        }
+        try {
+          let pageId;
+          if (row.action === "create") {
+            pageId = await createPage(
+              baseUrl,
+              space,
+              page.title,
+              page.storage,
+              ancestorId
+            );
+            idMapping.set(row.localId, pageId);
+            created.push({ localId: row.localId, pageId, title: page.title });
+            ctmLog(`[Sync] Created: ${page.title} (${pageId})`);
+          } else {
+            pageId = row.existingId;
+            await updatePage(
+              baseUrl,
+              pageId,
+              space,
+              page.title,
+              page.storage,
+              row.existingVersion
+            );
+            updated.push({ localId: row.localId, pageId, title: page.title });
+            ctmLog(`[Sync] Updated: ${page.title} (${pageId})`);
+          }
+          const labels = [
+            .../* @__PURE__ */ new Set([...page.labels ?? [], SYNC_MARKER_LABEL])
+          ];
+          await applyLabels(baseUrl, pageId, labels).catch((err2) => {
+            const msg = err2 instanceof Error ? err2.message : String(err2);
+            warnings.push({
+              localId: row.localId,
+              title: page.title,
+              warning: `Failed to apply labels: ${msg}`
+            });
+            ctmError(`[Sync] Label failure for "${page.title}":`, err2);
+          });
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          failed.push({ localId: row.localId, title: row.title, error: msg });
+          ctmError(`[Sync] Failed to ${row.action} "${page.title}":`, error);
+        }
+      }
+      onProgress == null ? void 0 : onProgress("Applying changes...", applicableRows.length, applicableRows.length);
+      const processedIds = /* @__PURE__ */ new Set();
+      for (const c of created) processedIds.add(c.localId);
+      for (const u of updated) processedIds.add(u.localId);
+      for (const f of failed) processedIds.add(f.localId);
+      const skipped = [];
+      for (const row of plan.rows) {
+        if (!processedIds.has(row.localId)) {
+          skipped.push({ localId: row.localId, title: row.title });
+        }
+      }
+      return {
+        space,
+        appliedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        created,
+        updated,
+        skipped,
+        failed,
+        warnings
+      };
+    }
+    async function fetchExistingPages(baseUrl, spaceKey) {
+      var _a3, _b2, _c, _d;
+      const pages = [];
+      let start = 0;
+      const limit = 200;
+      let hasMore = true;
+      while (hasMore) {
+        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page`);
+        const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=body.storage,version&limit=${limit}&start=${start}`;
+        const response = await fetchJson$1(url);
+        for (const r of response.results) {
+          pages.push({
+            id: r.id,
+            title: r.title,
+            body: ((_b2 = (_a3 = r.body) == null ? void 0 : _a3.storage) == null ? void 0 : _b2.value) ?? "",
+            version: ((_c = r.version) == null ? void 0 : _c.number) ?? 0
+          });
+        }
+        hasMore = !!((_d = response._links) == null ? void 0 : _d.next);
+        start += limit;
+      }
+      return pages;
+    }
+    async function createPage(baseUrl, spaceKey, title, storageBody, parentId, retries = 1) {
+      const body = {
+        type: "page",
+        title,
+        space: { key: spaceKey },
+        body: {
+          storage: {
+            value: storageBody,
+            representation: "storage"
+          }
+        }
+      };
+      if (parentId) {
+        body.ancestors = [{ id: parentId }];
+      }
+      try {
+        const result = await transportRequest({
+          url: `${baseUrl}/rest/api/content`,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        return result.id;
+      } catch (error) {
+        if (retries > 0 && isRateLimited$1(error)) {
+          const delay2 = getRetryDelay$1(error);
+          ctmLog(
+            `[Sync] Rate limited creating "${title}", retrying in ${delay2}ms`
+          );
+          await sleep$1(delay2);
+          return createPage(
+            baseUrl,
+            spaceKey,
+            title,
+            storageBody,
+            parentId,
+            retries - 1
+          );
+        }
+        throw error;
+      }
+    }
+    async function updatePage(baseUrl, pageId, spaceKey, title, storageBody, currentVersion, retries = 1) {
+      const body = {
+        id: pageId,
+        type: "page",
+        title,
+        space: { key: spaceKey },
+        body: {
+          storage: {
+            value: storageBody,
+            representation: "storage"
+          }
+        },
+        version: { number: currentVersion + 1 }
+      };
+      try {
+        await transportRequest({
+          url: `${baseUrl}/rest/api/content/${pageId}`,
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+      } catch (error) {
+        if (retries > 0 && isRateLimited$1(error)) {
+          const delay2 = getRetryDelay$1(error);
+          ctmLog(
+            `[Sync] Rate limited updating "${title}", retrying in ${delay2}ms`
+          );
+          await sleep$1(delay2);
+          return updatePage(
+            baseUrl,
+            pageId,
+            spaceKey,
+            title,
+            storageBody,
+            currentVersion,
+            retries - 1
+          );
+        }
+        throw error;
+      }
+    }
+    async function applyLabels(baseUrl, pageId, labels) {
+      if (labels.length === 0) return;
+      const body = labels.map((name) => ({ prefix: "global", name }));
+      await transportRequest({
+        url: `${baseUrl}/rest/api/content/${pageId}/label`,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+    }
+    function orderPagesParentsFirst(pages) {
+      const pageMap = /* @__PURE__ */ new Map();
+      for (const p of pages) {
+        pageMap.set(p.id, p);
+      }
+      const depthMemo = /* @__PURE__ */ new Map();
+      const depth = (id) => {
+        if (depthMemo.has(id)) return depthMemo.get(id);
+        const page = pageMap.get(id);
+        if (!page || page.parent === null) {
+          depthMemo.set(id, 0);
+          return 0;
+        }
+        depthMemo.set(id, Number.MAX_SAFE_INTEGER);
+        const d = depth(page.parent) + 1;
+        depthMemo.set(id, d);
+        return d;
+      };
+      return [...pages].sort((a, b) => depth(a.id) - depth(b.id));
+    }
+    function orderRowsParentsFirst(rows) {
+      const rowMap = /* @__PURE__ */ new Map();
+      for (const r of rows) {
+        rowMap.set(r.localId, r);
+      }
+      const depthMemo = /* @__PURE__ */ new Map();
+      const depth = (id) => {
+        if (depthMemo.has(id)) return depthMemo.get(id);
+        const row = rowMap.get(id);
+        if (!row || row.parentLocalId === null) {
+          depthMemo.set(id, 0);
+          return 0;
+        }
+        depthMemo.set(id, Number.MAX_SAFE_INTEGER);
+        const d = depth(row.parentLocalId) + 1;
+        depthMemo.set(id, d);
+        return d;
+      };
+      return [...rows].sort((a, b) => depth(a.localId) - depth(b.localId));
+    }
+    function isRateLimited$1(error) {
+      return error instanceof ConfluenceApiError && error.category === "rate_limited";
+    }
+    function getRetryDelay$1(error) {
+      if (error instanceof ConfluenceApiError && error.retryAfterMs !== void 0) {
+        return error.retryAfterMs;
+      }
+      return RETRY_DELAY_MS$1;
+    }
+    function sleep$1(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+    const MODAL_ID$1 = "md-sync-modal";
+    let state$1 = createInitialState$1();
+    function createInitialState$1() {
+      return {
+        file: null,
+        payload: null,
+        parseErrors: [],
+        phase: "pick",
+        spaceKey: "",
+        plan: null,
+        planError: null,
+        planning: false,
+        report: null
+      };
+    }
+    function showSyncModal() {
+      state$1 = createInitialState$1();
+      renderSyncModal();
+    }
+    function closeSyncModal() {
+      const el = document.getElementById(MODAL_ID$1);
+      if (el) el.remove();
+    }
+    function renderSyncModal() {
+      closeSyncModal();
+      const overlay = document.createElement("div");
+      overlay.id = MODAL_ID$1;
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", "Sync Payload");
+      overlay.style.cssText = `
+        position:fixed;inset:0;background:rgba(9,30,66,0.54);
+        backdrop-filter:blur(2px);z-index:10000;display:flex;
+        justify-content:center;align-items:center;padding:1.5rem;
+        box-sizing:border-box;font-family:var(--md-font);
+        animation:fadeIn 0.2s ease;
+    `;
+      applyTheme$1(overlay);
+      const content = document.createElement("div");
+      content.className = "md-modal-content";
+      content.style.cssText = `
+        width:42rem;max-width:95vw;height:auto;max-height:90vh;
+        display:flex;flex-direction:column;overflow:hidden;
+    `;
+      content.innerHTML = buildHeader$1();
+      content.innerHTML += buildBody$1();
+      overlay.appendChild(content);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeSyncModal();
+      });
+      document.body.appendChild(overlay);
+      attachEventListeners$1();
+    }
+    function applyTheme$1(overlay) {
+      const isDark = document.documentElement.getAttribute("data-color-mode") === "dark" || document.body.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (isDark) overlay.setAttribute("data-theme", "dark");
+    }
+    function buildHeader$1() {
+      return `
+        <div class="md-modal-header">
+            <div class="md-header-title">
+                <h3>Sync Payload</h3>
+            </div>
+            <div class="md-header-actions">
+                <button class="md-btn-icon" id="md-sync-close" title="Close">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+        </div>
+    `;
+    }
+    function buildBody$1() {
+      switch (state$1.phase) {
+        case "pick":
+          return buildFilePicker$1();
+        case "review":
+          return buildReview$1();
+        case "applying":
+          return buildProgress$1();
+        case "done":
+          return buildResult$1();
+      }
+    }
+    function buildFilePicker$1() {
+      let errorBlock = "";
+      if (state$1.parseErrors.length > 0) {
+        const items = state$1.parseErrors.map((e) => `<li style="margin-bottom:0.25rem;">${escapeHtml$1(e)}</li>`).join("");
+        errorBlock = `
+            <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;margin-top:0.5rem;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--md-danger);margin-bottom:0.375rem;">
+                    Validation errors:
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}
+                </ul>
+            </div>
+        `;
+      }
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="font-size:0.8125rem;color:var(--md-text-subtle);margin:0;line-height:1.4;">
+                Import a JSON sync payload (<code>onyx-sync/confluence-pages</code> format)
+                to create or update pages in a Confluence space. The importer always
+                applies the marker label <code>onyx-sync</code> to synced pages.
+            </p>
+            <div id="md-sync-dropzone" style="
+                border:2px dashed var(--md-border);border-radius:var(--md-radius-lg);
+                padding:2.5rem 1.5rem;text-align:center;cursor:pointer;
+                transition:all 0.15s ease;
+            ">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">🔄</div>
+                <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;">
+                    Drop .json payload file here
+                </div>
+                <div style="font-size:0.75rem;color:var(--md-text-muted);margin-top:0.25rem;">
+                    or click to browse
+                </div>
+                <input type="file" id="md-sync-file-input" accept=".json,application/json"
+                    style="display:none;" />
+            </div>
+            ${errorBlock}
+        </div>
+    `;
+    }
+    function buildReview$1() {
+      if (state$1.planning || !state$1.plan && !state$1.planError) {
+        return `
+            <div style="padding:2rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:12rem;">
+                <div class="md-btn-icon spinning" style="width:2rem;height:2rem;">
+                    <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                </div>
+                <div style="font-size:0.875rem;color:var(--md-text-subtle);">
+                    ${escapeHtml$1(state$1.planError ?? "Planning...")}
+                </div>
+            </div>
+        `;
+      }
+      if (state$1.planError && !state$1.plan) {
+        return `
+            <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+                <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
+                    <div style="font-size:0.75rem;color:var(--md-danger);">
+                        ${escapeHtml$1(state$1.planError)}
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button class="md-btn md-btn-secondary" id="md-sync-back">Back</button>
+                </div>
+            </div>
+        `;
+      }
+      const p = state$1.payload;
+      const plan = state$1.plan;
+      const dateStr = p.generatedAt ? new Date(p.generatedAt).toLocaleString() : "—";
+      const counts = { create: 0, update: 0, skip: 0 };
+      for (const row of plan.rows) {
+        counts[row.action]++;
+      }
+      const rowMap = /* @__PURE__ */ new Map();
+      const depthMemo = /* @__PURE__ */ new Map();
+      const computeDepth = (id) => {
+        if (depthMemo.has(id)) return depthMemo.get(id);
+        const row = plan.rows.find((r) => r.localId === id);
+        if (!row || row.parentLocalId === null) {
+          depthMemo.set(id, 0);
+          return 0;
+        }
+        depthMemo.set(id, Number.MAX_SAFE_INTEGER);
+        const d = computeDepth(row.parentLocalId) + 1;
+        depthMemo.set(id, d);
+        return d;
+      };
+      for (const row of plan.rows) {
+        rowMap.set(row.localId, { row, depth: computeDepth(row.localId) });
+      }
+      const tableRows = plan.rows.map((row) => {
+        const info = rowMap.get(row.localId);
+        const indent = info.depth * 1.25;
+        const checked = row.action === "skip" ? "" : "checked";
+        const disabled = row.action === "skip" ? "disabled" : "";
+        const badge = buildActionBadge$1(row.action);
+        return `
+            <tr style="border-bottom:1px solid var(--md-border);">
+                <td style="padding:0.375rem 0.5rem;text-align:center;">
+                    <input type="checkbox" class="md-sync-row-check"
+                        data-local-id="${escapeHtml$1(row.localId)}"
+                        ${checked} ${disabled}
+                        style="cursor:pointer;accent-color:var(--md-primary);" />
+                </td>
+                <td style="padding:0.375rem 0.5rem;padding-left:${indent}rem;color:var(--md-text);font-size:0.8125rem;">
+                    ${escapeHtml$1(row.title)}
+                </td>
+                <td style="padding:0.375rem 0.5rem;text-align:center;">
+                    ${badge}
+                </td>
+            </tr>
+        `;
+      }).join("");
+      const selectedCount = plan.rows.filter(
+        (r) => r.action !== "skip"
+      ).length;
+      return `
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto;">
+            <div style="background:var(--md-bg-subtle);border-radius:var(--md-radius);padding:0.75rem 1rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">
+                    Payload Info
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.375rem;font-size:0.8125rem;">
+                    <span style="color:var(--md-text-subtle);">Pages:</span>
+                    <span style="color:var(--md-text);font-weight:500;">${plan.rows.length}</span>
+                    <span style="color:var(--md-text-subtle);">Generated:</span>
+                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml$1(dateStr)}</span>
+                    <span style="color:var(--md-text-subtle);">Create:</span>
+                    <span style="color:var(--md-success);font-weight:500;">${counts.create}</span>
+                    <span style="color:var(--md-text-subtle);">Update:</span>
+                    <span style="color:var(--md-warning);font-weight:500;">${counts.update}</span>
+                    <span style="color:var(--md-text-subtle);">Skip:</span>
+                    <span style="color:var(--md-text-muted);font-weight:500;">${counts.skip}</span>
+                </div>
+            </div>
+
+            <div class="md-settings-section">
+                <div class="md-settings-title">Target Space</div>
+                <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
+                    Space Key
+                    <input id="md-sync-space" type="text" value="${escapeHtml$1(state$1.spaceKey)}"
+                        style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
+                        border:1px solid var(--md-border);border-radius:var(--md-radius);
+                        font-size:0.8125rem;font-family:var(--md-font);
+                        background:var(--md-bg);color:var(--md-text);box-sizing:border-box;" />
+                </label>
+            </div>
+
+            <div style="border:1px solid var(--md-border);border-radius:var(--md-radius);overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);">
+                            <th style="padding:0.5rem;text-align:center;width:2.5rem;">
+                                <input type="checkbox" id="md-sync-select-all"
+                                    style="cursor:pointer;accent-color:var(--md-primary);" />
+                            </th>
+                            <th style="padding:0.5rem;text-align:left;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;">
+                                Title
+                            </th>
+                            <th style="padding:0.5rem;text-align:center;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;width:5rem;">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-sync-back">Back</button>
+                <span style="font-size:0.75rem;color:var(--md-text-muted);" id="md-sync-selected-count">
+                    ${selectedCount} pages selected
+                </span>
+                <button class="md-btn md-btn-primary" id="md-sync-apply">
+                    Apply ${selectedCount} pages
+                </button>
+            </div>
+        </div>
+    `;
+    }
+    function buildActionBadge$1(action) {
+      const styles = {
+        create: "background:var(--md-success-light);color:var(--md-success);",
+        update: "background:var(--md-warning-light);color:var(--md-warning);",
+        skip: "background:var(--md-bg-subtle);color:var(--md-text-muted);"
+      };
+      const labels = {
+        create: "CREATE",
+        update: "UPDATE",
+        skip: "SKIP"
+      };
+      return `<span style="${styles[action]}padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.625rem;font-weight:600;letter-spacing:0.5px;">${labels[action]}</span>`;
+    }
+    function buildProgress$1() {
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
+            <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-sync-phase-label">
+                Starting sync...
+            </div>
+            <div style="width:100%;">
+                <div class="md-progress-bar" style="height:0.375rem;">
+                    <div class="md-progress-fill" id="md-sync-progress-fill" style="width:0%;"></div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--md-text-muted);" id="md-sync-progress-detail">
+                0 / 0
+            </div>
+        </div>
+    `;
+    }
+    function buildResult$1() {
+      const r = state$1.report;
+      const hasErrors = r.failed.length > 0;
+      let errorList = "";
+      if (r.failed.length > 0) {
+        const items = r.failed.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$1(e.title)}</strong>: ${escapeHtml$1(e.error)}</li>`).join("");
+        const moreNote = r.failed.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.failed.length - 20} more</li>` : "";
+        errorList = `
+            <div style="margin-top:0.75rem;max-height:8rem;overflow-y:auto;
+                background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-danger);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.375rem;">
+                    Errors (${r.failed.length})
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}${moreNote}
+                </ul>
+            </div>
+        `;
+      }
+      let warningList = "";
+      if (r.warnings.length > 0) {
+        const items = r.warnings.slice(0, 20).map((w) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$1(w.title)}</strong>: ${escapeHtml$1(w.warning)}</li>`).join("");
+        const moreNote = r.warnings.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.warnings.length - 20} more</li>` : "";
+        warningList = `
+            <div style="margin-top:0.5rem;max-height:6rem;overflow-y:auto;
+                background:var(--md-warning-light);border-radius:var(--md-radius);padding:0.75rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-warning);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.375rem;">
+                    Warnings (${r.warnings.length})
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}${moreNote}
+                </ul>
+            </div>
+        `;
+      }
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <div style="text-align:center;font-size:1.5rem;">${hasErrors ? "⚠️" : "✅"}</div>
+            <div style="display:flex;justify-content:center;gap:1.5rem;font-size:0.875rem;flex-wrap:wrap;">
+                <span style="color:var(--md-success);font-weight:500;">Created: ${r.created.length}</span>
+                <span style="color:var(--md-warning);font-weight:500;">Updated: ${r.updated.length}</span>
+                <span style="color:var(--md-text-muted);font-weight:500;">Skipped: ${r.skipped.length}</span>
+                <span style="color:var(--md-danger);font-weight:500;">Failed: ${r.failed.length}</span>
+            </div>
+            ${errorList}
+            ${warningList}
+            <div style="display:flex;justify-content:center;gap:0.5rem;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-sync-done">Close</button>
+                <button class="md-btn md-btn-primary" id="md-sync-download">Download report</button>
+            </div>
+        </div>
+    `;
+    }
+    function attachEventListeners$1() {
+      var _a3;
+      const modal = document.getElementById(MODAL_ID$1);
+      if (!modal) return;
+      (_a3 = modal.querySelector("#md-sync-close")) == null ? void 0 : _a3.addEventListener("click", closeSyncModal);
+      const onKeyDown = (e) => {
+        if (e.key === "Escape") {
+          closeSyncModal();
+          document.removeEventListener("keydown", onKeyDown);
+        }
+      };
+      document.addEventListener("keydown", onKeyDown);
+      switch (state$1.phase) {
+        case "pick":
+          attachFilePickerListeners$1(modal);
+          break;
+        case "review":
+          attachReviewListeners$1(modal);
+          break;
+        case "done":
+          attachResultListeners$1(modal);
+          break;
+      }
+    }
+    function attachFilePickerListeners$1(modal) {
+      const dropzone = modal.querySelector("#md-sync-dropzone");
+      const fileInput = modal.querySelector("#md-sync-file-input");
+      if (!dropzone || !fileInput) return;
+      dropzone.addEventListener("click", () => fileInput.click());
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = "var(--md-primary)";
+        dropzone.style.background = "var(--md-primary-light)";
+      });
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.style.borderColor = "var(--md-border)";
+        dropzone.style.background = "";
+      });
+      dropzone.addEventListener("drop", (e) => {
+        var _a3;
+        e.preventDefault();
+        dropzone.style.borderColor = "var(--md-border)";
+        dropzone.style.background = "";
+        const file = (_a3 = e.dataTransfer) == null ? void 0 : _a3.files[0];
+        if (file) void handleFileSelected$1(file);
+      });
+      fileInput.addEventListener("change", () => {
+        var _a3;
+        const file = (_a3 = fileInput.files) == null ? void 0 : _a3[0];
+        if (file) void handleFileSelected$1(file);
+      });
+    }
+    function attachReviewListeners$1(modal) {
+      var _a3, _b2;
+      (_a3 = modal.querySelector("#md-sync-back")) == null ? void 0 : _a3.addEventListener("click", () => {
+        state$1.phase = "pick";
+        state$1.file = null;
+        state$1.payload = null;
+        state$1.parseErrors = [];
+        state$1.plan = null;
+        state$1.planError = null;
+        renderSyncModal();
+      });
+      const spaceInput = modal.querySelector("#md-sync-space");
+      if (spaceInput) {
+        spaceInput.addEventListener("change", () => {
+          const newKey = spaceInput.value.trim();
+          if (newKey && newKey !== state$1.spaceKey) {
+            state$1.spaceKey = newKey;
+            state$1.payload = { ...state$1.payload, space: newKey };
+            void computePlan$1();
+          }
+        });
+      }
+      const selectAll = modal.querySelector("#md-sync-select-all");
+      if (selectAll) {
+        selectAll.addEventListener("change", () => {
+          const checks = modal.querySelectorAll(".md-sync-row-check");
+          for (const check of checks) {
+            if (!check.disabled) {
+              check.checked = selectAll.checked;
+            }
+          }
+          updateSelectedCount$1(modal);
+        });
+      }
+      const rowChecks = modal.querySelectorAll(".md-sync-row-check");
+      for (const check of rowChecks) {
+        check.addEventListener("change", () => updateSelectedCount$1(modal));
+      }
+      updateSelectAllState$1(modal);
+      (_b2 = modal.querySelector("#md-sync-apply")) == null ? void 0 : _b2.addEventListener("click", () => {
+        void startApplyProcess$1(modal);
+      });
+    }
+    function attachResultListeners$1(modal) {
+      var _a3, _b2;
+      (_a3 = modal.querySelector("#md-sync-done")) == null ? void 0 : _a3.addEventListener("click", closeSyncModal);
+      (_b2 = modal.querySelector("#md-sync-download")) == null ? void 0 : _b2.addEventListener("click", () => {
+        if (state$1.report) downloadReport$1(state$1.report);
+      });
+    }
+    async function handleFileSelected$1(file) {
+      ctmLog("[SyncModal] File selected:", file.name, file.size);
+      try {
+        const text = await file.text();
+        let raw;
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          state$1.parseErrors = ["File is not valid JSON."];
+          state$1.file = null;
+          state$1.payload = null;
+          renderSyncModal();
+          return;
+        }
+        const result = parseSyncPayload(raw);
+        if (!result.ok) {
+          state$1.parseErrors = [...result.errors];
+          state$1.file = null;
+          state$1.payload = null;
+          renderSyncModal();
+          return;
+        }
+        state$1.file = file;
+        state$1.payload = result.payload;
+        state$1.parseErrors = [];
+        state$1.spaceKey = result.payload.space;
+        state$1.phase = "review";
+        state$1.planning = true;
+        renderSyncModal();
+        void computePlan$1();
+      } catch (error) {
+        ctmError("[SyncModal] Failed to read file:", error);
+        state$1.parseErrors = [
+          `Failed to read file: ${error instanceof Error ? error.message : String(error)}`
+        ];
+        state$1.file = null;
+        state$1.payload = null;
+        state$1.phase = "pick";
+        renderSyncModal();
+      }
+    }
+    async function computePlan$1() {
+      if (!state$1.payload) return;
+      state$1.planning = true;
+      state$1.planError = null;
+      renderSyncModal();
+      try {
+        const plan = await planSync(state$1.payload);
+        state$1.plan = plan;
+        state$1.planning = false;
+        renderSyncModal();
+      } catch (error) {
+        ctmError("[SyncModal] Plan failed:", error);
+        state$1.planError = error instanceof Error ? error.message : String(error);
+        state$1.planning = false;
+        renderSyncModal();
+      }
+    }
+    async function startApplyProcess$1(modal) {
+      if (!state$1.payload || !state$1.plan) return;
+      const checks = modal.querySelectorAll(".md-sync-row-check");
+      const selectedLocalIds = /* @__PURE__ */ new Set();
+      for (const check of checks) {
+        if (check.checked && !check.disabled) {
+          const id = check.getAttribute("data-local-id");
+          if (id) selectedLocalIds.add(id);
+        }
+      }
+      if (selectedLocalIds.size === 0) return;
+      state$1.phase = "applying";
+      renderSyncModal();
+      try {
+        const report = await applySync(
+          state$1.payload,
+          state$1.plan,
+          selectedLocalIds,
+          (phase, current, total) => {
+            updateProgress$1(phase, current, total);
+          }
+        );
+        state$1.report = report;
+        state$1.phase = "done";
+        renderSyncModal();
+      } catch (error) {
+        ctmError("[SyncModal] Apply failed:", error);
+        state$1.report = {
+          space: state$1.payload.space,
+          appliedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          created: [],
+          updated: [],
+          skipped: [],
+          failed: [
+            {
+              localId: "(sync)",
+              title: "(sync)",
+              error: error instanceof Error ? error.message : String(error)
+            }
+          ],
+          warnings: []
+        };
+        state$1.phase = "done";
+        renderSyncModal();
+      }
+    }
+    function updateProgress$1(phase, current, total) {
+      const label = document.getElementById("md-sync-phase-label");
+      const fill = document.getElementById("md-sync-progress-fill");
+      const detail = document.getElementById("md-sync-progress-detail");
+      if (label) label.textContent = phase;
+      if (detail) detail.textContent = `${current} / ${total}`;
+      if (fill) {
+        const pct = total > 0 ? Math.round(current / total * 100) : 0;
+        fill.style.width = `${pct}%`;
+      }
+    }
+    function updateSelectedCount$1(modal) {
+      const checks = modal.querySelectorAll(".md-sync-row-check");
+      let count = 0;
+      for (const check of checks) {
+        if (check.checked && !check.disabled) count++;
+      }
+      const countEl = modal.querySelector("#md-sync-selected-count");
+      if (countEl) countEl.textContent = `${count} pages selected`;
+      const applyBtn = modal.querySelector("#md-sync-apply");
+      if (applyBtn) {
+        applyBtn.textContent = `Apply ${count} pages`;
+        applyBtn.disabled = count === 0;
+      }
+      updateSelectAllState$1(modal);
+    }
+    function updateSelectAllState$1(modal) {
+      const selectAll = modal.querySelector("#md-sync-select-all");
+      if (!selectAll) return;
+      const checks = modal.querySelectorAll(".md-sync-row-check");
+      let allChecked = true;
+      let hasEnabled = false;
+      for (const check of checks) {
+        if (!check.disabled) {
+          hasEnabled = true;
+          if (!check.checked) {
+            allChecked = false;
+            break;
+          }
+        }
+      }
+      selectAll.checked = hasEnabled && allChecked;
+    }
+    function downloadReport$1(report) {
+      const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+      const filename = `sync-report-${timestamp}.json`;
+      const blob = new Blob([JSON.stringify(report, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    function escapeHtml$1(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    const JIRA_PAYLOAD_FORMAT = "onyx-sync/jira-issues";
+    const JIRA_PAYLOAD_VERSION = 1;
+    const JIRA_DEFAULT_ISSUE_TYPE = "Задача";
+    const JIRA_SUBTASK_ISSUE_TYPE = "Подзадача";
+    function parseJiraPayload(raw) {
+      const errors = [];
+      if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+        return { ok: false, errors: ["Payload must be a JSON object."] };
+      }
+      const obj = raw;
+      const format = obj["format"];
+      if (format !== JIRA_PAYLOAD_FORMAT) {
+        errors.push(
+          `Invalid "format": expected "${JIRA_PAYLOAD_FORMAT}", got ${JSON.stringify(format)}.`
+        );
+      }
+      const version2 = obj["version"];
+      if (typeof version2 !== "number" || version2 !== JIRA_PAYLOAD_VERSION) {
+        errors.push(
+          `Invalid "version": expected ${JIRA_PAYLOAD_VERSION}, got ${JSON.stringify(version2)}.`
+        );
+      }
+      const project = obj["project"];
+      if (typeof project !== "string" || project.trim().length === 0) {
+        errors.push('Missing or empty "project" key.');
+      }
+      const generatedAt = obj["generatedAt"];
+      if (generatedAt !== void 0 && typeof generatedAt !== "string") {
+        errors.push('Invalid "generatedAt": expected a string.');
+      }
+      const issuesRaw = obj["issues"];
+      if (!Array.isArray(issuesRaw)) {
+        errors.push('Missing or invalid "issues": expected an array.');
+        return { ok: false, errors };
+      }
+      const ids = /* @__PURE__ */ new Set();
+      const issueMap = /* @__PURE__ */ new Map();
+      for (let i2 = 0; i2 < issuesRaw.length; i2++) {
+        const iss = issuesRaw[i2];
+        const ctx = `issues[${i2}]`;
+        if (typeof iss !== "object" || iss === null || Array.isArray(iss)) {
+          errors.push(`${ctx}: must be a JSON object.`);
+          continue;
+        }
+        const rec = iss;
+        const id = rec["id"];
+        if (typeof id !== "string" || id.length === 0) {
+          errors.push(`${ctx}: missing or empty "id".`);
+          continue;
+        }
+        if (ids.has(id)) {
+          errors.push(`${ctx}: duplicate id "${id}".`);
+          continue;
+        }
+        ids.add(id);
+        const summary = rec["summary"];
+        if (typeof summary !== "string" || summary.trim().length === 0) {
+          errors.push(`${ctx} (id="${id}"): missing or empty "summary".`);
+        }
+        const issueType = rec["issueType"];
+        if (issueType !== void 0 && typeof issueType !== "string") {
+          errors.push(`${ctx} (id="${id}"): "issueType" must be a string.`);
+        }
+        const description = rec["description"];
+        if (description !== void 0 && typeof description !== "string") {
+          errors.push(`${ctx} (id="${id}"): "description" must be a string.`);
+        }
+        const labels = rec["labels"];
+        if (labels !== void 0) {
+          if (!Array.isArray(labels) || labels.some((l) => typeof l !== "string")) {
+            errors.push(`${ctx} (id="${id}"): "labels" must be an array of strings.`);
+          }
+        }
+        const parent = rec["parent"];
+        if (parent !== null && typeof parent !== "string") {
+          errors.push(`${ctx} (id="${id}"): "parent" must be a string or null.`);
+        } else if (typeof parent === "string" && parent.length === 0) {
+          errors.push(
+            `${ctx} (id="${id}"): "parent" must not be an empty string (use null for top-level).`
+          );
+        }
+        issueMap.set(id, {
+          id,
+          summary: typeof summary === "string" ? summary : "",
+          issueType: typeof issueType === "string" ? issueType : void 0,
+          description: typeof description === "string" ? description : void 0,
+          labels: Array.isArray(labels) ? labels.filter((l) => typeof l === "string") : void 0,
+          parent: typeof parent === "string" ? parent : null
+        });
+      }
+      if (issueMap.size > 0) {
+        for (const issue of issueMap.values()) {
+          if (issue.parent === null) continue;
+          if (!issueMap.has(issue.parent)) {
+            errors.push(
+              `Issue "${issue.id}": parent "${issue.parent}" does not exist in payload.`
+            );
+          }
+        }
+        for (const issue of issueMap.values()) {
+          const cycle = detectJiraCycle(issue.id, issueMap);
+          if (cycle) {
+            errors.push(
+              `Issue "${issue.id}": cycle in parent chain (${cycle.join(" → ")}).`
+            );
+          }
+        }
+      }
+      if (errors.length > 0) {
+        return { ok: false, errors };
+      }
+      const payload = {
+        format: JIRA_PAYLOAD_FORMAT,
+        version: JIRA_PAYLOAD_VERSION,
+        project,
+        generatedAt: typeof generatedAt === "string" ? generatedAt : (/* @__PURE__ */ new Date()).toISOString(),
+        issues: Array.from(issueMap.values())
+      };
+      return { ok: true, payload };
+    }
+    function detectJiraCycle(startId, issueMap) {
+      const visited = /* @__PURE__ */ new Set();
+      const path = [];
+      let current = startId;
+      while (current !== null) {
+        if (visited.has(current)) {
+          const cycleStart = path.indexOf(current);
+          return path.slice(cycleStart).concat(current);
+        }
+        visited.add(current);
+        path.push(current);
+        const issue = issueMap.get(current);
+        if (!issue) break;
+        current = issue.parent;
+      }
+      return null;
+    }
+    function simpleNormal(text) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+    const RETRY_DELAY_MS = 2e3;
+    const JIRA_JSON_HEADERS = {
+      "Content-Type": "application/json",
+      "X-Atlassian-Token": "no-check"
+    };
+    async function planJiraSync(payload, onProgress) {
+      const baseUrl = getBaseUrl();
+      const existingIssues = await fetchExistingIssues(baseUrl, payload.project);
+      const existingBySummary = /* @__PURE__ */ new Map();
+      for (const iss of existingIssues) {
+        const norm = simpleNormal(iss.summary);
+        if (!existingBySummary.has(norm)) {
+          existingBySummary.set(norm, iss);
+        }
+      }
+      const ordered = orderIssuesParentsFirst(payload.issues);
+      const rows = [];
+      for (const issue of ordered) {
+        const normSummary = simpleNormal(issue.summary);
+        const existing = existingBySummary.get(normSummary);
+        if (!existing) {
+          rows.push({
+            localId: issue.id,
+            title: issue.summary,
+            parentLocalId: issue.parent,
+            action: "create"
+          });
+          continue;
+        }
+        const existingDesc = existing.description ?? "";
+        const payloadDesc = issue.description ?? "";
+        const sameDesc = simpleNormal(payloadDesc) === simpleNormal(existingDesc);
+        if (sameDesc) {
+          rows.push({
+            localId: issue.id,
+            title: issue.summary,
+            parentLocalId: issue.parent,
+            action: "skip",
+            existingKey: existing.key
+          });
+        } else {
+          rows.push({
+            localId: issue.id,
+            title: issue.summary,
+            parentLocalId: issue.parent,
+            action: "update",
+            existingKey: existing.key
+          });
+        }
+      }
+      return { project: payload.project, rows };
+    }
+    async function applyJiraSync(payload, plan, selectedLocalIds, onProgress) {
+      const baseUrl = getBaseUrl();
+      const project = payload.project;
+      const created = [];
+      const updated = [];
+      const failed = [];
+      const warnings = [];
+      const idMapping = /* @__PURE__ */ new Map();
+      for (const row of plan.rows) {
+        if ((row.action === "skip" || row.action === "update") && row.existingKey) {
+          idMapping.set(row.localId, row.existingKey);
+        }
+      }
+      const issueMap = /* @__PURE__ */ new Map();
+      for (const iss of payload.issues) {
+        issueMap.set(iss.id, iss);
+      }
+      const orderedRows = orderJiraRowsParentsFirst(plan.rows);
+      const applicableRows = orderedRows.filter(
+        (r) => selectedLocalIds.has(r.localId) && (r.action === "create" || r.action === "update")
+      );
+      onProgress == null ? void 0 : onProgress("Applying changes...", 0, applicableRows.length);
+      let processed = 0;
+      for (const row of applicableRows) {
+        onProgress == null ? void 0 : onProgress("Applying changes...", processed, applicableRows.length);
+        processed++;
+        const issue = issueMap.get(row.localId);
+        if (!issue) {
+          failed.push({
+            localId: row.localId,
+            title: row.title,
+            error: "Issue not found in payload."
+          });
+          continue;
+        }
+        let parentKey = null;
+        if (row.parentLocalId !== null) {
+          const resolved = idMapping.get(row.parentLocalId);
+          if (!resolved) {
+            failed.push({
+              localId: row.localId,
+              title: row.title,
+              error: `Parent "${row.parentLocalId}" was not applied or resolved.`
+            });
+            continue;
+          }
+          parentKey = resolved;
+        }
+        try {
+          let issueKey;
+          if (row.action === "create") {
+            issueKey = await createIssue(
+              baseUrl,
+              project,
+              issue,
+              parentKey
+            );
+            idMapping.set(row.localId, issueKey);
+            created.push({ localId: row.localId, pageId: issueKey, title: issue.summary });
+            ctmLog(`[JiraSync] Created: ${issue.summary} (${issueKey})`);
+          } else {
+            issueKey = row.existingKey;
+            await updateIssue(baseUrl, issueKey, issue);
+            updated.push({ localId: row.localId, pageId: issueKey, title: issue.summary });
+            ctmLog(`[JiraSync] Updated: ${issue.summary} (${issueKey})`);
+          }
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          failed.push({ localId: row.localId, title: row.title, error: msg });
+          ctmError(`[JiraSync] Failed to ${row.action} "${issue.summary}":`, error);
+        }
+      }
+      onProgress == null ? void 0 : onProgress("Applying changes...", applicableRows.length, applicableRows.length);
+      const processedIds = /* @__PURE__ */ new Set();
+      for (const c of created) processedIds.add(c.localId);
+      for (const u of updated) processedIds.add(u.localId);
+      for (const f of failed) processedIds.add(f.localId);
+      const skipped = [];
+      for (const row of plan.rows) {
+        if (!processedIds.has(row.localId)) {
+          skipped.push({ localId: row.localId, title: row.title });
+        }
+      }
+      return {
+        project,
+        appliedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        created,
+        updated,
+        skipped,
+        failed,
+        warnings
+      };
+    }
+    async function fetchExistingIssues(baseUrl, projectKey) {
+      const issues = [];
+      let startAt = 0;
+      const maxResults = 100;
+      let total = Infinity;
+      while (startAt < total) {
+        const jql = encodeURIComponent(
+          `project = "${projectKey}" AND labels = "${SYNC_MARKER_LABEL}" ORDER BY key ASC`
+        );
+        const url = `${baseUrl}/rest/api/2/search?jql=${jql}&fields=key,summary,description,labels&startAt=${startAt}&maxResults=${maxResults}`;
+        const response = await fetchJson$1(url);
+        for (const iss of response.issues) {
+          issues.push({
+            key: iss.key,
+            summary: iss.fields.summary,
+            description: iss.fields.description ?? ""
+          });
+        }
+        total = response.total;
+        startAt += response.issues.length;
+        if (response.issues.length === 0) break;
+      }
+      return issues;
+    }
+    async function createIssue(baseUrl, projectKey, issue, parentKey, retries = 1) {
+      const isSubtask = parentKey !== null;
+      const issueType = isSubtask ? JIRA_SUBTASK_ISSUE_TYPE : issue.issueType ?? JIRA_DEFAULT_ISSUE_TYPE;
+      const labels = [.../* @__PURE__ */ new Set([...issue.labels ?? [], SYNC_MARKER_LABEL])];
+      const fields = {
+        project: { key: projectKey },
+        summary: issue.summary,
+        issuetype: { name: issueType },
+        labels
+      };
+      if (issue.description !== void 0) {
+        fields["description"] = issue.description;
+      }
+      if (parentKey) {
+        fields["parent"] = { key: parentKey };
+      }
+      try {
+        const result = await transportRequest({
+          url: `${baseUrl}/rest/api/2/issue`,
+          method: "POST",
+          headers: JIRA_JSON_HEADERS,
+          body: JSON.stringify({ fields })
+        });
+        return result.key;
+      } catch (error) {
+        if (retries > 0 && isRateLimited(error)) {
+          const delay2 = getRetryDelay(error);
+          ctmLog(
+            `[JiraSync] Rate limited creating "${issue.summary}", retrying in ${delay2}ms`
+          );
+          await sleep(delay2);
+          return createIssue(baseUrl, projectKey, issue, parentKey, retries - 1);
+        }
+        throw error;
+      }
+    }
+    async function updateIssue(baseUrl, issueKey, issue, retries = 1) {
+      const labels = [.../* @__PURE__ */ new Set([...issue.labels ?? [], SYNC_MARKER_LABEL])];
+      const fields = {
+        summary: issue.summary,
+        labels
+      };
+      if (issue.description !== void 0) {
+        fields["description"] = issue.description;
+      }
+      try {
+        await transportRequest({
+          url: `${baseUrl}/rest/api/2/issue/${issueKey}`,
+          method: "PUT",
+          headers: JIRA_JSON_HEADERS,
+          body: JSON.stringify({ fields })
+        });
+      } catch (error) {
+        if (retries > 0 && isRateLimited(error)) {
+          const delay2 = getRetryDelay(error);
+          ctmLog(
+            `[JiraSync] Rate limited updating "${issue.summary}", retrying in ${delay2}ms`
+          );
+          await sleep(delay2);
+          return updateIssue(baseUrl, issueKey, issue, retries - 1);
+        }
+        throw error;
+      }
+    }
+    function orderIssuesParentsFirst(issues) {
+      const issueMap = /* @__PURE__ */ new Map();
+      for (const iss of issues) {
+        issueMap.set(iss.id, iss);
+      }
+      const depthMemo = /* @__PURE__ */ new Map();
+      const depth = (id) => {
+        if (depthMemo.has(id)) return depthMemo.get(id);
+        const issue = issueMap.get(id);
+        if (!issue || issue.parent === null) {
+          depthMemo.set(id, 0);
+          return 0;
+        }
+        depthMemo.set(id, Number.MAX_SAFE_INTEGER);
+        const d = depth(issue.parent) + 1;
+        depthMemo.set(id, d);
+        return d;
+      };
+      return [...issues].sort((a, b) => depth(a.id) - depth(b.id));
+    }
+    function orderJiraRowsParentsFirst(rows) {
+      const rowMap = /* @__PURE__ */ new Map();
+      for (const r of rows) {
+        rowMap.set(r.localId, r);
+      }
+      const depthMemo = /* @__PURE__ */ new Map();
+      const depth = (id) => {
+        if (depthMemo.has(id)) return depthMemo.get(id);
+        const row = rowMap.get(id);
+        if (!row || row.parentLocalId === null) {
+          depthMemo.set(id, 0);
+          return 0;
+        }
+        depthMemo.set(id, Number.MAX_SAFE_INTEGER);
+        const d = depth(row.parentLocalId) + 1;
+        depthMemo.set(id, d);
+        return d;
+      };
+      return [...rows].sort((a, b) => depth(a.localId) - depth(b.localId));
+    }
+    function isRateLimited(error) {
+      return error instanceof ConfluenceApiError && error.category === "rate_limited";
+    }
+    function getRetryDelay(error) {
+      if (error instanceof ConfluenceApiError && error.retryAfterMs !== void 0) {
+        return error.retryAfterMs;
+      }
+      return RETRY_DELAY_MS;
+    }
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+    const PAGE_SIZE = 100;
+    async function exportJiraIssues(projectKey, onProgress) {
+      var _a3, _b2;
+      const baseUrl = getBaseUrl();
+      const issues = [];
+      let startAt = 0;
+      let total = Infinity;
+      onProgress == null ? void 0 : onProgress("Exporting issues...", 0, 0);
+      while (startAt < total) {
+        const jql = encodeURIComponent(`project = "${projectKey}" ORDER BY key ASC`);
+        const url = `${baseUrl}/rest/api/2/search?jql=${jql}&fields=key,summary,status,issuetype,labels&startAt=${startAt}&maxResults=${PAGE_SIZE}`;
+        try {
+          const response = await fetchJson$1(url);
+          for (const iss of response.issues) {
+            issues.push({
+              key: iss.key,
+              summary: iss.fields.summary,
+              status: ((_a3 = iss.fields.status) == null ? void 0 : _a3.name) ?? "",
+              issueType: ((_b2 = iss.fields.issuetype) == null ? void 0 : _b2.name) ?? "",
+              labels: iss.fields.labels ?? []
+            });
+          }
+          total = response.total;
+          startAt += response.issues.length;
+          onProgress == null ? void 0 : onProgress("Exporting issues...", issues.length, total);
+          if (response.issues.length === 0) break;
+        } catch (error) {
+          ctmError("[JiraExport] Failed to fetch issues:", error);
+          throw error;
+        }
+      }
+      return {
+        format: "onyx-sync/jira-export",
+        version: 1,
+        project: projectKey,
+        exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        issues
+      };
+    }
+    const MODAL_ID = "md-jira-modal";
+    let state = createInitialState();
+    function createInitialState() {
+      return {
+        mode: "export",
+        file: null,
+        payload: null,
+        parseErrors: [],
+        phase: "pick",
+        projectKey: "",
+        plan: null,
+        planError: null,
+        planning: false,
+        report: null,
+        exportProjectKey: "",
+        exporting: false,
+        exportError: null,
+        exportResult: null
+      };
+    }
+    function showJiraModal() {
+      state = createInitialState();
+      renderJiraModal();
+    }
+    function closeJiraModal() {
+      const el = document.getElementById(MODAL_ID);
+      if (el) el.remove();
+    }
+    function renderJiraModal() {
+      closeJiraModal();
+      const overlay = document.createElement("div");
+      overlay.id = MODAL_ID;
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", "Jira Sync");
+      overlay.style.cssText = `
+        position:fixed;inset:0;background:rgba(9,30,66,0.54);
+        backdrop-filter:blur(2px);z-index:10000;display:flex;
+        justify-content:center;align-items:center;padding:1.5rem;
+        box-sizing:border-box;font-family:var(--md-font);
+        animation:fadeIn 0.2s ease;
+    `;
+      applyTheme(overlay);
+      const content = document.createElement("div");
+      content.className = "md-modal-content";
+      content.style.cssText = `
+        width:42rem;max-width:95vw;height:auto;max-height:90vh;
+        display:flex;flex-direction:column;overflow:hidden;
+    `;
+      content.innerHTML = buildHeader();
+      content.innerHTML += buildBody();
+      overlay.appendChild(content);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeJiraModal();
+      });
+      document.body.appendChild(overlay);
+      attachEventListeners();
+    }
+    function applyTheme(overlay) {
+      const isDark = document.documentElement.getAttribute("data-color-mode") === "dark" || document.body.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (isDark) overlay.setAttribute("data-theme", "dark");
+    }
+    function buildHeader() {
+      return `
+        <div class="md-modal-header">
+            <div class="md-header-title">
+                <h3>Jira Sync</h3>
+            </div>
+            <div class="md-header-actions">
+                <button class="md-btn-icon" id="md-jira-close" title="Close">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+        </div>
+    `;
+    }
+    function buildBody() {
+      const showToggle = state.phase !== "applying";
+      const toggle = showToggle ? buildModeToggle() : "";
+      const body = state.mode === "export" ? buildExportBody() : buildApplyBody();
+      return toggle + body;
+    }
+    function buildModeToggle() {
+      const exportActive = state.mode === "export" ? "active" : "";
+      const applyActive = state.mode === "apply" ? "active" : "";
+      const disabled = state.phase === "applying" ? "disabled" : "";
+      return `
+        <div style="display:flex;gap:0.25rem;padding:0.75rem 1.25rem 0;border-bottom:1px solid var(--md-border);">
+            <button class="md-segment ${exportActive}" id="md-jira-mode-export" ${disabled}
+                style="padding:0.375rem 1rem;border-radius:var(--md-radius);border:1px solid var(--md-border);
+                background:${exportActive ? "var(--md-primary)" : "var(--md-bg)"};
+                color:${exportActive ? "#fff" : "var(--md-text-subtle)"};
+                cursor:pointer;font-size:0.8125rem;font-weight:500;font-family:var(--md-font);">
+                Export
+            </button>
+            <button class="md-segment ${applyActive}" id="md-jira-mode-apply" ${disabled}
+                style="padding:0.375rem 1rem;border-radius:var(--md-radius);border:1px solid var(--md-border);
+                background:${applyActive ? "var(--md-primary)" : "var(--md-bg)"};
+                color:${applyActive ? "#fff" : "var(--md-text-subtle)"};
+                cursor:pointer;font-size:0.8125rem;font-weight:500;font-family:var(--md-font);">
+                Apply
+            </button>
+        </div>
+    `;
+    }
+    function buildExportBody() {
+      if (state.exporting) {
+        return buildExportProgress();
+      }
+      if (state.exportResult) {
+        return buildExportDone();
+      }
+      let errorBlock = "";
+      if (state.exportError) {
+        errorBlock = `
+            <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;margin-top:0.5rem;">
+                <div style="font-size:0.75rem;color:var(--md-danger);">
+                    ${escapeHtml(state.exportError)}
+                </div>
+            </div>
+        `;
+      }
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="font-size:0.8125rem;color:var(--md-text-subtle);margin:0;line-height:1.4;">
+                Export all issues from a Jira project to a JSON file
+                (<code>onyx-sync/jira-export</code> format). The export includes
+                issue keys, summaries, statuses, types, and labels.
+            </p>
+            <div class="md-settings-section">
+                <div class="md-settings-title">Project</div>
+                <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
+                    Project Key
+                    <input id="md-jira-export-project" type="text"
+                        value="${escapeHtml(state.exportProjectKey)}"
+                        placeholder="e.g. ONYX"
+                        style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
+                        border:1px solid var(--md-border);border-radius:var(--md-radius);
+                        font-size:0.8125rem;font-family:var(--md-font);
+                        background:var(--md-bg);color:var(--md-text);box-sizing:border-box;" />
+                </label>
+            </div>
+            ${errorBlock}
+            <div style="display:flex;justify-content:flex-end;padding-top:0.5rem;">
+                <button class="md-btn md-btn-primary" id="md-jira-export-start">Export</button>
+            </div>
+        </div>
+    `;
+    }
+    function buildExportProgress() {
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
+            <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-jira-phase-label">
+                Exporting issues...
+            </div>
+            <div style="width:100%;">
+                <div class="md-progress-bar" style="height:0.375rem;">
+                    <div class="md-progress-fill" id="md-jira-progress-fill" style="width:0%;"></div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--md-text-muted);" id="md-jira-progress-detail">
+                0 / 0
+            </div>
+        </div>
+    `;
+    }
+    function buildExportDone() {
+      const result = state.exportResult;
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <div style="text-align:center;font-size:1.5rem;">✅</div>
+            <div style="text-align:center;font-size:0.875rem;color:var(--md-text);">
+                Exported <strong>${result.issues.length}</strong> issues from
+                project <strong>${escapeHtml(result.project)}</strong>.
+            </div>
+            <div style="display:flex;justify-content:center;gap:0.5rem;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-jira-export-done">Close</button>
+                <button class="md-btn md-btn-primary" id="md-jira-export-download">Download again</button>
+            </div>
+        </div>
+    `;
+    }
+    function buildApplyBody() {
+      switch (state.phase) {
+        case "pick":
+          return buildFilePicker();
+        case "review":
+          return buildReview();
+        case "applying":
+          return buildProgress();
+        case "done":
+          return buildResult();
+      }
+    }
+    function buildFilePicker() {
+      let errorBlock = "";
+      if (state.parseErrors.length > 0) {
+        const items = state.parseErrors.map((e) => `<li style="margin-bottom:0.25rem;">${escapeHtml(e)}</li>`).join("");
+        errorBlock = `
+            <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;margin-top:0.5rem;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--md-danger);margin-bottom:0.375rem;">
+                    Validation errors:
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}
+                </ul>
+            </div>
+        `;
+      }
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="font-size:0.8125rem;color:var(--md-text-subtle);margin:0;line-height:1.4;">
+                Import a JSON sync payload (<code>onyx-sync/jira-issues</code> format)
+                to create or update issues in a Jira project. The importer always
+                applies the marker label <code>onyx-sync</code> to synced issues.
+            </p>
+            <div id="md-jira-dropzone" style="
+                border:2px dashed var(--md-border);border-radius:var(--md-radius-lg);
+                padding:2.5rem 1.5rem;text-align:center;cursor:pointer;
+                transition:all 0.15s ease;
+            ">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">📋</div>
+                <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;">
+                    Drop .json payload file here
+                </div>
+                <div style="font-size:0.75rem;color:var(--md-text-muted);margin-top:0.25rem;">
+                    or click to browse
+                </div>
+                <input type="file" id="md-jira-file-input" accept=".json,application/json"
+                    style="display:none;" />
+            </div>
+            ${errorBlock}
+        </div>
+    `;
+    }
+    function buildReview() {
+      if (state.planning || !state.plan && !state.planError) {
+        return `
+            <div style="padding:2rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:12rem;">
+                <div class="md-btn-icon spinning" style="width:2rem;height:2rem;">
+                    <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                </div>
+                <div style="font-size:0.875rem;color:var(--md-text-subtle);">
+                    ${escapeHtml(state.planError ?? "Planning...")}
+                </div>
+            </div>
+        `;
+      }
+      if (state.planError && !state.plan) {
+        return `
+            <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+                <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
+                    <div style="font-size:0.75rem;color:var(--md-danger);">
+                        ${escapeHtml(state.planError)}
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button class="md-btn md-btn-secondary" id="md-jira-back">Back</button>
+                </div>
+            </div>
+        `;
+      }
+      const p = state.payload;
+      const plan = state.plan;
+      const dateStr = p.generatedAt ? new Date(p.generatedAt).toLocaleString() : "—";
+      const counts = { create: 0, update: 0, skip: 0 };
+      for (const row of plan.rows) {
+        counts[row.action]++;
+      }
+      const depthMemo = /* @__PURE__ */ new Map();
+      const computeDepth = (id) => {
+        if (depthMemo.has(id)) return depthMemo.get(id);
+        const row = plan.rows.find((r) => r.localId === id);
+        if (!row || row.parentLocalId === null) {
+          depthMemo.set(id, 0);
+          return 0;
+        }
+        depthMemo.set(id, Number.MAX_SAFE_INTEGER);
+        const d = computeDepth(row.parentLocalId) + 1;
+        depthMemo.set(id, d);
+        return d;
+      };
+      const tableRows = plan.rows.map((row) => {
+        const depth = computeDepth(row.localId);
+        const indent = depth * 1.25;
+        const checked = row.action === "skip" ? "" : "checked";
+        const disabled = row.action === "skip" ? "disabled" : "";
+        const badge = buildActionBadge(row.action);
+        return `
+            <tr style="border-bottom:1px solid var(--md-border);">
+                <td style="padding:0.375rem 0.5rem;text-align:center;">
+                    <input type="checkbox" class="md-jira-row-check"
+                        data-local-id="${escapeHtml(row.localId)}"
+                        ${checked} ${disabled}
+                        style="cursor:pointer;accent-color:var(--md-primary);" />
+                </td>
+                <td style="padding:0.375rem 0.5rem;padding-left:${indent}rem;color:var(--md-text);font-size:0.8125rem;">
+                    ${escapeHtml(row.title)}
+                </td>
+                <td style="padding:0.375rem 0.5rem;text-align:center;">
+                    ${badge}
+                </td>
+            </tr>
+        `;
+      }).join("");
+      const selectedCount = plan.rows.filter(
+        (r) => r.action !== "skip"
+      ).length;
+      return `
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto;">
+            <div style="background:var(--md-bg-subtle);border-radius:var(--md-radius);padding:0.75rem 1rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">
+                    Payload Info
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.375rem;font-size:0.8125rem;">
+                    <span style="color:var(--md-text-subtle);">Issues:</span>
+                    <span style="color:var(--md-text);font-weight:500;">${plan.rows.length}</span>
+                    <span style="color:var(--md-text-subtle);">Generated:</span>
+                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml(dateStr)}</span>
+                    <span style="color:var(--md-text-subtle);">Create:</span>
+                    <span style="color:var(--md-success);font-weight:500;">${counts.create}</span>
+                    <span style="color:var(--md-text-subtle);">Update:</span>
+                    <span style="color:var(--md-warning);font-weight:500;">${counts.update}</span>
+                    <span style="color:var(--md-text-subtle);">Skip:</span>
+                    <span style="color:var(--md-text-muted);font-weight:500;">${counts.skip}</span>
+                </div>
+            </div>
+
+            <div class="md-settings-section">
+                <div class="md-settings-title">Target Project</div>
+                <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
+                    Project Key
+                    <input id="md-jira-project" type="text" value="${escapeHtml(state.projectKey)}"
+                        style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
+                        border:1px solid var(--md-border);border-radius:var(--md-radius);
+                        font-size:0.8125rem;font-family:var(--md-font);
+                        background:var(--md-bg);color:var(--md-text);box-sizing:border-box;" />
+                </label>
+            </div>
+
+            <div style="border:1px solid var(--md-border);border-radius:var(--md-radius);overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);">
+                            <th style="padding:0.5rem;text-align:center;width:2.5rem;">
+                                <input type="checkbox" id="md-jira-select-all"
+                                    style="cursor:pointer;accent-color:var(--md-primary);" />
+                            </th>
+                            <th style="padding:0.5rem;text-align:left;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;">
+                                Summary
+                            </th>
+                            <th style="padding:0.5rem;text-align:center;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;width:5rem;">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-jira-back">Back</button>
+                <span style="font-size:0.75rem;color:var(--md-text-muted);" id="md-jira-selected-count">
+                    ${selectedCount} issues selected
+                </span>
+                <button class="md-btn md-btn-primary" id="md-jira-apply">
+                    Apply ${selectedCount} issues
+                </button>
+            </div>
+        </div>
+    `;
+    }
+    function buildActionBadge(action) {
+      const styles = {
+        create: "background:var(--md-success-light);color:var(--md-success);",
+        update: "background:var(--md-warning-light);color:var(--md-warning);",
+        skip: "background:var(--md-bg-subtle);color:var(--md-text-muted);"
+      };
+      const labels = {
+        create: "CREATE",
+        update: "UPDATE",
+        skip: "SKIP"
+      };
+      return `<span style="${styles[action]}padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.625rem;font-weight:600;letter-spacing:0.5px;">${labels[action]}</span>`;
+    }
+    function buildProgress() {
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
+            <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-jira-phase-label">
+                Starting sync...
+            </div>
+            <div style="width:100%;">
+                <div class="md-progress-bar" style="height:0.375rem;">
+                    <div class="md-progress-fill" id="md-jira-progress-fill" style="width:0%;"></div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--md-text-muted);" id="md-jira-progress-detail">
+                0 / 0
+            </div>
+        </div>
+    `;
+    }
+    function buildResult() {
+      const r = state.report;
+      const hasErrors = r.failed.length > 0;
+      let errorList = "";
+      if (r.failed.length > 0) {
+        const items = r.failed.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml(e.title)}</strong>: ${escapeHtml(e.error)}</li>`).join("");
+        const moreNote = r.failed.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.failed.length - 20} more</li>` : "";
+        errorList = `
+            <div style="margin-top:0.75rem;max-height:8rem;overflow-y:auto;
+                background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-danger);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.375rem;">
+                    Errors (${r.failed.length})
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}${moreNote}
+                </ul>
+            </div>
+        `;
+      }
+      let warningList = "";
+      if (r.warnings.length > 0) {
+        const items = r.warnings.slice(0, 20).map((w) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml(w.title)}</strong>: ${escapeHtml(w.warning)}</li>`).join("");
+        const moreNote = r.warnings.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.warnings.length - 20} more</li>` : "";
+        warningList = `
+            <div style="margin-top:0.5rem;max-height:6rem;overflow-y:auto;
+                background:var(--md-warning-light);border-radius:var(--md-radius);padding:0.75rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-warning);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.375rem;">
+                    Warnings (${r.warnings.length})
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}${moreNote}
+                </ul>
+            </div>
+        `;
+      }
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <div style="text-align:center;font-size:1.5rem;">${hasErrors ? "⚠️" : "✅"}</div>
+            <div style="display:flex;justify-content:center;gap:1.5rem;font-size:0.875rem;flex-wrap:wrap;">
+                <span style="color:var(--md-success);font-weight:500;">Created: ${r.created.length}</span>
+                <span style="color:var(--md-warning);font-weight:500;">Updated: ${r.updated.length}</span>
+                <span style="color:var(--md-text-muted);font-weight:500;">Skipped: ${r.skipped.length}</span>
+                <span style="color:var(--md-danger);font-weight:500;">Failed: ${r.failed.length}</span>
+            </div>
+            ${errorList}
+            ${warningList}
+            <div style="display:flex;justify-content:center;gap:0.5rem;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-jira-done">Close</button>
+                <button class="md-btn md-btn-primary" id="md-jira-download">Download report</button>
+            </div>
+        </div>
+    `;
+    }
+    function attachEventListeners() {
+      var _a3, _b2, _c;
+      const modal = document.getElementById(MODAL_ID);
+      if (!modal) return;
+      (_a3 = modal.querySelector("#md-jira-close")) == null ? void 0 : _a3.addEventListener("click", closeJiraModal);
+      const onKeyDown = (e) => {
+        if (e.key === "Escape") {
+          closeJiraModal();
+          document.removeEventListener("keydown", onKeyDown);
+        }
+      };
+      document.addEventListener("keydown", onKeyDown);
+      if (state.phase !== "applying") {
+        (_b2 = modal.querySelector("#md-jira-mode-export")) == null ? void 0 : _b2.addEventListener("click", () => {
+          switchMode("export");
+        });
+        (_c = modal.querySelector("#md-jira-mode-apply")) == null ? void 0 : _c.addEventListener("click", () => {
+          switchMode("apply");
+        });
+      }
+      if (state.mode === "export") {
+        attachExportListeners(modal);
+      } else {
+        switch (state.phase) {
+          case "pick":
+            attachFilePickerListeners(modal);
+            break;
+          case "review":
+            attachReviewListeners(modal);
+            break;
+          case "done":
+            attachResultListeners(modal);
+            break;
+        }
+      }
+    }
+    function switchMode(mode) {
+      if (state.mode === mode) return;
+      state.mode = mode;
+      state.phase = "pick";
+      state.parseErrors = [];
+      state.plan = null;
+      state.planError = null;
+      state.planning = false;
+      state.report = null;
+      state.file = null;
+      state.payload = null;
+      state.exportError = null;
+      state.exportResult = null;
+      state.exporting = false;
+      renderJiraModal();
+    }
+    function attachExportListeners(modal) {
+      var _a3, _b2, _c;
+      if (state.exporting) return;
+      if (state.exportResult) {
+        (_a3 = modal.querySelector("#md-jira-export-done")) == null ? void 0 : _a3.addEventListener("click", closeJiraModal);
+        (_b2 = modal.querySelector("#md-jira-export-download")) == null ? void 0 : _b2.addEventListener("click", () => {
+          if (state.exportResult) downloadExport(state.exportResult);
+        });
+        return;
+      }
+      const projectInput = modal.querySelector("#md-jira-export-project");
+      if (projectInput) {
+        projectInput.addEventListener("input", () => {
+          state.exportProjectKey = projectInput.value.trim().toUpperCase();
+        });
+      }
+      (_c = modal.querySelector("#md-jira-export-start")) == null ? void 0 : _c.addEventListener("click", () => {
+        void startExport$1();
+      });
+    }
+    function attachFilePickerListeners(modal) {
+      const dropzone = modal.querySelector("#md-jira-dropzone");
+      const fileInput = modal.querySelector("#md-jira-file-input");
+      if (!dropzone || !fileInput) return;
+      dropzone.addEventListener("click", () => fileInput.click());
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = "var(--md-primary)";
+        dropzone.style.background = "var(--md-primary-light)";
+      });
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.style.borderColor = "var(--md-border)";
+        dropzone.style.background = "";
+      });
+      dropzone.addEventListener("drop", (e) => {
+        var _a3;
+        e.preventDefault();
+        dropzone.style.borderColor = "var(--md-border)";
+        dropzone.style.background = "";
+        const file = (_a3 = e.dataTransfer) == null ? void 0 : _a3.files[0];
+        if (file) void handleFileSelected(file);
+      });
+      fileInput.addEventListener("change", () => {
+        var _a3;
+        const file = (_a3 = fileInput.files) == null ? void 0 : _a3[0];
+        if (file) void handleFileSelected(file);
+      });
+    }
+    function attachReviewListeners(modal) {
+      var _a3, _b2;
+      (_a3 = modal.querySelector("#md-jira-back")) == null ? void 0 : _a3.addEventListener("click", () => {
+        state.phase = "pick";
+        state.file = null;
+        state.payload = null;
+        state.parseErrors = [];
+        state.plan = null;
+        state.planError = null;
+        renderJiraModal();
+      });
+      const projectInput = modal.querySelector("#md-jira-project");
+      if (projectInput) {
+        projectInput.addEventListener("change", () => {
+          const newKey = projectInput.value.trim().toUpperCase();
+          if (newKey && newKey !== state.projectKey) {
+            state.projectKey = newKey;
+            state.payload = { ...state.payload, project: newKey };
+            void computePlan();
+          }
+        });
+      }
+      const selectAll = modal.querySelector("#md-jira-select-all");
+      if (selectAll) {
+        selectAll.addEventListener("change", () => {
+          const checks = modal.querySelectorAll(".md-jira-row-check");
+          for (const check of checks) {
+            if (!check.disabled) {
+              check.checked = selectAll.checked;
+            }
+          }
+          updateSelectedCount(modal);
+        });
+      }
+      const rowChecks = modal.querySelectorAll(".md-jira-row-check");
+      for (const check of rowChecks) {
+        check.addEventListener("change", () => updateSelectedCount(modal));
+      }
+      updateSelectAllState(modal);
+      (_b2 = modal.querySelector("#md-jira-apply")) == null ? void 0 : _b2.addEventListener("click", () => {
+        void startApplyProcess(modal);
+      });
+    }
+    function attachResultListeners(modal) {
+      var _a3, _b2;
+      (_a3 = modal.querySelector("#md-jira-done")) == null ? void 0 : _a3.addEventListener("click", closeJiraModal);
+      (_b2 = modal.querySelector("#md-jira-download")) == null ? void 0 : _b2.addEventListener("click", () => {
+        if (state.report) downloadReport(state.report);
+      });
+    }
+    async function startExport$1() {
+      const projectKey = state.exportProjectKey.trim().toUpperCase();
+      if (!projectKey) return;
+      state.exporting = true;
+      state.exportError = null;
+      renderJiraModal();
+      try {
+        const result = await exportJiraIssues(projectKey, (phase, current, total) => {
+          updateProgress(phase, current, total);
+        });
+        state.exportResult = result;
+        state.exporting = false;
+        downloadExport(result);
+        renderJiraModal();
+      } catch (error) {
+        ctmError("[JiraModal] Export failed:", error);
+        state.exportError = error instanceof Error ? error.message : String(error);
+        state.exporting = false;
+        renderJiraModal();
+      }
+    }
+    async function handleFileSelected(file) {
+      ctmLog("[JiraModal] File selected:", file.name, file.size);
+      try {
+        const text = await file.text();
+        let raw;
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          state.parseErrors = ["File is not valid JSON."];
+          state.file = null;
+          state.payload = null;
+          renderJiraModal();
+          return;
+        }
+        const result = parseJiraPayload(raw);
+        if (!result.ok) {
+          state.parseErrors = [...result.errors];
+          state.file = null;
+          state.payload = null;
+          renderJiraModal();
+          return;
+        }
+        state.file = file;
+        state.payload = result.payload;
+        state.parseErrors = [];
+        state.projectKey = result.payload.project;
+        state.phase = "review";
+        state.planning = true;
+        renderJiraModal();
+        void computePlan();
+      } catch (error) {
+        ctmError("[JiraModal] Failed to read file:", error);
+        state.parseErrors = [
+          `Failed to read file: ${error instanceof Error ? error.message : String(error)}`
+        ];
+        state.file = null;
+        state.payload = null;
+        state.phase = "pick";
+        renderJiraModal();
+      }
+    }
+    async function computePlan() {
+      if (!state.payload) return;
+      state.planning = true;
+      state.planError = null;
+      renderJiraModal();
+      try {
+        const plan = await planJiraSync(state.payload);
+        state.plan = plan;
+        state.planning = false;
+        renderJiraModal();
+      } catch (error) {
+        ctmError("[JiraModal] Plan failed:", error);
+        state.planError = error instanceof Error ? error.message : String(error);
+        state.planning = false;
+        renderJiraModal();
+      }
+    }
+    async function startApplyProcess(modal) {
+      if (!state.payload || !state.plan) return;
+      const checks = modal.querySelectorAll(".md-jira-row-check");
+      const selectedLocalIds = /* @__PURE__ */ new Set();
+      for (const check of checks) {
+        if (check.checked && !check.disabled) {
+          const id = check.getAttribute("data-local-id");
+          if (id) selectedLocalIds.add(id);
+        }
+      }
+      if (selectedLocalIds.size === 0) return;
+      state.phase = "applying";
+      renderJiraModal();
+      try {
+        const report = await applyJiraSync(
+          state.payload,
+          state.plan,
+          selectedLocalIds,
+          (phase, current, total) => {
+            updateProgress(phase, current, total);
+          }
+        );
+        state.report = report;
+        state.phase = "done";
+        renderJiraModal();
+      } catch (error) {
+        ctmError("[JiraModal] Apply failed:", error);
+        state.report = {
+          project: state.payload.project,
+          appliedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          created: [],
+          updated: [],
+          skipped: [],
+          failed: [
+            {
+              localId: "(sync)",
+              title: "(sync)",
+              error: error instanceof Error ? error.message : String(error)
+            }
+          ],
+          warnings: []
+        };
+        state.phase = "done";
+        renderJiraModal();
+      }
+    }
+    function updateProgress(phase, current, total) {
+      const label = document.getElementById("md-jira-phase-label");
+      const fill = document.getElementById("md-jira-progress-fill");
+      const detail = document.getElementById("md-jira-progress-detail");
+      if (label) label.textContent = phase;
+      if (detail) detail.textContent = `${current} / ${total}`;
+      if (fill) {
+        const pct = total > 0 ? Math.round(current / total * 100) : 0;
+        fill.style.width = `${pct}%`;
+      }
+    }
+    function updateSelectedCount(modal) {
+      const checks = modal.querySelectorAll(".md-jira-row-check");
+      let count = 0;
+      for (const check of checks) {
+        if (check.checked && !check.disabled) count++;
+      }
+      const countEl = modal.querySelector("#md-jira-selected-count");
+      if (countEl) countEl.textContent = `${count} issues selected`;
+      const applyBtn = modal.querySelector("#md-jira-apply");
+      if (applyBtn) {
+        applyBtn.textContent = `Apply ${count} issues`;
+        applyBtn.disabled = count === 0;
+      }
+      updateSelectAllState(modal);
+    }
+    function updateSelectAllState(modal) {
+      const selectAll = modal.querySelector("#md-jira-select-all");
+      if (!selectAll) return;
+      const checks = modal.querySelectorAll(".md-jira-row-check");
+      let allChecked = true;
+      let hasEnabled = false;
+      for (const check of checks) {
+        if (!check.disabled) {
+          hasEnabled = true;
+          if (!check.checked) {
+            allChecked = false;
+            break;
+          }
+        }
+      }
+      selectAll.checked = hasEnabled && allChecked;
+    }
+    function downloadExport(exportData) {
+      const filename = `${exportData.project}-jira-export.json`;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    function downloadReport(report) {
+      const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+      const filename = `jira-sync-report-${timestamp}.json`;
+      const blob = new Blob([JSON.stringify(report, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -25526,11 +28035,21 @@ ${converted.output}
       ctmLog("startImport called");
       showImportModal();
     }
+    function startSync() {
+      ctmLog("startSync called");
+      showSyncModal();
+    }
+    function startJiraSync() {
+      ctmLog("startJiraSync called");
+      showJiraModal();
+    }
     const SCRIPT_VERSION = (typeof GM_info !== "undefined" ? (_a2 = GM_info == null ? void 0 : GM_info.script) == null ? void 0 : _a2.version : "dev") ?? "unknown";
     ctmLog(`Confluence To Markdown v${SCRIPT_VERSION} initialized`);
     bootstrap({
       onPageExport: startExport,
       onImport: startImport,
+      onSync: startSync,
+      onJiraSync: startJiraSync,
       onHubSettings: showHubSettingsPanel
     });
     const DEFAULT_TEXT_SIZE_BYTES = 5 * 1024;
