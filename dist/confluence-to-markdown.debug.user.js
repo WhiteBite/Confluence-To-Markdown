@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Confluence to Markdown Exporter (Debug)
 // @namespace    https://github.com/WhiteBite/confluence-to-markdown
-// @version      3.4.0
+// @version      3.4.1
 // @author       WhiteBite
 // @description  Export Confluence pages to clean Markdown (debug build — readable, with console)
 // @icon         https://www.atlassian.com/favicon.ico
@@ -741,6 +741,26 @@
         }
       }
       return descendants;
+    }
+    async function fetchPageForHub(pageId) {
+      var _a3, _b2, _c, _d, _e, _f;
+      const url = `${getBaseUrl()}/rest/api/content/${pageId}?expand=body.storage,ancestors,version,metadata.labels,space`;
+      try {
+        const page = await fetchJson(url);
+        const labels = ((_c = (_b2 = (_a3 = page.metadata) == null ? void 0 : _a3.labels) == null ? void 0 : _b2.results) == null ? void 0 : _c.map((l) => l.name)) || [];
+        return {
+          id: page.id,
+          title: page.title,
+          htmlContent: ((_e = (_d = page.body) == null ? void 0 : _d.storage) == null ? void 0 : _e.value) || "",
+          ancestors: (page.ancestors || []).map((a) => ({ id: a.id, title: a.title, type: a.type || "page" })),
+          version: page.version ? { number: page.version.number, when: page.version.when } : void 0,
+          labels,
+          space: ((_f = page.space) == null ? void 0 : _f.key) || ""
+        };
+      } catch (error) {
+        ctmError("[API] fetchPageForHub failed:", error);
+        return null;
+      }
     }
     async function fetchSpace(spaceKey) {
       var _a3;
@@ -19145,7 +19165,7 @@ ${converted.output}
       let content = "";
       content += `
     <div class="title-page">
-      <h1>${escapeHtml$4(exportTitle)}</h1>
+      <h1>${escapeHtml$5(exportTitle)}</h1>
       <div class="meta">
         <p><strong>Всего страниц:</strong> ${pages.length}</p>
         <p><strong>Дата экспорта:</strong> ${(/* @__PURE__ */ new Date()).toLocaleDateString("ru-RU")}</p>
@@ -19163,7 +19183,7 @@ ${converted.output}
         const node = treeMap.get(page.id);
         const relativeLevel = node ? node.level - baseLevel : 0;
         const indent = relativeLevel * 20;
-        content += `<li style="margin-left: ${indent}px;"><a href="#page-${page.id}">${escapeHtml$4(page.title)}</a></li>`;
+        content += `<li style="margin-left: ${indent}px;"><a href="#page-${page.id}">${escapeHtml$5(page.title)}</a></li>`;
       }
       content += `
       </ul>
@@ -19176,7 +19196,7 @@ ${converted.output}
         const headingTag = `h${Math.min(relativeLevel + 1, 6)}`;
         const pageUrl = `${baseUrl}/pages/viewpage.action?pageId=${page.id}`;
         content += `<article class="page-content" id="page-${page.id}">`;
-        content += `<${headingTag} class="page-title">${escapeHtml$4(page.title)}</${headingTag}>`;
+        content += `<${headingTag} class="page-title">${escapeHtml$5(page.title)}</${headingTag}>`;
         if (settings.includeSourceLinks) {
           content += `<p class="source-link">Источник: <a href="${pageUrl}">${pageUrl}</a></p>`;
         }
@@ -19198,7 +19218,7 @@ ${converted.output}
   <meta charset="UTF-8">
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml$4(exportTitle)} - PDF Export</title>
+  <title>${escapeHtml$5(exportTitle)} - PDF Export</title>
   <style>${styles}</style>
 </head>
 <body>
@@ -19621,7 +19641,7 @@ ${converted.output}
     }
   `;
     }
-    function escapeHtml$4(text) {
+    function escapeHtml$5(text) {
       const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
@@ -20808,6 +20828,21 @@ ${converted.output}
       ctmLog("getSpaceKey: NOT FOUND — URL:", window.location.href);
       return null;
     }
+    function getSpaceName$1() {
+      var _a3, _b2, _c;
+      const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+      if ((_a3 = win.AJS) == null ? void 0 : _a3.Meta) {
+        const metaName = win.AJS.Meta.get("space-name");
+        if (metaName) return String(metaName);
+      }
+      const breadcrumb = document.querySelector("#breadcrumb-section a[data-space-key]");
+      const bcText = (_b2 = breadcrumb == null ? void 0 : breadcrumb.textContent) == null ? void 0 : _b2.trim();
+      if (bcText) return bcText;
+      const spaceLink = document.querySelector(".space-name a, #space-name-link");
+      const slText = (_c = spaceLink == null ? void 0 : spaceLink.textContent) == null ? void 0 : _c.trim();
+      if (slText) return slText;
+      return getSpaceKey();
+    }
     function getErrorMessage(error) {
       if (error instanceof Error) return error.message;
       if (typeof error === "string") return error;
@@ -21724,10 +21759,8 @@ ${converted.output}
         rootTree,
         rootTitle,
         spaceKey,
-        // spaceName is a display-only manifest field; we don't have it at this
-        // call site (only spaceKey is available from URL/AJS.Meta). The importer
-        // uses spaceKey, not spaceName, for the actual restore.
-        null,
+        // spaceName is display-only; importer relies on spaceKey for restore.
+        getSpaceName$1(),
         {
           includeAttachments: filterSet.size > 0,
           includeViewHtml: false,
@@ -22177,7 +22210,7 @@ ${converted.output}
       reset: `<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`,
       link: `<svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`
     };
-    function escapeHtml$3(text) {
+    function escapeHtml$4(text) {
       const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
@@ -22226,7 +22259,7 @@ ${converted.output}
         html += `<span class="${togglerClass}">${ICONS.chevron}</span>`;
         html += `<input type="checkbox" class="md-tree-checkbox" data-page-id="${node.id}" checked>`;
         html += `<span class="${iconClass}">${icon}</span>`;
-        html += `<span class="md-tree-label${errorClass}">${escapeHtml$3(node.title)}</span>`;
+        html += `<span class="md-tree-label${errorClass}">${escapeHtml$4(node.title)}</span>`;
         if (hasChildren) {
           html += `<span class="md-child-count">${childCount}</span>`;
         }
@@ -22242,7 +22275,7 @@ ${converted.output}
       html += "</ul>";
       return html;
     }
-    function renderModal(options) {
+    function renderModal$1(options) {
       const { rootNode, rootTitle, theme, settings, obsidianSettings } = options;
       return `
     <div id="md-export-modal-content" class="md-modal-content">
@@ -22280,7 +22313,7 @@ ${converted.output}
       </div>
       <p class="md-header-subtitle">
         ${ICONS.folder.replace("<svg", '<svg class="icon"')}
-        <span>${escapeHtml$3(rootTitle)}</span>
+        <span>${escapeHtml$4(rootTitle)}</span>
       </p>
     </div>
   `;
@@ -23400,6 +23433,13 @@ ${converted.output}
           if (obsidianSection) obsidianSection.style.display = "none";
           const attachmentCard = element.querySelector("#md-attachment-filter-card");
           if (attachmentCard) attachmentCard.style.display = "block";
+          if (!currentObsidianSettings2.attachmentFilter) {
+            currentObsidianSettings2.attachmentFilter = "*";
+          }
+          syncAllChip(element, currentObsidianSettings2.attachmentFilter);
+          syncCategoryChips(element, currentObsidianSettings2.attachmentFilter);
+          syncExtensionChips(element, currentObsidianSettings2.attachmentFilter);
+          syncFilterInput(element, currentObsidianSettings2.attachmentFilter);
           const downloadBtn = element.querySelector("#md-download-btn");
           if (downloadBtn) {
             downloadBtn.setAttribute("data-action", "backup");
@@ -24266,7 +24306,7 @@ ${converted.output}
           diagramTargetFormat: obsidianSettings.diagramTargetFormat === "wikilink" ? "mermaid" : obsidianSettings.diagramTargetFormat
         }
       };
-      modal.innerHTML = renderModal(renderOptions);
+      modal.innerHTML = renderModal$1(renderOptions);
       modalElement = modal;
       const controller = {
         show: () => {
@@ -24366,7 +24406,7 @@ ${converted.output}
       });
       return controller;
     }
-    function closeModal() {
+    function closeModal$1() {
       if (modalElement) {
         cleanupListeners == null ? void 0 : cleanupListeners();
         modalElement.remove();
@@ -24437,6 +24477,7 @@ ${converted.output}
     const EXPORT_BUTTON_ID = "md-export-trigger";
     const IMPORT_BUTTON_ID = "md-import-trigger";
     const SYNC_BUTTON_ID = "md-sync-trigger";
+    const SPACE_BUTTON_ID = "md-space-sync-trigger";
     const HUB_SETTINGS_ID = "md-hub-settings-trigger";
     const STATUS_ID = "md-export-status";
     const JIRA_BUTTON_ID = "md-jira-sync-trigger";
@@ -24531,6 +24572,7 @@ ${converted.output}
       }
       injectImportButton(container);
       injectSyncButton(container);
+      injectSpaceButton(container);
       injectHubSettingsButton(container);
     }
     function injectExportButton(container) {
@@ -24584,6 +24626,25 @@ ${converted.output}
         container.appendChild(btn);
       }
       ctmLog("addExportButtons: SYNC button added");
+    }
+    function injectSpaceButton(container) {
+      var _a3;
+      if (!activeCallbacks) return;
+      if (document.getElementById(SPACE_BUTTON_ID)) return;
+      const btn = createButton(
+        "🗂 Space",
+        "aui-button aui-button-secondary",
+        activeCallbacks.onSpaceSync
+      );
+      btn.id = SPACE_BUTTON_ID;
+      btn.style.marginLeft = "8px";
+      const syncBtn = document.getElementById(SYNC_BUTTON_ID);
+      if (syncBtn) {
+        (_a3 = syncBtn.parentElement) == null ? void 0 : _a3.insertBefore(btn, syncBtn.nextSibling);
+      } else {
+        container.appendChild(btn);
+      }
+      ctmLog("addExportButtons: SPACE button added");
     }
     function injectHubSettingsButton(container) {
       if (!activeCallbacks) return;
@@ -24786,15 +24847,15 @@ ${converted.output}
                     <div class="md-settings-title">Подключение</div>
                     <div class="md-hub-field">
                         <label class="md-config-label">Hub URL</label>
-                        <input type="url" id="md-hub-url" class="md-hub-input" value="${escapeHtml$3(settings.url)}" placeholder="https://your-midas.ai">
+                        <input type="url" id="md-hub-url" class="md-hub-input" value="${escapeHtml$4(settings.url)}" placeholder="https://your-midas.ai">
                     </div>
                     <div class="md-hub-field">
                         <label class="md-config-label">API Token</label>
-                        <input type="password" id="md-hub-token" class="md-hub-input" value="${escapeHtml$3(settings.apiToken)}" placeholder="hub_xxxxxxxx">
+                        <input type="password" id="md-hub-token" class="md-hub-input" value="${escapeHtml$4(settings.apiToken)}" placeholder="hub_xxxxxxxx">
                     </div>
                     <div class="md-hub-field">
                         <label class="md-config-label">Source Alias</label>
-                        <input type="text" id="md-hub-alias" class="md-hub-input" value="${escapeHtml$3(settings.alias)}" placeholder="acme-wiki">
+                        <input type="text" id="md-hub-alias" class="md-hub-input" value="${escapeHtml$4(settings.alias)}" placeholder="acme-wiki">
                     </div>
                     <div class="md-hub-test-row">
                         <button class="md-btn md-btn-secondary md-hub-test-btn">Проверить связь</button>
@@ -25114,23 +25175,23 @@ ${converted.output}
     function sleep$2(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
-    const MODAL_ID$2 = "md-import-modal";
-    let state$2 = createInitialState$2();
-    function createInitialState$2() {
+    const MODAL_ID$3 = "md-import-modal";
+    let state$3 = createInitialState$3();
+    function createInitialState$3() {
       return { file: null, manifest: null, phase: "pick", result: null };
     }
     function showImportModal() {
-      state$2 = createInitialState$2();
+      state$3 = createInitialState$3();
       renderImportModal();
     }
     function closeImportModal() {
-      const el = document.getElementById(MODAL_ID$2);
+      const el = document.getElementById(MODAL_ID$3);
       if (el) el.remove();
     }
     function renderImportModal() {
       closeImportModal();
       const overlay = document.createElement("div");
-      overlay.id = MODAL_ID$2;
+      overlay.id = MODAL_ID$3;
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
       overlay.setAttribute("aria-label", "Import Backup");
@@ -25141,27 +25202,27 @@ ${converted.output}
         box-sizing:border-box;font-family:var(--md-font);
         animation:fadeIn 0.2s ease;
     `;
-      applyTheme$2(overlay);
+      applyTheme$3(overlay);
       const content = document.createElement("div");
       content.className = "md-modal-content";
       content.style.cssText = `
         width:32rem;max-width:95vw;height:auto;max-height:90vh;
         display:flex;flex-direction:column;overflow:hidden;
     `;
-      content.innerHTML = buildHeader$2();
-      content.innerHTML += buildBody$2();
+      content.innerHTML = buildHeader$3();
+      content.innerHTML += buildBody$3();
       overlay.appendChild(content);
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) closeImportModal();
       });
       document.body.appendChild(overlay);
-      attachEventListeners$2();
+      attachEventListeners$3();
     }
-    function applyTheme$2(overlay) {
+    function applyTheme$3(overlay) {
       const isDark = document.documentElement.getAttribute("data-color-mode") === "dark" || document.body.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches;
       if (isDark) overlay.setAttribute("data-theme", "dark");
     }
-    function buildHeader$2() {
+    function buildHeader$3() {
       return `
         <div class="md-modal-header">
             <div class="md-header-title">
@@ -25175,16 +25236,16 @@ ${converted.output}
         </div>
     `;
     }
-    function buildBody$2() {
-      switch (state$2.phase) {
+    function buildBody$3() {
+      switch (state$3.phase) {
         case "pick":
           return buildFilePicker$2();
         case "configure":
           return buildConfigForm();
         case "importing":
-          return buildProgress$2();
+          return buildProgress$3();
         case "done":
-          return buildResult$2();
+          return buildResult$3();
       }
     }
     function buildFilePicker$2() {
@@ -25213,7 +25274,7 @@ ${converted.output}
     `;
     }
     function buildConfigForm() {
-      const m = state$2.manifest;
+      const m = state$3.manifest;
       const currentSpace = getSpaceKey() ?? m.spaceKey ?? "";
       const dateStr = new Date(m.exportDate).toLocaleString();
       return `
@@ -25226,7 +25287,7 @@ ${converted.output}
                     <span style="color:var(--md-text-subtle);">Pages:</span>
                     <span style="color:var(--md-text);font-weight:500;">${m.pageCount}</span>
                     <span style="color:var(--md-text-subtle);">Space:</span>
-                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml$2(m.spaceName ?? m.spaceKey ?? "—")}</span>
+                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml$3(m.spaceName ?? m.spaceKey ?? "—")}</span>
                     <span style="color:var(--md-text-subtle);">Date:</span>
                     <span style="color:var(--md-text);font-weight:500;">${dateStr}</span>
                     <span style="color:var(--md-text-subtle);">Attachments:</span>
@@ -25239,7 +25300,7 @@ ${converted.output}
                 <div style="display:flex;flex-direction:column;gap:0.5rem;">
                     <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
                         Space Key
-                        <input id="md-import-space" type="text" value="${escapeHtml$2(currentSpace)}"
+                        <input id="md-import-space" type="text" value="${escapeHtml$3(currentSpace)}"
                             style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
                             border:1px solid var(--md-border);border-radius:var(--md-radius);
                             font-size:0.8125rem;font-family:var(--md-font);
@@ -25275,7 +25336,7 @@ ${converted.output}
         </div>
     `;
     }
-    function buildProgress$2() {
+    function buildProgress$3() {
       return `
         <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
             <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-import-phase-label">
@@ -25292,12 +25353,12 @@ ${converted.output}
         </div>
     `;
     }
-    function buildResult$2() {
-      const r = state$2.result;
+    function buildResult$3() {
+      const r = state$3.result;
       const hasErrors = r.errors.length > 0;
       let errorList = "";
       if (hasErrors) {
-        const items = r.errors.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$2(e.pageTitle)}</strong>: ${escapeHtml$2(e.error)}</li>`).join("");
+        const items = r.errors.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$3(e.pageTitle)}</strong>: ${escapeHtml$3(e.error)}</li>`).join("");
         const moreNote = r.errors.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.errors.length - 20} more</li>` : "";
         errorList = `
             <div style="margin-top:0.75rem;max-height:10rem;overflow-y:auto;
@@ -25323,9 +25384,9 @@ ${converted.output}
         </div>
     `;
     }
-    function attachEventListeners$2() {
+    function attachEventListeners$3() {
       var _a3;
-      const modal = document.getElementById(MODAL_ID$2);
+      const modal = document.getElementById(MODAL_ID$3);
       if (!modal) return;
       (_a3 = modal.querySelector("#md-import-close")) == null ? void 0 : _a3.addEventListener("click", closeImportModal);
       const onKeyDown = (e) => {
@@ -25335,7 +25396,7 @@ ${converted.output}
         }
       };
       document.addEventListener("keydown", onKeyDown);
-      switch (state$2.phase) {
+      switch (state$3.phase) {
         case "pick":
           attachFilePickerListeners$2(modal);
           break;
@@ -25343,7 +25404,7 @@ ${converted.output}
           attachConfigListeners(modal);
           break;
         case "done":
-          attachResultListeners$2(modal);
+          attachResultListeners$3(modal);
           break;
       }
     }
@@ -25378,16 +25439,16 @@ ${converted.output}
     function attachConfigListeners(modal) {
       var _a3, _b2;
       (_a3 = modal.querySelector("#md-import-back")) == null ? void 0 : _a3.addEventListener("click", () => {
-        state$2.phase = "pick";
-        state$2.file = null;
-        state$2.manifest = null;
+        state$3.phase = "pick";
+        state$3.file = null;
+        state$3.manifest = null;
         renderImportModal();
       });
       (_b2 = modal.querySelector("#md-import-start")) == null ? void 0 : _b2.addEventListener("click", () => {
         void startImportProcess();
       });
     }
-    function attachResultListeners$2(modal) {
+    function attachResultListeners$3(modal) {
       var _a3;
       (_a3 = modal.querySelector("#md-import-done")) == null ? void 0 : _a3.addEventListener("click", closeImportModal);
     }
@@ -25403,9 +25464,9 @@ ${converted.output}
         }
         const text = new TextDecoder().decode(manifestData);
         const manifest = JSON.parse(text);
-        state$2.file = file;
-        state$2.manifest = manifest;
-        state$2.phase = "configure";
+        state$3.file = file;
+        state$3.manifest = manifest;
+        state$3.phase = "configure";
         renderImportModal();
       } catch (error) {
         ctmError("[ImportModal] Failed to parse file:", error);
@@ -25413,8 +25474,8 @@ ${converted.output}
       }
     }
     async function startImportProcess() {
-      const modal = document.getElementById(MODAL_ID$2);
-      if (!modal || !state$2.file) return;
+      const modal = document.getElementById(MODAL_ID$3);
+      if (!modal || !state$3.file) return;
       const spaceInput = modal.querySelector("#md-import-space");
       const parentInput = modal.querySelector("#md-import-parent");
       const skipCheckbox = modal.querySelector("#md-import-skip-existing");
@@ -25430,32 +25491,32 @@ ${converted.output}
         skipExisting: (skipCheckbox == null ? void 0 : skipCheckbox.checked) ?? true,
         includeAttachments: (attachCheckbox == null ? void 0 : attachCheckbox.checked) ?? true
       };
-      state$2.phase = "importing";
+      state$3.phase = "importing";
       renderImportModal();
       try {
         const result = await importConfluenceBackup(
-          state$2.file,
+          state$3.file,
           options,
           (phase, current, total) => {
-            updateProgress$2(phase, current, total);
+            updateProgress$3(phase, current, total);
           }
         );
-        state$2.result = result;
-        state$2.phase = "done";
+        state$3.result = result;
+        state$3.phase = "done";
         renderImportModal();
       } catch (error) {
         ctmError("[ImportModal] Import failed:", error);
-        state$2.result = {
+        state$3.result = {
           created: 0,
           skipped: 0,
           failed: 1,
           errors: [{ pageTitle: "(import)", error: error instanceof Error ? error.message : String(error) }]
         };
-        state$2.phase = "done";
+        state$3.phase = "done";
         renderImportModal();
       }
     }
-    function updateProgress$2(phase, current, total) {
+    function updateProgress$3(phase, current, total) {
       const label = document.getElementById("md-import-phase-label");
       const fill = document.getElementById("md-import-progress-fill");
       const detail = document.getElementById("md-import-progress-detail");
@@ -25466,7 +25527,7 @@ ${converted.output}
         fill.style.width = `${pct}%`;
       }
     }
-    function escapeHtml$2(str) {
+    function escapeHtml$3(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
     const SYNC_MARKER_LABEL = "onyx-sync";
@@ -25967,9 +26028,9 @@ ${converted.output}
     function sleep$1(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
-    const MODAL_ID$1 = "md-sync-modal";
-    let state$1 = createInitialState$1();
-    function createInitialState$1() {
+    const MODAL_ID$2 = "md-sync-modal";
+    let state$2 = createInitialState$2();
+    function createInitialState$2() {
       return {
         file: null,
         payload: null,
@@ -25983,17 +26044,17 @@ ${converted.output}
       };
     }
     function showSyncModal() {
-      state$1 = createInitialState$1();
+      state$2 = createInitialState$2();
       renderSyncModal();
     }
     function closeSyncModal() {
-      const el = document.getElementById(MODAL_ID$1);
+      const el = document.getElementById(MODAL_ID$2);
       if (el) el.remove();
     }
     function renderSyncModal() {
       closeSyncModal();
       const overlay = document.createElement("div");
-      overlay.id = MODAL_ID$1;
+      overlay.id = MODAL_ID$2;
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
       overlay.setAttribute("aria-label", "Sync Payload");
@@ -26004,27 +26065,27 @@ ${converted.output}
         box-sizing:border-box;font-family:var(--md-font);
         animation:fadeIn 0.2s ease;
     `;
-      applyTheme$1(overlay);
+      applyTheme$2(overlay);
       const content = document.createElement("div");
       content.className = "md-modal-content";
       content.style.cssText = `
         width:42rem;max-width:95vw;height:auto;max-height:90vh;
         display:flex;flex-direction:column;overflow:hidden;
     `;
-      content.innerHTML = buildHeader$1();
-      content.innerHTML += buildBody$1();
+      content.innerHTML = buildHeader$2();
+      content.innerHTML += buildBody$2();
       overlay.appendChild(content);
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) closeSyncModal();
       });
       document.body.appendChild(overlay);
-      attachEventListeners$1();
+      attachEventListeners$2();
     }
-    function applyTheme$1(overlay) {
+    function applyTheme$2(overlay) {
       const isDark = document.documentElement.getAttribute("data-color-mode") === "dark" || document.body.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches;
       if (isDark) overlay.setAttribute("data-theme", "dark");
     }
-    function buildHeader$1() {
+    function buildHeader$2() {
       return `
         <div class="md-modal-header">
             <div class="md-header-title">
@@ -26038,22 +26099,22 @@ ${converted.output}
         </div>
     `;
     }
-    function buildBody$1() {
-      switch (state$1.phase) {
+    function buildBody$2() {
+      switch (state$2.phase) {
         case "pick":
           return buildFilePicker$1();
         case "review":
-          return buildReview$1();
+          return buildReview$2();
         case "applying":
-          return buildProgress$1();
+          return buildProgress$2();
         case "done":
-          return buildResult$1();
+          return buildResult$2();
       }
     }
     function buildFilePicker$1() {
       let errorBlock = "";
-      if (state$1.parseErrors.length > 0) {
-        const items = state$1.parseErrors.map((e) => `<li style="margin-bottom:0.25rem;">${escapeHtml$1(e)}</li>`).join("");
+      if (state$2.parseErrors.length > 0) {
+        const items = state$2.parseErrors.map((e) => `<li style="margin-bottom:0.25rem;">${escapeHtml$2(e)}</li>`).join("");
         errorBlock = `
             <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;margin-top:0.5rem;">
                 <div style="font-size:0.75rem;font-weight:600;color:var(--md-danger);margin-bottom:0.375rem;">
@@ -26091,25 +26152,25 @@ ${converted.output}
         </div>
     `;
     }
-    function buildReview$1() {
-      if (state$1.planning || !state$1.plan && !state$1.planError) {
+    function buildReview$2() {
+      if (state$2.planning || !state$2.plan && !state$2.planError) {
         return `
             <div style="padding:2rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:12rem;">
                 <div class="md-btn-icon spinning" style="width:2rem;height:2rem;">
                     <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                 </div>
                 <div style="font-size:0.875rem;color:var(--md-text-subtle);">
-                    ${escapeHtml$1(state$1.planError ?? "Planning...")}
+                    ${escapeHtml$2(state$2.planError ?? "Planning...")}
                 </div>
             </div>
         `;
       }
-      if (state$1.planError && !state$1.plan) {
+      if (state$2.planError && !state$2.plan) {
         return `
             <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
                 <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
                     <div style="font-size:0.75rem;color:var(--md-danger);">
-                        ${escapeHtml$1(state$1.planError)}
+                        ${escapeHtml$2(state$2.planError)}
                     </div>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
@@ -26118,8 +26179,8 @@ ${converted.output}
             </div>
         `;
       }
-      const p = state$1.payload;
-      const plan = state$1.plan;
+      const p = state$2.payload;
+      const plan = state$2.plan;
       const dateStr = p.generatedAt ? new Date(p.generatedAt).toLocaleString() : "—";
       const counts = { create: 0, update: 0, skip: 0 };
       for (const row of plan.rows) {
@@ -26152,12 +26213,12 @@ ${converted.output}
             <tr style="border-bottom:1px solid var(--md-border);">
                 <td style="padding:0.375rem 0.5rem;text-align:center;">
                     <input type="checkbox" class="md-sync-row-check"
-                        data-local-id="${escapeHtml$1(row.localId)}"
+                        data-local-id="${escapeHtml$2(row.localId)}"
                         ${checked} ${disabled}
                         style="cursor:pointer;accent-color:var(--md-primary);" />
                 </td>
                 <td style="padding:0.375rem 0.5rem;padding-left:${indent}rem;color:var(--md-text);font-size:0.8125rem;">
-                    ${escapeHtml$1(row.title)}
+                    ${escapeHtml$2(row.title)}
                 </td>
                 <td style="padding:0.375rem 0.5rem;text-align:center;">
                     ${badge}
@@ -26178,7 +26239,7 @@ ${converted.output}
                     <span style="color:var(--md-text-subtle);">Pages:</span>
                     <span style="color:var(--md-text);font-weight:500;">${plan.rows.length}</span>
                     <span style="color:var(--md-text-subtle);">Generated:</span>
-                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml$1(dateStr)}</span>
+                    <span style="color:var(--md-text);font-weight:500;">${escapeHtml$2(dateStr)}</span>
                     <span style="color:var(--md-text-subtle);">Create:</span>
                     <span style="color:var(--md-success);font-weight:500;">${counts.create}</span>
                     <span style="color:var(--md-text-subtle);">Update:</span>
@@ -26192,7 +26253,7 @@ ${converted.output}
                 <div class="md-settings-title">Target Space</div>
                 <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
                     Space Key
-                    <input id="md-sync-space" type="text" value="${escapeHtml$1(state$1.spaceKey)}"
+                    <input id="md-sync-space" type="text" value="${escapeHtml$2(state$2.spaceKey)}"
                         style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
                         border:1px solid var(--md-border);border-radius:var(--md-radius);
                         font-size:0.8125rem;font-family:var(--md-font);
@@ -26247,7 +26308,7 @@ ${converted.output}
       };
       return `<span style="${styles[action]}padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.625rem;font-weight:600;letter-spacing:0.5px;">${labels[action]}</span>`;
     }
-    function buildProgress$1() {
+    function buildProgress$2() {
       return `
         <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
             <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-sync-phase-label">
@@ -26264,12 +26325,12 @@ ${converted.output}
         </div>
     `;
     }
-    function buildResult$1() {
-      const r = state$1.report;
+    function buildResult$2() {
+      const r = state$2.report;
       const hasErrors = r.failed.length > 0;
       let errorList = "";
       if (r.failed.length > 0) {
-        const items = r.failed.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$1(e.title)}</strong>: ${escapeHtml$1(e.error)}</li>`).join("");
+        const items = r.failed.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$2(e.title)}</strong>: ${escapeHtml$2(e.error)}</li>`).join("");
         const moreNote = r.failed.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.failed.length - 20} more</li>` : "";
         errorList = `
             <div style="margin-top:0.75rem;max-height:8rem;overflow-y:auto;
@@ -26285,7 +26346,7 @@ ${converted.output}
       }
       let warningList = "";
       if (r.warnings.length > 0) {
-        const items = r.warnings.slice(0, 20).map((w) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$1(w.title)}</strong>: ${escapeHtml$1(w.warning)}</li>`).join("");
+        const items = r.warnings.slice(0, 20).map((w) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$2(w.title)}</strong>: ${escapeHtml$2(w.warning)}</li>`).join("");
         const moreNote = r.warnings.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.warnings.length - 20} more</li>` : "";
         warningList = `
             <div style="margin-top:0.5rem;max-height:6rem;overflow-y:auto;
@@ -26317,9 +26378,9 @@ ${converted.output}
         </div>
     `;
     }
-    function attachEventListeners$1() {
+    function attachEventListeners$2() {
       var _a3;
-      const modal = document.getElementById(MODAL_ID$1);
+      const modal = document.getElementById(MODAL_ID$2);
       if (!modal) return;
       (_a3 = modal.querySelector("#md-sync-close")) == null ? void 0 : _a3.addEventListener("click", closeSyncModal);
       const onKeyDown = (e) => {
@@ -26329,15 +26390,15 @@ ${converted.output}
         }
       };
       document.addEventListener("keydown", onKeyDown);
-      switch (state$1.phase) {
+      switch (state$2.phase) {
         case "pick":
           attachFilePickerListeners$1(modal);
           break;
         case "review":
-          attachReviewListeners$1(modal);
+          attachReviewListeners$2(modal);
           break;
         case "done":
-          attachResultListeners$1(modal);
+          attachResultListeners$2(modal);
           break;
       }
     }
@@ -26369,24 +26430,24 @@ ${converted.output}
         if (file) void handleFileSelected$1(file);
       });
     }
-    function attachReviewListeners$1(modal) {
+    function attachReviewListeners$2(modal) {
       var _a3, _b2;
       (_a3 = modal.querySelector("#md-sync-back")) == null ? void 0 : _a3.addEventListener("click", () => {
-        state$1.phase = "pick";
-        state$1.file = null;
-        state$1.payload = null;
-        state$1.parseErrors = [];
-        state$1.plan = null;
-        state$1.planError = null;
+        state$2.phase = "pick";
+        state$2.file = null;
+        state$2.payload = null;
+        state$2.parseErrors = [];
+        state$2.plan = null;
+        state$2.planError = null;
         renderSyncModal();
       });
       const spaceInput = modal.querySelector("#md-sync-space");
       if (spaceInput) {
         spaceInput.addEventListener("change", () => {
           const newKey = spaceInput.value.trim();
-          if (newKey && newKey !== state$1.spaceKey) {
-            state$1.spaceKey = newKey;
-            state$1.payload = { ...state$1.payload, space: newKey };
+          if (newKey && newKey !== state$2.spaceKey) {
+            state$2.spaceKey = newKey;
+            state$2.payload = { ...state$2.payload, space: newKey };
             void computePlan$1();
           }
         });
@@ -26400,23 +26461,23 @@ ${converted.output}
               check.checked = selectAll.checked;
             }
           }
-          updateSelectedCount$1(modal);
+          updateSelectedCount$2(modal);
         });
       }
       const rowChecks = modal.querySelectorAll(".md-sync-row-check");
       for (const check of rowChecks) {
-        check.addEventListener("change", () => updateSelectedCount$1(modal));
+        check.addEventListener("change", () => updateSelectedCount$2(modal));
       }
-      updateSelectAllState$1(modal);
+      updateSelectAllState$2(modal);
       (_b2 = modal.querySelector("#md-sync-apply")) == null ? void 0 : _b2.addEventListener("click", () => {
         void startApplyProcess$1(modal);
       });
     }
-    function attachResultListeners$1(modal) {
+    function attachResultListeners$2(modal) {
       var _a3, _b2;
       (_a3 = modal.querySelector("#md-sync-done")) == null ? void 0 : _a3.addEventListener("click", closeSyncModal);
       (_b2 = modal.querySelector("#md-sync-download")) == null ? void 0 : _b2.addEventListener("click", () => {
-        if (state$1.report) downloadReport$1(state$1.report);
+        if (state$2.report) downloadReport$1(state$2.report);
       });
     }
     async function handleFileSelected$1(file) {
@@ -26427,58 +26488,58 @@ ${converted.output}
         try {
           raw = JSON.parse(text);
         } catch {
-          state$1.parseErrors = ["File is not valid JSON."];
-          state$1.file = null;
-          state$1.payload = null;
+          state$2.parseErrors = ["File is not valid JSON."];
+          state$2.file = null;
+          state$2.payload = null;
           renderSyncModal();
           return;
         }
         const result = parseSyncPayload(raw);
         if (!result.ok) {
-          state$1.parseErrors = [...result.errors];
-          state$1.file = null;
-          state$1.payload = null;
+          state$2.parseErrors = [...result.errors];
+          state$2.file = null;
+          state$2.payload = null;
           renderSyncModal();
           return;
         }
-        state$1.file = file;
-        state$1.payload = result.payload;
-        state$1.parseErrors = [];
-        state$1.spaceKey = result.payload.space;
-        state$1.phase = "review";
-        state$1.planning = true;
+        state$2.file = file;
+        state$2.payload = result.payload;
+        state$2.parseErrors = [];
+        state$2.spaceKey = result.payload.space;
+        state$2.phase = "review";
+        state$2.planning = true;
         renderSyncModal();
         void computePlan$1();
       } catch (error) {
         ctmError("[SyncModal] Failed to read file:", error);
-        state$1.parseErrors = [
+        state$2.parseErrors = [
           `Failed to read file: ${error instanceof Error ? error.message : String(error)}`
         ];
-        state$1.file = null;
-        state$1.payload = null;
-        state$1.phase = "pick";
+        state$2.file = null;
+        state$2.payload = null;
+        state$2.phase = "pick";
         renderSyncModal();
       }
     }
     async function computePlan$1() {
-      if (!state$1.payload) return;
-      state$1.planning = true;
-      state$1.planError = null;
+      if (!state$2.payload) return;
+      state$2.planning = true;
+      state$2.planError = null;
       renderSyncModal();
       try {
-        const plan = await planSync(state$1.payload);
-        state$1.plan = plan;
-        state$1.planning = false;
+        const plan = await planSync(state$2.payload);
+        state$2.plan = plan;
+        state$2.planning = false;
         renderSyncModal();
       } catch (error) {
         ctmError("[SyncModal] Plan failed:", error);
-        state$1.planError = error instanceof Error ? error.message : String(error);
-        state$1.planning = false;
+        state$2.planError = error instanceof Error ? error.message : String(error);
+        state$2.planning = false;
         renderSyncModal();
       }
     }
     async function startApplyProcess$1(modal) {
-      if (!state$1.payload || !state$1.plan) return;
+      if (!state$2.payload || !state$2.plan) return;
       const checks = modal.querySelectorAll(".md-sync-row-check");
       const selectedLocalIds = /* @__PURE__ */ new Set();
       for (const check of checks) {
@@ -26488,24 +26549,24 @@ ${converted.output}
         }
       }
       if (selectedLocalIds.size === 0) return;
-      state$1.phase = "applying";
+      state$2.phase = "applying";
       renderSyncModal();
       try {
         const report = await applySync(
-          state$1.payload,
-          state$1.plan,
+          state$2.payload,
+          state$2.plan,
           selectedLocalIds,
           (phase, current, total) => {
-            updateProgress$1(phase, current, total);
+            updateProgress$2(phase, current, total);
           }
         );
-        state$1.report = report;
-        state$1.phase = "done";
+        state$2.report = report;
+        state$2.phase = "done";
         renderSyncModal();
       } catch (error) {
         ctmError("[SyncModal] Apply failed:", error);
-        state$1.report = {
-          space: state$1.payload.space,
+        state$2.report = {
+          space: state$2.payload.space,
           appliedAt: (/* @__PURE__ */ new Date()).toISOString(),
           created: [],
           updated: [],
@@ -26519,11 +26580,11 @@ ${converted.output}
           ],
           warnings: []
         };
-        state$1.phase = "done";
+        state$2.phase = "done";
         renderSyncModal();
       }
     }
-    function updateProgress$1(phase, current, total) {
+    function updateProgress$2(phase, current, total) {
       const label = document.getElementById("md-sync-phase-label");
       const fill = document.getElementById("md-sync-progress-fill");
       const detail = document.getElementById("md-sync-progress-detail");
@@ -26534,7 +26595,7 @@ ${converted.output}
         fill.style.width = `${pct}%`;
       }
     }
-    function updateSelectedCount$1(modal) {
+    function updateSelectedCount$2(modal) {
       const checks = modal.querySelectorAll(".md-sync-row-check");
       let count = 0;
       for (const check of checks) {
@@ -26547,9 +26608,9 @@ ${converted.output}
         applyBtn.textContent = `Apply ${count} pages`;
         applyBtn.disabled = count === 0;
       }
-      updateSelectAllState$1(modal);
+      updateSelectAllState$2(modal);
     }
-    function updateSelectAllState$1(modal) {
+    function updateSelectAllState$2(modal) {
       const selectAll = modal.querySelector("#md-sync-select-all");
       if (!selectAll) return;
       const checks = modal.querySelectorAll(".md-sync-row-check");
@@ -26570,6 +26631,866 @@ ${converted.output}
       const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
       const filename = `sync-report-${timestamp}.json`;
       const blob = new Blob([JSON.stringify(report, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    function escapeHtml$2(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    async function fetchSpaceCatalogWithVersions(spaceKey, onProgress) {
+      var _a3, _b2;
+      const baseUrl = getBaseUrl();
+      const entries = [];
+      let start = 0;
+      const limit = 200;
+      let hasMore = true;
+      while (hasMore) {
+        const cql = encodeURIComponent(`space="${spaceKey}" AND type=page`);
+        const url = `${baseUrl}/rest/api/content/search?cql=${cql}&expand=ancestors,version&limit=${limit}&start=${start}`;
+        const response = await fetchJson(url);
+        for (const r of response.results) {
+          if (r.status && r.status !== "current") continue;
+          const ancestors = r.ancestors ?? [];
+          const parentId = ancestors.length > 0 ? ancestors[ancestors.length - 1].id : null;
+          entries.push({
+            id: r.id,
+            title: r.title,
+            version: ((_a3 = r.version) == null ? void 0 : _a3.number) ?? 0,
+            parentId
+          });
+        }
+        hasMore = !!((_b2 = response._links) == null ? void 0 : _b2.next);
+        start += limit;
+      }
+      return entries;
+    }
+    function diffSpace(state2, catalog) {
+      if (state2 === null) {
+        return {
+          added: [...catalog],
+          changed: [],
+          removed: [],
+          unchangedCount: 0
+        };
+      }
+      const statePages = state2.pages;
+      const catalogIds = new Set(catalog.map((c) => c.id));
+      const added = [];
+      const changed = [];
+      let unchangedCount = 0;
+      for (const entry of catalog) {
+        const stored = statePages[entry.id];
+        if (!stored) {
+          added.push(entry);
+          continue;
+        }
+        if (stored.version !== entry.version || stored.title !== entry.title || stored.parentId !== entry.parentId) {
+          changed.push({ ...entry, oldVersion: stored.version });
+        } else {
+          unchangedCount++;
+        }
+      }
+      const removed = [];
+      for (const [id, info] of Object.entries(statePages)) {
+        if (!catalogIds.has(id)) {
+          removed.push({
+            id,
+            title: info.title,
+            version: info.version
+          });
+        }
+      }
+      return { added, changed, removed, unchangedCount };
+    }
+    async function scanSpace(store, spaceKey, onProgress) {
+      const catalog = await fetchSpaceCatalogWithVersions(spaceKey);
+      const state2 = await store.readState();
+      const diff = diffSpace(state2, catalog);
+      return { catalog, diff };
+    }
+    async function applySpaceSync(store, spaceKey, catalog, diff, selectedIds, onProgress) {
+      var _a3;
+      const failed = [];
+      let written = 0;
+      const toAddOrUpdate = [
+        ...diff.added.filter((e) => selectedIds.has(e.id)),
+        ...diff.changed.filter((e) => selectedIds.has(e.id))
+      ];
+      const toRemove = diff.removed.filter((e) => selectedIds.has(e.id));
+      const totalWork = toAddOrUpdate.length + toRemove.length;
+      let processed = 0;
+      onProgress == null ? void 0 : onProgress("Applying changes...", 0, totalWork);
+      for (const entry of toAddOrUpdate) {
+        onProgress == null ? void 0 : onProgress("Applying changes...", processed, totalWork);
+        processed++;
+        try {
+          const page = await fetchPageForHub(entry.id);
+          if (!page) {
+            failed.push({
+              id: entry.id,
+              title: entry.title,
+              error: "Failed to fetch page (null response)."
+            });
+            continue;
+          }
+          const ancestors = page.ancestors ?? [];
+          const treePage = {
+            id: page.id,
+            title: page.title,
+            parentId: ancestors.length > 0 ? ancestors[ancestors.length - 1].id : null,
+            version: ((_a3 = page.version) == null ? void 0 : _a3.number) ?? 0,
+            labels: page.labels,
+            storage: page.htmlContent
+          };
+          await store.writePage(treePage);
+          written++;
+          ctmLog(`[SpaceSync] Written: ${entry.title} (${entry.id})`);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          failed.push({ id: entry.id, title: entry.title, error: msg });
+          ctmError(`[SpaceSync] Failed to write "${entry.title}":`, error);
+        }
+      }
+      for (const entry of toRemove) {
+        onProgress == null ? void 0 : onProgress("Applying changes...", processed, totalWork);
+        processed++;
+        try {
+          await store.deletePage(entry.id);
+          ctmLog(`[SpaceSync] Deleted: ${entry.title} (${entry.id})`);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          failed.push({ id: entry.id, title: entry.title, error: msg });
+          ctmError(`[SpaceSync] Failed to delete "${entry.title}":`, error);
+        }
+      }
+      onProgress == null ? void 0 : onProgress("Applying changes...", totalWork, totalWork);
+      const pages = {};
+      for (const entry of catalog) {
+        pages[entry.id] = {
+          title: entry.title,
+          version: entry.version,
+          parentId: entry.parentId
+        };
+      }
+      const newState = {
+        format: "onyx-sync/space-state",
+        version: 1,
+        space: spaceKey,
+        lastSync: (/* @__PURE__ */ new Date()).toISOString(),
+        pages
+      };
+      await store.writeState(newState);
+      const manifest = {
+        format: "onyx-sync/space-tree",
+        version: 1,
+        space: spaceKey,
+        exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        pageCount: catalog.length
+      };
+      await store.writeManifest(manifest);
+      return {
+        space: spaceKey,
+        scannedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        added: diff.added.filter((e) => selectedIds.has(e.id)).length,
+        changed: diff.changed.filter((e) => selectedIds.has(e.id)).length,
+        removed: toRemove.length,
+        unchangedCount: diff.unchangedCount,
+        failed,
+        written
+      };
+    }
+    class MemoryTreeStore {
+      constructor() {
+        __publicField(this, "state", null);
+        __publicField(this, "pages", /* @__PURE__ */ new Map());
+        __publicField(this, "manifest", null);
+      }
+      async readState() {
+        return this.state;
+      }
+      async writeState(state2) {
+        this.state = state2;
+      }
+      async listPages() {
+        return Array.from(this.pages.keys());
+      }
+      async readPage(id) {
+        return this.pages.get(id) ?? null;
+      }
+      async writePage(page) {
+        this.pages.set(page.id, page);
+      }
+      async deletePage(id) {
+        this.pages.delete(id);
+      }
+      async writeManifest(manifest) {
+        this.manifest = manifest;
+      }
+      /** @internal Exposed for delta building in Download mode. */
+      getManifest() {
+        return this.manifest;
+      }
+    }
+    class FsTreeStore {
+      constructor(dirHandle) {
+        __publicField(this, "dirHandle");
+        this.dirHandle = dirHandle;
+      }
+      async getPagesDir() {
+        return this.dirHandle.getDirectoryHandle("pages", { create: true });
+      }
+      async readState() {
+        try {
+          const fh = await this.dirHandle.getFileHandle("state.json");
+          const file = await fh.getFile();
+          const text = await file.text();
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      }
+      async writeState(state2) {
+        const fh = await this.dirHandle.getFileHandle("state.json", { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(JSON.stringify(state2, null, 2));
+        await writable.close();
+      }
+      async listPages() {
+        try {
+          const pagesDir = await this.getPagesDir();
+          const ids = [];
+          for await (const name of pagesDir.keys()) {
+            if (name.endsWith(".json")) {
+              ids.push(name.slice(0, -5));
+            }
+          }
+          return ids;
+        } catch {
+          return [];
+        }
+      }
+      async readPage(id) {
+        try {
+          const pagesDir = await this.getPagesDir();
+          const fh = await pagesDir.getFileHandle(`${id}.json`);
+          const file = await fh.getFile();
+          const text = await file.text();
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      }
+      async writePage(page) {
+        const pagesDir = await this.getPagesDir();
+        const fh = await pagesDir.getFileHandle(`${page.id}.json`, { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(JSON.stringify(page, null, 2));
+        await writable.close();
+      }
+      async deletePage(id) {
+        try {
+          const pagesDir = await this.getPagesDir();
+          await pagesDir.removeEntry(`${id}.json`);
+        } catch {
+        }
+      }
+      async writeManifest(manifest) {
+        const fh = await this.dirHandle.getFileHandle("manifest.json", { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(JSON.stringify(manifest, null, 2));
+        await writable.close();
+      }
+    }
+    async function pickDirectory() {
+      if (typeof window.showDirectoryPicker !== "function") return null;
+      try {
+        return await window.showDirectoryPicker({ mode: "readwrite" });
+      } catch {
+        return null;
+      }
+    }
+    const MODAL_ID$1 = "md-space-sync-modal";
+    let state$1 = createInitialState$1();
+    function createInitialState$1() {
+      return {
+        phase: "pick",
+        spaceKey: getSpaceKey() ?? "",
+        target: "download",
+        store: null,
+        scanResult: null,
+        scanError: null,
+        scanning: false,
+        report: null,
+        pickError: null
+      };
+    }
+    function showSpaceSyncModal() {
+      state$1 = createInitialState$1();
+      renderModal();
+    }
+    function renderModal() {
+      closeModal();
+      const overlay = document.createElement("div");
+      overlay.id = MODAL_ID$1;
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", "Space Sync");
+      overlay.style.cssText = `
+        position:fixed;inset:0;background:rgba(9,30,66,0.54);
+        backdrop-filter:blur(2px);z-index:10000;display:flex;
+        justify-content:center;align-items:center;padding:1.5rem;
+        box-sizing:border-box;font-family:var(--md-font);
+        animation:fadeIn 0.2s ease;
+    `;
+      applyTheme$1(overlay);
+      const content = document.createElement("div");
+      content.className = "md-modal-content";
+      content.style.cssText = `
+        width:42rem;max-width:95vw;height:auto;max-height:90vh;
+        display:flex;flex-direction:column;overflow:hidden;
+    `;
+      content.innerHTML = buildHeader$1();
+      content.innerHTML += buildBody$1();
+      overlay.appendChild(content);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeModal();
+      });
+      document.body.appendChild(overlay);
+      attachEventListeners$1();
+    }
+    function closeModal() {
+      const el = document.getElementById(MODAL_ID$1);
+      if (el) el.remove();
+    }
+    function applyTheme$1(overlay) {
+      const isDark = document.documentElement.getAttribute("data-color-mode") === "dark" || document.body.classList.contains("dark") || window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (isDark) overlay.setAttribute("data-theme", "dark");
+    }
+    function buildHeader$1() {
+      return `
+        <div class="md-modal-header">
+            <div class="md-header-title">
+                <h3>Space Sync</h3>
+            </div>
+            <div class="md-header-actions">
+                <button class="md-btn-icon" id="md-space-close" title="Close">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+        </div>
+    `;
+    }
+    function buildBody$1() {
+      switch (state$1.phase) {
+        case "pick":
+          return buildPick();
+        case "review":
+          return buildReview$1();
+        case "applying":
+          return buildProgress$1();
+        case "done":
+          return buildResult$1();
+      }
+    }
+    function buildPick() {
+      let errorBlock = "";
+      if (state$1.pickError) {
+        errorBlock = `
+            <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;margin-top:0.5rem;">
+                <div style="font-size:0.75rem;color:var(--md-danger);">
+                    ${escapeHtml$1(state$1.pickError)}
+                </div>
+            </div>
+        `;
+      }
+      const folderActive = state$1.target === "folder";
+      const downloadActive = state$1.target === "download";
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="font-size:0.8125rem;color:var(--md-text-subtle);margin:0;line-height:1.4;">
+                Incrementally sync a Confluence space to a git-friendly folder tree
+                or a delta JSON file. Only changed pages (added/updated/removed) are
+                fetched — unchanged pages are skipped.
+            </p>
+            <div class="md-settings-section">
+                <div class="md-settings-title">Space</div>
+                <label style="font-size:0.8125rem;color:var(--md-text-subtle);">
+                    Space Key
+                    <input id="md-space-key" type="text" value="${escapeHtml$1(state$1.spaceKey)}"
+                        placeholder="e.g. SPC"
+                        style="display:block;width:100%;margin-top:0.25rem;padding:0.375rem 0.5rem;
+                        border:1px solid var(--md-border);border-radius:var(--md-radius);
+                        font-size:0.8125rem;font-family:var(--md-font);
+                        background:var(--md-bg);color:var(--md-text);box-sizing:border-box;" />
+                </label>
+            </div>
+            <div class="md-settings-section">
+                <div class="md-settings-title">Target</div>
+                <div style="display:flex;gap:0.25rem;">
+                    <button class="md-segment ${folderActive ? "active" : ""}" id="md-space-target-folder"
+                        style="padding:0.375rem 1rem;border-radius:var(--md-radius);border:1px solid var(--md-border);
+                        background:${folderActive ? "var(--md-primary)" : "var(--md-bg)"};
+                        color:${folderActive ? "#fff" : "var(--md-text-subtle)"};
+                        cursor:pointer;font-size:0.8125rem;font-weight:500;font-family:var(--md-font);">
+                        Folder
+                    </button>
+                    <button class="md-segment ${downloadActive ? "active" : ""}" id="md-space-target-download"
+                        style="padding:0.375rem 1rem;border-radius:var(--md-radius);border:1px solid var(--md-border);
+                        background:${downloadActive ? "var(--md-primary)" : "var(--md-bg)"};
+                        color:${downloadActive ? "#fff" : "var(--md-text-subtle)"};
+                        cursor:pointer;font-size:0.8125rem;font-weight:500;font-family:var(--md-font);">
+                        Download
+                    </button>
+                </div>
+            </div>
+            ${errorBlock}
+            <div style="display:flex;justify-content:flex-end;padding-top:0.5rem;">
+                <button class="md-btn md-btn-primary" id="md-space-scan">Scan</button>
+            </div>
+        </div>
+    `;
+    }
+    function buildReview$1() {
+      if (state$1.scanning || !state$1.scanResult && !state$1.scanError) {
+        return `
+            <div style="padding:2rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:12rem;">
+                <div class="md-btn-icon spinning" style="width:2rem;height:2rem;">
+                    <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                </div>
+                <div style="font-size:0.875rem;color:var(--md-text-subtle);">
+                    ${escapeHtml$1(state$1.scanError ?? "Scanning...")}
+                </div>
+            </div>
+        `;
+      }
+      if (state$1.scanError && !state$1.scanResult) {
+        return `
+            <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+                <div style="background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
+                    <div style="font-size:0.75rem;color:var(--md-danger);">
+                        ${escapeHtml$1(state$1.scanError)}
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button class="md-btn md-btn-secondary" id="md-space-back">Back</button>
+                </div>
+            </div>
+        `;
+      }
+      const diff = state$1.scanResult.diff;
+      const catalog = state$1.scanResult.catalog;
+      const rows = [];
+      for (const entry of diff.added) {
+        rows.push(buildChangelogRow(entry.id, entry.title, "add", `v${entry.version}`));
+      }
+      for (const entry of diff.changed) {
+        rows.push(buildChangelogRow(
+          entry.id,
+          entry.title,
+          "update",
+          `v${entry.oldVersion} → v${entry.version}`
+        ));
+      }
+      for (const entry of diff.removed) {
+        rows.push(buildChangelogRow(entry.id, entry.title, "delete", `v${entry.version}`));
+      }
+      const totalChanges = diff.added.length + diff.changed.length + diff.removed.length;
+      const selectedCount = totalChanges;
+      return `
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto;">
+            <div style="background:var(--md-bg-subtle);border-radius:var(--md-radius);padding:0.75rem 1rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">
+                    Space Summary
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.375rem;font-size:0.8125rem;">
+                    <span style="color:var(--md-text-subtle);">Total pages:</span>
+                    <span style="color:var(--md-text);font-weight:500;">${catalog.length}</span>
+                    <span></span>
+                    <span style="color:var(--md-success);">Added:</span>
+                    <span style="color:var(--md-success);font-weight:500;">${diff.added.length}</span>
+                    <span></span>
+                    <span style="color:var(--md-warning);">Changed:</span>
+                    <span style="color:var(--md-warning);font-weight:500;">${diff.changed.length}</span>
+                    <span></span>
+                    <span style="color:var(--md-danger);">Removed:</span>
+                    <span style="color:var(--md-danger);font-weight:500;">${diff.removed.length}</span>
+                    <span></span>
+                    <span style="color:var(--md-text-muted);">Unchanged:</span>
+                    <span style="color:var(--md-text-muted);font-weight:500;">${diff.unchangedCount}</span>
+                    <span></span>
+                </div>
+            </div>
+
+            ${totalChanges === 0 ? `
+                <div style="text-align:center;padding:1.5rem;color:var(--md-text-subtle);font-size:0.875rem;">
+                    No changes detected. Space is up to date.
+                </div>
+            ` : `
+                <div style="border:1px solid var(--md-border);border-radius:var(--md-radius);overflow:hidden;max-height:20rem;overflow-y:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:var(--md-bg-subtle);border-bottom:1px solid var(--md-border);position:sticky;top:0;">
+                                <th style="padding:0.5rem;text-align:center;width:2.5rem;">
+                                    <input type="checkbox" id="md-space-select-all" checked
+                                        style="cursor:pointer;accent-color:var(--md-primary);" />
+                                </th>
+                                <th style="padding:0.5rem;text-align:left;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;">
+                                    Title
+                                </th>
+                                <th style="padding:0.5rem;text-align:center;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;width:5rem;">
+                                    Action
+                                </th>
+                                <th style="padding:0.5rem;text-align:right;font-size:0.6875rem;font-weight:600;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.5px;width:6rem;">
+                                    Version
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.join("")}
+                        </tbody>
+                    </table>
+                </div>
+            `}
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-space-back">Back</button>
+                <span style="font-size:0.75rem;color:var(--md-text-muted);" id="md-space-selected-count">
+                    ${selectedCount} changes selected
+                </span>
+                <button class="md-btn md-btn-primary" id="md-space-apply" ${totalChanges === 0 ? "disabled" : ""}>
+                    Apply ${selectedCount} changes
+                </button>
+            </div>
+        </div>
+    `;
+    }
+    function buildChangelogRow(id, title, action, versionInfo) {
+      const badge = buildChangeBadge(action);
+      return `
+        <tr style="border-bottom:1px solid var(--md-border);">
+            <td style="padding:0.375rem 0.5rem;text-align:center;">
+                <input type="checkbox" class="md-space-row-check"
+                    data-id="${escapeHtml$1(id)}" checked
+                    style="cursor:pointer;accent-color:var(--md-primary);" />
+            </td>
+            <td style="padding:0.375rem 0.5rem;color:var(--md-text);font-size:0.8125rem;">
+                ${escapeHtml$1(title)}
+            </td>
+            <td style="padding:0.375rem 0.5rem;text-align:center;">
+                ${badge}
+            </td>
+            <td style="padding:0.375rem 0.5rem;text-align:right;color:var(--md-text-muted);font-size:0.75rem;">
+                ${escapeHtml$1(versionInfo)}
+            </td>
+        </tr>
+    `;
+    }
+    function buildChangeBadge(action) {
+      const styles = {
+        add: "background:var(--md-success-light);color:var(--md-success);",
+        update: "background:var(--md-warning-light);color:var(--md-warning);",
+        delete: "background:var(--md-danger-light);color:var(--md-danger);"
+      };
+      const labels = {
+        add: "ADD",
+        update: "UPDATE",
+        delete: "DELETE"
+      };
+      return `<span style="${styles[action]}padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.625rem;font-weight:600;letter-spacing:0.5px;">${labels[action]}</span>`;
+    }
+    function buildProgress$1() {
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:center;justify-content:center;min-height:10rem;">
+            <div style="font-size:0.875rem;color:var(--md-text);font-weight:500;" id="md-space-phase-label">
+                Starting sync...
+            </div>
+            <div style="width:100%;">
+                <div class="md-progress-bar" style="height:0.375rem;">
+                    <div class="md-progress-fill" id="md-space-progress-fill" style="width:0%;"></div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--md-text-muted);" id="md-space-progress-detail">
+                0 / 0
+            </div>
+        </div>
+    `;
+    }
+    function buildResult$1() {
+      const r = state$1.report;
+      const hasErrors = r.failed.length > 0;
+      let errorList = "";
+      if (r.failed.length > 0) {
+        const items = r.failed.slice(0, 20).map((e) => `<li style="margin-bottom:0.25rem;"><strong>${escapeHtml$1(e.title)}</strong>: ${escapeHtml$1(e.error)}</li>`).join("");
+        const moreNote = r.failed.length > 20 ? `<li style="color:var(--md-text-muted);">...and ${r.failed.length - 20} more</li>` : "";
+        errorList = `
+            <div style="margin-top:0.75rem;max-height:8rem;overflow-y:auto;
+                background:var(--md-danger-light);border-radius:var(--md-radius);padding:0.75rem;">
+                <div style="font-size:0.6875rem;font-weight:600;color:var(--md-danger);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.375rem;">
+                    Errors (${r.failed.length})
+                </div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.75rem;color:var(--md-text);">
+                    ${items}${moreNote}
+                </ul>
+            </div>
+        `;
+      }
+      const downloadBtn = state$1.target === "download" ? `<button class="md-btn md-btn-primary" id="md-space-download-delta">Download delta</button>` : "";
+      return `
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+            <div style="text-align:center;font-size:1.5rem;">${hasErrors ? "⚠️" : "✅"}</div>
+            <div style="display:flex;justify-content:center;gap:1.5rem;font-size:0.875rem;flex-wrap:wrap;">
+                <span style="color:var(--md-success);font-weight:500;">Added: ${r.added}</span>
+                <span style="color:var(--md-warning);font-weight:500;">Changed: ${r.changed}</span>
+                <span style="color:var(--md-danger);font-weight:500;">Removed: ${r.removed}</span>
+                <span style="color:var(--md-text-muted);font-weight:500;">Written: ${r.written}</span>
+            </div>
+            ${errorList}
+            <div style="display:flex;justify-content:center;gap:0.5rem;padding-top:0.5rem;">
+                <button class="md-btn md-btn-secondary" id="md-space-done">Close</button>
+                ${downloadBtn}
+            </div>
+        </div>
+    `;
+    }
+    function attachEventListeners$1() {
+      var _a3;
+      const modal = document.getElementById(MODAL_ID$1);
+      if (!modal) return;
+      (_a3 = modal.querySelector("#md-space-close")) == null ? void 0 : _a3.addEventListener("click", closeModal);
+      const onKeyDown = (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          document.removeEventListener("keydown", onKeyDown);
+        }
+      };
+      document.addEventListener("keydown", onKeyDown);
+      switch (state$1.phase) {
+        case "pick":
+          attachPickListeners(modal);
+          break;
+        case "review":
+          attachReviewListeners$1(modal);
+          break;
+        case "done":
+          attachResultListeners$1(modal);
+          break;
+      }
+    }
+    function attachPickListeners(modal) {
+      var _a3, _b2, _c;
+      (_a3 = modal.querySelector("#md-space-target-folder")) == null ? void 0 : _a3.addEventListener("click", () => {
+        state$1.target = "folder";
+        state$1.pickError = null;
+        renderModal();
+      });
+      (_b2 = modal.querySelector("#md-space-target-download")) == null ? void 0 : _b2.addEventListener("click", () => {
+        state$1.target = "download";
+        state$1.pickError = null;
+        renderModal();
+      });
+      const keyInput = modal.querySelector("#md-space-key");
+      if (keyInput) {
+        keyInput.addEventListener("input", () => {
+          state$1.spaceKey = keyInput.value.trim().toUpperCase();
+        });
+      }
+      (_c = modal.querySelector("#md-space-scan")) == null ? void 0 : _c.addEventListener("click", () => {
+        void startScan();
+      });
+    }
+    function attachReviewListeners$1(modal) {
+      var _a3, _b2;
+      (_a3 = modal.querySelector("#md-space-back")) == null ? void 0 : _a3.addEventListener("click", () => {
+        state$1.phase = "pick";
+        state$1.scanResult = null;
+        state$1.scanError = null;
+        state$1.store = null;
+        renderModal();
+      });
+      const selectAll = modal.querySelector("#md-space-select-all");
+      if (selectAll) {
+        selectAll.addEventListener("change", () => {
+          const checks = modal.querySelectorAll(".md-space-row-check");
+          for (const check of checks) {
+            check.checked = selectAll.checked;
+          }
+          updateSelectedCount$1(modal);
+        });
+      }
+      const rowChecks = modal.querySelectorAll(".md-space-row-check");
+      for (const check of rowChecks) {
+        check.addEventListener("change", () => updateSelectedCount$1(modal));
+      }
+      updateSelectAllState$1(modal);
+      (_b2 = modal.querySelector("#md-space-apply")) == null ? void 0 : _b2.addEventListener("click", () => {
+        void startApply(modal);
+      });
+    }
+    function attachResultListeners$1(modal) {
+      var _a3, _b2;
+      (_a3 = modal.querySelector("#md-space-done")) == null ? void 0 : _a3.addEventListener("click", closeModal);
+      (_b2 = modal.querySelector("#md-space-download-delta")) == null ? void 0 : _b2.addEventListener("click", () => {
+        void downloadDelta();
+      });
+    }
+    async function startScan() {
+      const spaceKey = state$1.spaceKey.trim().toUpperCase();
+      if (!spaceKey) return;
+      let store;
+      if (state$1.target === "folder") {
+        const dirHandle = await pickDirectory();
+        if (!dirHandle) {
+          state$1.pickError = "Directory picker cancelled or File System Access API unavailable.";
+          renderModal();
+          return;
+        }
+        store = new FsTreeStore(dirHandle);
+      } else {
+        store = new MemoryTreeStore();
+      }
+      state$1.store = store;
+      state$1.phase = "review";
+      state$1.scanning = true;
+      state$1.scanError = null;
+      renderModal();
+      try {
+        const result = await scanSpace(store, spaceKey);
+        state$1.scanResult = result;
+        state$1.scanning = false;
+        renderModal();
+      } catch (error) {
+        ctmError("[SpaceSyncModal] Scan failed:", error);
+        state$1.scanError = error instanceof Error ? error.message : String(error);
+        state$1.scanning = false;
+        renderModal();
+      }
+    }
+    async function startApply(modal) {
+      if (!state$1.store || !state$1.scanResult) return;
+      const checks = modal.querySelectorAll(".md-space-row-check");
+      const selectedIds = /* @__PURE__ */ new Set();
+      for (const check of checks) {
+        if (check.checked) {
+          const id = check.getAttribute("data-id");
+          if (id) selectedIds.add(id);
+        }
+      }
+      if (selectedIds.size === 0) return;
+      state$1.phase = "applying";
+      renderModal();
+      try {
+        const report = await applySpaceSync(
+          state$1.store,
+          state$1.spaceKey,
+          state$1.scanResult.catalog,
+          state$1.scanResult.diff,
+          selectedIds,
+          (phase, current, total) => {
+            updateProgress$1(phase, current, total);
+          }
+        );
+        state$1.report = report;
+        state$1.phase = "done";
+        renderModal();
+      } catch (error) {
+        ctmError("[SpaceSyncModal] Apply failed:", error);
+        state$1.report = {
+          space: state$1.spaceKey,
+          scannedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          added: 0,
+          changed: 0,
+          removed: 0,
+          unchangedCount: 0,
+          failed: [{
+            id: "(sync)",
+            title: "(sync)",
+            error: error instanceof Error ? error.message : String(error)
+          }],
+          written: 0
+        };
+        state$1.phase = "done";
+        renderModal();
+      }
+    }
+    function updateProgress$1(phase, current, total) {
+      const label = document.getElementById("md-space-phase-label");
+      const fill = document.getElementById("md-space-progress-fill");
+      const detail = document.getElementById("md-space-progress-detail");
+      if (label) label.textContent = phase;
+      if (detail) detail.textContent = `${current} / ${total}`;
+      if (fill) {
+        const pct = total > 0 ? Math.round(current / total * 100) : 0;
+        fill.style.width = `${pct}%`;
+      }
+    }
+    function updateSelectedCount$1(modal) {
+      const checks = modal.querySelectorAll(".md-space-row-check");
+      let count = 0;
+      for (const check of checks) {
+        if (check.checked) count++;
+      }
+      const countEl = modal.querySelector("#md-space-selected-count");
+      if (countEl) countEl.textContent = `${count} changes selected`;
+      const applyBtn = modal.querySelector("#md-space-apply");
+      if (applyBtn) {
+        applyBtn.textContent = `Apply ${count} changes`;
+        applyBtn.disabled = count === 0;
+      }
+      updateSelectAllState$1(modal);
+    }
+    function updateSelectAllState$1(modal) {
+      const selectAll = modal.querySelector("#md-space-select-all");
+      if (!selectAll) return;
+      const checks = modal.querySelectorAll(".md-space-row-check");
+      let allChecked = true;
+      let hasAny = false;
+      for (const check of checks) {
+        hasAny = true;
+        if (!check.checked) {
+          allChecked = false;
+          break;
+        }
+      }
+      selectAll.checked = hasAny && allChecked;
+    }
+    async function downloadDelta() {
+      if (!state$1.store || !state$1.scanResult) return;
+      const store = state$1.store;
+      const diff = state$1.scanResult.diff;
+      const spaceKey = state$1.spaceKey;
+      const deltaState = await store.readState();
+      if (!deltaState) return;
+      const addedPages = [];
+      const changedPages = [];
+      for (const entry of diff.added) {
+        const page = await store.readPage(entry.id);
+        if (page) addedPages.push(page);
+      }
+      for (const entry of diff.changed) {
+        const page = await store.readPage(entry.id);
+        if (page) changedPages.push(page);
+      }
+      const removedIds = diff.removed.map((r) => r.id);
+      const delta = {
+        format: "onyx-sync/space-delta",
+        version: 1,
+        space: spaceKey,
+        added: addedPages,
+        changed: changedPages,
+        removed: removedIds,
+        state: deltaState
+      };
+      const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+      const filename = `space-delta-${timestamp}.json`;
+      const blob = new Blob([JSON.stringify(delta, null, 2)], {
         type: "application/json"
       });
       const url = URL.createObjectURL(blob);
@@ -27962,7 +28883,7 @@ ${converted.output}
         });
       } catch (error) {
         logError(error, "startExport", { pageId });
-        closeModal();
+        closeModal$1();
         alert(`Export failed: ${getErrorMessage(error)}`);
         updateStatus(`Error: ${getErrorMessage(error)}`);
       } finally {
@@ -28039,6 +28960,10 @@ ${converted.output}
       ctmLog("startSync called");
       showSyncModal();
     }
+    function startSpaceSync() {
+      ctmLog("startSpaceSync called");
+      showSpaceSyncModal();
+    }
     function startJiraSync() {
       ctmLog("startJiraSync called");
       showJiraModal();
@@ -28049,6 +28974,7 @@ ${converted.output}
       onPageExport: startExport,
       onImport: startImport,
       onSync: startSync,
+      onSpaceSync: startSpaceSync,
       onJiraSync: startJiraSync,
       onHubSettings: showHubSettingsPanel
     });
