@@ -135,6 +135,16 @@ export function setupEventListeners(deps: HandlerDependencies): () => void {
             const attachmentCard = element.querySelector('#md-attachment-filter-card') as HTMLElement;
             if (attachmentCard) attachmentCard.style.display = 'block';
 
+            // Backup is lossless by default: include ALL attachments unless the
+            // user has already narrowed the filter. User can still deselect via chips.
+            if (!currentObsidianSettings.attachmentFilter) {
+                currentObsidianSettings.attachmentFilter = '*';
+            }
+            syncAllChip(element, currentObsidianSettings.attachmentFilter);
+            syncCategoryChips(element, currentObsidianSettings.attachmentFilter);
+            syncExtensionChips(element, currentObsidianSettings.attachmentFilter);
+            syncFilterInput(element, currentObsidianSettings.attachmentFilter);
+
             // Update download button to indicate backup
             const downloadBtn = element.querySelector('#md-download-btn') as HTMLButtonElement;
             if (downloadBtn) {

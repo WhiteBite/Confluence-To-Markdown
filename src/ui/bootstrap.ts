@@ -8,10 +8,11 @@
  * Designed to be the SOLE entry-point UI logic — `main.ts` should call
  * `bootstrap(...)` once and never touch DOM directly.
  *
- * Header buttons (4 total, Confluence only):
+ * Header buttons (5 total, Confluence only):
  *   [📤 Export]  — opens export modal (page/space toggle inside)
  *   [📥 Import]  — opens import modal
  *   [🔄 Sync]    — opens sync payload modal
+ *   [🗂 Space]   — opens incremental space sync modal
  *   [⚙️]         — hub settings
  *
  * Floating button (Jira only):
@@ -31,6 +32,7 @@ import { fetchJson } from '@/utils/transport';
 const EXPORT_BUTTON_ID = 'md-export-trigger';
 const IMPORT_BUTTON_ID = 'md-import-trigger';
 const SYNC_BUTTON_ID = 'md-sync-trigger';
+const SPACE_BUTTON_ID = 'md-space-sync-trigger';
 const HUB_SETTINGS_ID = 'md-hub-settings-trigger';
 const STATUS_ID = 'md-export-status';
 const JIRA_BUTTON_ID = 'md-jira-sync-trigger';
@@ -45,6 +47,8 @@ export interface BootstrapCallbacks {
     onImport: () => void;
     /** Triggered when "🔄 Sync" is clicked */
     onSync: () => void;
+    /** Triggered when "🗂 Space" is clicked */
+    onSpaceSync: () => void;
     /** Triggered when "🔄 Jira Sync" is clicked (floating button, Jira only) */
     onJiraSync: () => void;
     /** Triggered when ⚙ Hub settings is clicked */
@@ -165,6 +169,7 @@ function addExportButtons(): void {
     }
     injectImportButton(container);
     injectSyncButton(container);
+    injectSpaceButton(container);
     injectHubSettingsButton(container);
 }
 
@@ -224,6 +229,27 @@ function injectSyncButton(container: Element): void {
         container.appendChild(btn);
     }
     ctmLog('addExportButtons: SYNC button added');
+}
+
+function injectSpaceButton(container: Element): void {
+    if (!activeCallbacks) return;
+    if (document.getElementById(SPACE_BUTTON_ID)) return;
+
+    const btn = createButton(
+        '🗂 Space',
+        'aui-button aui-button-secondary',
+        activeCallbacks.onSpaceSync
+    );
+    btn.id = SPACE_BUTTON_ID;
+    btn.style.marginLeft = '8px';
+
+    const syncBtn = document.getElementById(SYNC_BUTTON_ID);
+    if (syncBtn) {
+        syncBtn.parentElement?.insertBefore(btn, syncBtn.nextSibling);
+    } else {
+        container.appendChild(btn);
+    }
+    ctmLog('addExportButtons: SPACE button added');
 }
 
 function injectHubSettingsButton(container: Element): void {

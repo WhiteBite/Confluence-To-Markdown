@@ -152,6 +152,29 @@ export function getSpaceKey(): string | null {
     return null;
 }
 
+/** Human-readable space name (for manifests / display). Falls back to space key. */
+export function getSpaceName(): string | null {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window) as any;
+
+    // AJS.Meta 'space-name' (Server + Cloud)
+    if (win.AJS?.Meta) {
+        const metaName = win.AJS.Meta.get('space-name');
+        if (metaName) return String(metaName);
+    }
+
+    // Breadcrumb link carrying the space key
+    const breadcrumb = document.querySelector('#breadcrumb-section a[data-space-key]');
+    const bcText = breadcrumb?.textContent?.trim();
+    if (bcText) return bcText;
+
+    const spaceLink = document.querySelector('.space-name a, #space-name-link');
+    const slText = spaceLink?.textContent?.trim();
+    if (slText) return slText;
+
+    return getSpaceKey();
+}
+
 /** Safe error message extraction */
 export function getErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;

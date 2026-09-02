@@ -28,7 +28,7 @@ import { parseAttachmentFilter } from '@/core/attachment-filter';
 
 import type { ModalAction, ModalContext, ModalController } from '@/ui/modal';
 import type { PageTreeNode } from '@/api/types';
-import { getSpaceKey } from '@/utils/helpers';
+import { getSpaceKey, getSpaceName } from '@/utils/helpers';
 
 export interface ActionRunnerDeps {
     /** Optional modal controller for progress/toast UI. May be undefined for headless flows. */
@@ -240,10 +240,8 @@ async function finalizeBackup(
         rootTree,
         rootTitle,
         spaceKey,
-        // spaceName is a display-only manifest field; we don't have it at this
-        // call site (only spaceKey is available from URL/AJS.Meta). The importer
-        // uses spaceKey, not spaceName, for the actual restore.
-        null,
+        // spaceName is display-only; importer relies on spaceKey for restore.
+        getSpaceName(),
         {
             includeAttachments: filterSet.size > 0,
             includeViewHtml: false,

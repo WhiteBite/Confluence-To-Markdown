@@ -29,6 +29,7 @@ import { bootstrap } from '@/ui/bootstrap';
 import { showHubSettingsPanel } from '@/ui/hub-settings-panel';
 import { showImportModal } from '@/ui/import-modal';
 import { showSyncModal } from '@/ui/sync-modal';
+import { showSpaceSyncModal } from '@/ui/space-sync-modal';
 import { showJiraModal } from '@/ui/jira-modal';
 
 import { getCurrentPageId, getErrorMessage, getSpaceKey } from '@/utils/helpers';
@@ -242,6 +243,15 @@ function startSync(): void {
 }
 
 // ============================================================================
+// Space Sync
+// ============================================================================
+
+function startSpaceSync(): void {
+    ctmLog('startSpaceSync called');
+    showSpaceSyncModal();
+}
+
+// ============================================================================
 // Jira Sync
 // ============================================================================
 
@@ -262,6 +272,7 @@ bootstrap({
     onPageExport: startExport,
     onImport: startImport,
     onSync: startSync,
+    onSpaceSync: startSpaceSync,
     onJiraSync: startJiraSync,
     onHubSettings: showHubSettingsPanel,
 });
